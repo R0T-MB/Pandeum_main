@@ -1,0 +1,75 @@
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
+from ..database import get_db
+from ..schemas import ProblemRequest, AISolveResponse
+from ..ai_engine import AIEngine
+from ..auth import get_current_user, get_current_active_user
+from ..models import User
+from ..crud import get_user_memory, save_conversation, add_to_waiting_list, get_external_resources
+from typing import Optional
+
+router = APIRouter(prefix="/ai", tags=["ai"])
+
+@router.post("/solve", response_model=AISolveResponse)
+async def solve_problem(
+    request: ProblemRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user)  # opcional
+):
+    user_id = str(current_user.id) if current_user else None
+    
+    # Obtener memoria contextual si usuario autenticado
+    memory_context = None
+    if user_id:
+        memory = get_user_memory(db, user_id)
+        if memory:
+            memory_context = memory.context_data
+    
+    # Llamar al motor IA
+    result = await AIEngine.solve_problem(
+        problem=request.problem,
+        user_location=request.user_location,
+        budget=request.budget,
+        db=db,
+        user_id=user_id,
+        memory_context=memory_context
+    )
+    
+    # Guardar conversación si usuario autenticado
+    if user_id:
+        save_conversation(
+            db=db,
+            user_id=user_id,
+            problem_text=request.problem,
+            ai_response=result,
+            confidence_score=result.get("confidence_score", 0.5),
+            category=result.get("diagnosis", {}).get("possible_causes", [])[0] if result.get("diagnosis") else "unknown",
+            urgency=result.get("urgency", "medium")
+        )
+    
+    # Si no hay proveedores y hay fallback con waitlist, añadir a lista de espera
+    if not result.get("has_providers") and result.get("fallback", {}).get("waitlist_enabled") and user_id:
+        add_to_waiting_list(
+            db=db,
+            user_id=user_id,
+            problem_category=result.get("diagnosis", {}).get("possible_causes", [""])[0]
+        )
+        # Añadir guías externas
+        external = get_external_resources(db, category="general")  # simplificado
+        if external:
+            result["fallback"]["guides"] = [{"title": r.title, "url": r.url} for r in external]
+    
+    return result
+
+@router.post("/explore")
+async def explore_mode(
+    request: ProblemRequest,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    # Modo exploración no guarda conversación igual, solo devuelve ideas
+    result = await AIEngine.explore_mode(
+        problem=request.problem,
+        budget=request.budget
+    )
+    return result

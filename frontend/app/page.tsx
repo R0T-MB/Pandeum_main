@@ -1,0 +1,178 @@
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
+import { useAuth } from '@/components/providers/AuthProvider'
+import { api, aiApi } from '@/lib/api'
+import { ChatInput } from '@/components/chat/ChatInput'
+import { ChatMessage } from '@/components/chat/ChatMessage'
+import Sidebar from '@/components/layout/Sidebar'
+import { Menu, Sparkles } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
+import { Message } from '@/types'
+
+export default function HomePage() {
+  const { user } = useAuth()
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Cargar historial de conversaciones
+    if (user) {
+      loadHistory()
+    }
+  }, [user])
+
+  const loadHistory = async () => {
+    try {
+      const response = await api.get('/users/me/conversations')
+      const conversations = response.data
+      
+      const historyMessages: Message[] = []
+      
+      conversations.forEach((conv: any) => {
+        // Mensaje del usuario
+        historyMessages.push({
+          id: conv.id + '-user',
+          role: 'user',
+          content: conv.problem_text,
+          timestamp: new Date(conv.created_at)
+        })
+        
+        // Mensaje del asistente
+        historyMessages.push({
+          id: conv.id + '-assistant',
+          role: 'assistant',
+          content: conv.ai_response,
+          timestamp: new Date(conv.created_at)
+        })
+      })
+      
+      setMessages(historyMessages)
+    } catch (error) {
+      console.error('Error loading history')
+    }
+  }
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const handleSendMessage = async (problem: string) => {
+    if (!problem.trim()) return
+
+    // Agregar mensaje del usuario
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: problem,
+      timestamp: new Date(),
+    }
+    setMessages(prev => [...prev, userMessage])
+    setIsLoading(true)
+
+    try {
+      const aiData = await aiApi.solve(problem)
+      
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: aiData,
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, assistantMessage])
+    } catch (error) {
+      toast.error('Error al procesar tu consulta')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex h-screen bg-white dark:bg-dark">
+      {/* Sidebar */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="glass border-b border-white/20 px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-white/10 transition"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <span className="font-semibold">Pandeum</span>
+          </div>
+          <div className="w-8" /> {/* spacer */}
+        </header>
+
+        {/* Chat area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <div className="max-w-md">
+                <Sparkles className="w-16 h-16 text-primary mx-auto mb-4" />
+                <h1 className="text-3xl font-bold mb-2">¿Qué problema podemos resolver hoy?</h1>
+                <p className="text-gray-500 dark:text-gray-400 mb-8">
+                  Describe tu situación de forma natural. Pandeum te ayudará a encontrar la mejor solución.
+                </p>
+                <div className="grid gap-3">
+                  {[
+                    "Mi laptop se apaga cuando juego",
+                    "Necesito un tutor de cálculo para mi examen",
+                    "El lavaplatos está inundando la cocina",
+                  ].map((example) => (
+                    <button
+                      key={example}
+                      onClick={() => handleSendMessage(example)}
+                      className="glass rounded-xl p-3 text-left hover:bg-white/20 transition"
+                    >
+                      {example}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <AnimatePresence>
+              {messages.map((msg) => (
+                <ChatMessage key={msg.id} message={msg} />
+              ))}
+              {isLoading && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="glass rounded-2xl p-4 max-w-[80%]">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="p-4 border-t border-white/10">
+          <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+        </div>
+      </div>
+    </div>
+  )
+}
