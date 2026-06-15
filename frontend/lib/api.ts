@@ -26,12 +26,16 @@ api.interceptors.response.use(
           const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
             refresh_token: refreshToken,
           });
-          localStorage.setItem('access_token', res.data.access_token);
+          const newToken = res.data.access_token;
+          localStorage.setItem('access_token', newToken);
           localStorage.setItem('refresh_token', res.data.refresh_token);
-          originalRequest.headers.Authorization = `Bearer ${res.data.access_token}`;
+          // Sincronizar cookie para el middleware
+          document.cookie = `access_token=${newToken}; path=/; SameSite=Lax`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } catch (err) {
           localStorage.clear();
+          document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
           window.location.href = '/login';
         }
       } else {

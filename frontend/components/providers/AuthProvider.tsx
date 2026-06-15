@@ -5,6 +5,16 @@ import { useRouter } from 'next/navigation'
 import { api, setAuthToken, removeAuthToken } from '@/lib/api'
 import { User } from '@/types'
 
+// Helper para manejar cookies
+const setCookie = (name: string, value: string, days = 7) => {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString()
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
+}
+
+const removeCookie = (name: string) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+}
+
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -24,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (token) {
+      setCookie('access_token', token)
       setAuthToken(token)
       fetchUser()
     } else {
@@ -48,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { access_token, refresh_token } = response.data
     localStorage.setItem('access_token', access_token)
     localStorage.setItem('refresh_token', refresh_token)
+    setCookie('access_token', access_token)
     setAuthToken(access_token)
     await fetchUser()
     router.push('/')
@@ -58,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { access_token, refresh_token } = response.data
     localStorage.setItem('access_token', access_token)
     localStorage.setItem('refresh_token', refresh_token)
+    setCookie('access_token', access_token)
     setAuthToken(access_token)
     await fetchUser()
     router.push('/')
@@ -71,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    removeCookie('access_token')
     removeAuthToken()
     setUser(null)
     router.push('/login')
