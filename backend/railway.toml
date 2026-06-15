@@ -1,8 +1,11 @@
-[build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
-
-[deploy]
-healthcheckPath = "/"
-healthcheckTimeout = 30
-restartPolicyType = "on_failure"
+# Sobrescribir el archivo con la versión correcta
+(
+echo [build]
+echo builder = "dockerfile"
+echo dockerfilePath = "Dockerfile"
+echo.
+echo [deploy]
+echo healthcheckPath = "/"
+echo healthcheckTimeout = 30
+echo restartPolicyType = "on_failure"
+) > backend\railway.toml
