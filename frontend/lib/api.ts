@@ -1,56 +1,104 @@
-import axios, { AxiosInstance } from 'axios';
-import { AISolveResponse } from '@/types';
+'use client'
 
-const api: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-  headers: { 'Content-Type': 'application/json' },
-});
+import axios, { AxiosInstance } from 'axios'
+import type { AISolveResponse } from '@/types'
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+export const api: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+export const setAuthToken = (token: string) => {
+  api.defaults.headers.common.Authorization = `Bearer ${token}` 
+}
+
+export const removeAuthToken = () => {
+  delete api.defaults.headers.common.Authorization
+}
+
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('access_token')
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}` 
+      }
+    }
+
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refresh_token');
+    const originalRequest = error.config
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true
+
+      const refreshToken =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('refresh_token')
+          : null
+
       if (refreshToken) {
         try {
-          const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,
-          });
-          const newToken = res.data.access_token;
-          localStorage.setItem('access_token', newToken);
-          localStorage.setItem('refresh_token', res.data.refresh_token);
-          // Sincronizar cookie para el middleware
-          document.cookie = `access_token=${newToken}; path=/; SameSite=Lax`;
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return api(originalRequest);
-        } catch (err) {
-          localStorage.clear();
-          document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-          window.location.href = '/login';
+          })
+
+          const newAccessToken = response.data.access_token
+          const newRefreshToken = response.data.refresh_token
+
+          localStorage.setItem('access_token', newAccessToken)
+          localStorage.setItem('refresh_token', newRefreshToken)
+
+          document.cookie = `access_token=${newAccessToken}; path=/; SameSite=Lax` 
+
+          setAuthToken(newAccessToken)
+
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}` 
+
+          return api(originalRequest)
+        } catch (refreshError) {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+
+          document.cookie =
+            'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+
+          window.location.href = '/login'
+
+          return Promise.reject(refreshError)
         }
-      } else {
-        window.location.href = '/login';
       }
+
+      window.location.href = '/login'
     }
-    return Promise.reject(error);
+
+    return Promise.reject(error)
   }
-);
+)
 
 export const aiApi = {
   solve: async (problem: string): Promise<AISolveResponse> => {
-    const response = await api.post<AISolveResponse>('/ai/solve', { problem });
-    return response.data;
-  }
-};
+    const response = await api.post<AISolveResponse>('/ai/solve', {
+      problem,
+    })
 
-export default api;
+    return response.data
+  },
+}
+
+export default api
