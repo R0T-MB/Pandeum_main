@@ -26,7 +26,7 @@ def update_me(
         current_user.city = city
     db.commit()
     db.refresh(current_user)
-    return {"message": "Perfil actualizado", "user": current_user}
+    return {"message": "Perfil actualizado", "user": UserResponse.model_validate(current_user)}
 
 @router.get("/me/conversations", response_model=List[ConversationResponse])
 def get_my_conversations(
