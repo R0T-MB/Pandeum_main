@@ -66,7 +66,7 @@ class ProviderResponse(ProviderBase):
     trust_factors: Dict
     cases_resolved_similar: int
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
     user: Optional[UserResponse] = None
     rating: Optional[float] = 0
 
