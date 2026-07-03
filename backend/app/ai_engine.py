@@ -227,8 +227,16 @@ class AIEngine:
         """
         response = model.generate_content(prompt)
         raw = response.text.strip()
-        # similar limpieza
+        # Limpiar posibles marcadores de código
+        if raw.startswith("```json"):
+            raw = raw[7:]
+        if raw.startswith("```"):
+            raw = raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        raw = raw.strip()
         try:
             return json.loads(raw)
         except:
+            # Fallback cuando Gemini no devuelve JSON válido
             return {"ideas": [], "confidence_score": 0.3}
