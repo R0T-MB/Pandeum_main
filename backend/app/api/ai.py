@@ -35,6 +35,15 @@ async def solve_problem(
         memory_context=memory_context
     )
     
+    # Normalizar fallback para asegurar que sea dict
+    fallback = result.get("fallback")
+    if not isinstance(fallback, dict):
+        fallback = {
+            "message": str(fallback) if fallback else None,
+            "waitlist_enabled": False
+        }
+        result["fallback"] = fallback
+    
     # Guardar conversación si usuario autenticado
     if user_id:
         save_conversation(
@@ -48,7 +57,7 @@ async def solve_problem(
         )
     
     # Si no hay proveedores y hay fallback con waitlist, añadir a lista de espera
-    if not result.get("has_providers") and result.get("fallback", {}).get("waitlist_enabled") and user_id:
+    if not result.get("has_providers") and fallback.get("waitlist_enabled") and user_id:
         add_to_waiting_list(
             db=db,
             user_id=user_id,
