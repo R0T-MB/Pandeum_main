@@ -10,7 +10,7 @@ interface Props {
 
 // Función para parsear solución en formato **Título:** detalle
 const parseSolution = (text: string) => {
-  const match = text.match(/\*\*(.+?):\*\*(.*)/s);
+  const match = text.match(/\*\*(.+?):\*\*([\s\S]*)/);
   if (match) {
     return { title: match[1].trim(), detail: match[2].trim() };
   }
