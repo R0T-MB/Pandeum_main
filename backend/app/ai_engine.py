@@ -1,5 +1,7 @@
 import json
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
+import httpx
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 from .config import settings
@@ -10,6 +12,69 @@ genai.configure(api_key=settings.GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 class AIEngine:
+    @staticmethod
+    async def _generate_with_openrouter(prompt: str) -> Optional[Dict[str, Any]]:
+        """Fallback a OpenRouter si está configurado."""
+        if not settings.OPENROUTER_API_KEY:
+            return None
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": settings.OPENROUTER_MODEL,
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "Eres Pandeum, un asistente experto en resolver problemas. Devuelve SOLO JSON válido sin texto adicional."
+                            },
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ]
+                    }
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    content = data["choices"][0]["message"]["content"]
+                    # Limpiar posibles marcadores de código
+                    if content.startswith("```json"):
+                        content = content[7:]
+                    if content.startswith("```"):
+                        content = content[3:]
+                    if content.endswith("```"):
+                        content = content[:-3]
+                    content = content.strip()
+                    
+                    try:
+                        return json.loads(content)
+                    except json.JSONDecodeError:
+                        return None
+                return None
+        except Exception:
+            # Si OpenRouter falla, no romper el endpoint
+            return None
+
+    @staticmethod
+    def _normalize_ai_response(ai_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Normaliza respuesta de IA para asegurar estructura completa."""
+        return {
+            "confidence_score": ai_result.get("confidence_score", 0.5),
+            "diagnosis": ai_result.get("diagnosis", {"possible_causes": [], "questions": []}),
+            "instant_solutions": ai_result.get("instant_solutions", []),
+            "urgency": ai_result.get("urgency", "medium"),
+            "has_providers": False,
+            "providers": [],
+            "composite_solution": ai_result.get("composite_solution"),
+            "fallback": ai_result.get("fallback")
+        }
     @staticmethod
     async def solve_problem(
         problem: str,
@@ -75,31 +140,101 @@ class AIEngine:
         Si el problema es compuesto (ej: montar tienda online), puedes generar composite_solution.
         """
 
-        # 2. Llamar a Gemini
-        response = model.generate_content(prompt)
-        raw_text = response.text.strip()
-        # Limpiar posibles marcadores de código
-        if raw_text.startswith("```json"):
-            raw_text = raw_text[7:]
-        if raw_text.startswith("```"):
-            raw_text = raw_text[3:]
-        if raw_text.endswith("```"):
-            raw_text = raw_text[:-3]
-        raw_text = raw_text.strip()
-
+        # 2. Llamar a Gemini con manejo de cuota
         try:
-            ai_result = json.loads(raw_text)
-        except json.JSONDecodeError:
-            # Fallback mínimo
-            ai_result = {
-                "confidence_score": 0.3,
-                "diagnosis": {"possible_causes": ["No se pudo analizar"], "questions": []},
-                "instant_solutions": ["Intenta reiniciar o buscar ayuda en línea"],
-                "urgency": "medium",
-                "providers": [],
-                "composite_solution": None,
-                "fallback": {"type": "error", "message": "La IA no pudo procesar correctamente. Intenta de nuevo."}
-            }
+            response = model.generate_content(prompt)
+            raw_text = response.text.strip()
+            # Limpiar posibles marcadores de código
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            if raw_text.startswith("```"):
+                raw_text = raw_text[3:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+            raw_text = raw_text.strip()
+
+            try:
+                ai_result = json.loads(raw_text)
+            except json.JSONDecodeError:
+                # Fallback mínimo por JSON inválido
+                ai_result = {
+                    "confidence_score": 0.3,
+                    "diagnosis": {"possible_causes": ["No se pudo analizar"], "questions": []},
+                    "instant_solutions": ["Intenta reiniciar o buscar ayuda en línea"],
+                    "urgency": "medium",
+                    "has_providers": False,
+                    "providers": [],
+                    "composite_solution": None,
+                    "fallback": {"type": "error", "message": "La IA no pudo procesar correctamente. Intenta de nuevo."}
+                }
+        except ResourceExhausted:
+            # Intentar fallback con OpenRouter
+            ai_result = await AIEngine._generate_with_openrouter(prompt)
+            if ai_result:
+                # Normalizar respuesta de OpenRouter si está incompleta
+                ai_result = AIEngine._normalize_ai_response(ai_result)
+            else:
+                # Fallback local cuando Gemini excede cuota y OpenRouter no está disponible
+                ai_result = {
+                    "confidence_score": 0.45,
+                    "diagnosis": {
+                        "possible_causes": [
+                            "El asistente de IA no está disponible temporalmente.",
+                            "El problema requiere revisión con información adicional.",
+                            "Puede ser necesario escalar a un proveedor especializado."
+                        ],
+                        "questions": [
+                            "¿El problema sigue ocurriendo después de reiniciar el equipo?",
+                            "¿Cuándo empezó el problema?",
+                            "¿Has probado con otro dispositivo o conexión?"
+                        ]
+                    },
+                    "instant_solutions": [
+                        "**Revisar lo básico:** Verifica conexiones, energía y reinicio del equipo.",
+                        "**Anotar el problema:** Guarda detalles como hora, frecuencia y mensajes de error.",
+                        "**Solicitar ayuda profesional:** Si el problema continúa, contacta a un especialista."
+                    ],
+                    "urgency": "medium",
+                    "has_providers": False,
+                    "providers": [],
+                    "composite_solution": None,
+                    "fallback": {
+                        "type": "quota_exceeded",
+                        "message": "El asistente de IA alcanzó temporalmente su límite de uso. Te mostramos una respuesta básica mientras se restablece el servicio.",
+                        "waitlist_enabled": False
+                    }
+                }
+        except Exception:
+            # Capturar errores temporales de Gemini sin tumbar el endpoint
+            ai_result = await AIEngine._generate_with_openrouter(prompt)
+            if ai_result:
+                # Normalizar respuesta de OpenRouter si está incompleta
+                ai_result = AIEngine._normalize_ai_response(ai_result)
+            else:
+                # Fallback local para errores generales de Gemini
+                ai_result = {
+                    "confidence_score": 0.4,
+                    "diagnosis": {
+                        "possible_causes": [
+                            "El asistente de IA no está disponible temporalmente.",
+                            "Error temporal en el procesamiento de la consulta."
+                        ],
+                        "questions": []
+                    },
+                    "instant_solutions": [
+                        "Intenta nuevamente en unos momentos.",
+                        "Verifica tu conexión a internet."
+                    ],
+                    "urgency": "medium",
+                    "has_providers": False,
+                    "providers": [],
+                    "composite_solution": None,
+                    "fallback": {
+                        "type": "temporary_error",
+                        "message": "Error temporal en el asistente de IA. Te mostramos una respuesta básica.",
+                        "waitlist_enabled": False
+                    }
+                }
 
         # 3. Si hay restricted_category_warning, devolver eso y no buscar proveedores
         if ai_result.get("restricted_category_warning"):

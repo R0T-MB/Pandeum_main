@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # Gemini
     GEMINI_API_KEY: str
 
+    # OpenRouter (fallback AI - optional)
+    OPENROUTER_API_KEY: Optional[str] = None
+    OPENROUTER_MODEL: str = "openai/gpt-3.5-turbo"
+
     # CORS
     FRONTEND_URL: str = "http://localhost:3000"
 
