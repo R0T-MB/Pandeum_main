@@ -1,12 +1,14 @@
 "use client";
 
-import { AISolveResponse } from '@/types';
+import { AISolveResponse, ProviderRecommendation } from '@/types';
 import { CheckCircle, AlertCircle, Wrench, User, ChevronDown, ChevronUp, Star, Phone, MapPin, DollarSign, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
   response: AISolveResponse;
 }
+
+type RecommendedProvider = ProviderRecommendation;
 
 // Función para parsear solución en formato **Título:** detalle
 const parseSolution = (text: string) => {
@@ -37,8 +39,59 @@ export const SolutionJourney = ({ response }: Props) => {
 
   const topCauses = response.diagnosis.possible_causes.slice(0, 3);
   const hasMoreCauses = response.diagnosis.possible_causes.length > 3;
-  const mainProvider = response.has_providers && response.providers.length > 0 ? response.providers[0] : null;
+  const providers = response.has_providers && response.providers ? response.providers : [];
   const topSolutions = response.instant_solutions.slice(0, 3);
+
+  // Calcular badges comparativos si hay múltiples proveedores
+  const getProviderBadges = (provider: RecommendedProvider, allProviders: RecommendedProvider[]) => {
+    if (allProviders.length <= 1) return [];
+
+    const badges: string[] = [];
+
+    // Más barato
+    const costs = allProviders.map(p => {
+      const match = p.estimated_cost?.match(/\$?(\d+)/);
+      return match ? parseInt(match[1]) : Infinity;
+    }).filter(c => c !== Infinity);
+    
+    if (costs.length > 0) {
+      const currentCostMatch = provider.estimated_cost?.match(/\$?(\d+)/);
+      const currentCost = currentCostMatch ? parseInt(currentCostMatch[1]) : Infinity;
+      if (currentCost === Math.min(...costs)) {
+        badges.push('Más barato');
+      }
+    }
+
+    // Mejor calificación
+    const ratings = allProviders.map(p => typeof p.rating === 'number' ? p.rating : 0);
+    const currentRating = typeof provider.rating === 'number' ? provider.rating : 0;
+    if (currentRating === Math.max(...ratings) && currentRating > 0) {
+      badges.push('Mejor calificación');
+    }
+
+    // Mayor confianza
+    const trustScores = allProviders.map(p => typeof p.trust_score === 'number' ? p.trust_score : 0);
+    const currentTrustScore = typeof provider.trust_score === 'number' ? provider.trust_score : 0;
+    if (currentTrustScore === Math.max(...trustScores) && currentTrustScore > 0) {
+      badges.push('Mayor confianza');
+    }
+
+    // Más rápido
+    const responseTimes = allProviders.map(p => typeof p.response_time_hours === 'number' ? p.response_time_hours : Infinity);
+    const currentResponseTime = typeof provider.response_time_hours === 'number' ? provider.response_time_hours : Infinity;
+    if (currentResponseTime === Math.min(...responseTimes) && currentResponseTime !== Infinity) {
+      badges.push('Más rápido');
+    }
+
+    // Más cercano (solo si distance_km existe)
+    const distances = allProviders.map(p => typeof p.distance_km === 'number' ? p.distance_km : Infinity);
+    const currentDistance = typeof provider.distance_km === 'number' ? provider.distance_km : Infinity;
+    if (currentDistance === Math.min(...distances) && currentDistance !== Infinity) {
+      badges.push('Más cercano');
+    }
+
+    return badges.slice(0, 2); // Máximo 2 badges por proveedor
+  };
 
   return (
     <div className="my-6 space-y-4">
@@ -139,7 +192,10 @@ export const SolutionJourney = ({ response }: Props) => {
             <div>
               <h4 className="font-bold text-lg text-gray-900 dark:text-gray-100">Proveedor recomendado</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {mainProvider ? 'Te conectamos con el mejor especialista' : 'Aún no encontramos especialista'}
+                {providers.length > 0 
+                  ? `${providers.length} especialista${providers.length > 1 ? 's' : ''} encontrado${providers.length > 1 ? 's' : ''}`
+                  : 'Aún no encontramos especialista'
+                }
               </p>
             </div>
             <ChevronDown 
@@ -239,70 +295,88 @@ export const SolutionJourney = ({ response }: Props) => {
         {/* Provider Detail */}
         {activeSection === 'provider' && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300">
-            {mainProvider ? (
+            {providers.length > 0 ? (
               <>
                 <h4 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                   <User size={20} className="text-purple-600 dark:text-purple-400" />
-                  Especialista recomendado
+                  Especialistas recomendados
                 </h4>
-                <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h5 className="font-bold text-xl text-gray-900 dark:text-gray-100">
-                        {mainProvider.business_name}
-                      </h5>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
-                          <Star size={16} fill="currentColor" />
-                          <span className="font-medium">{mainProvider.rating?.toFixed(1) || 'N/A'}</span>
+                <div className="space-y-4">
+                  {providers.map((provider, idx) => {
+                    const badges = getProviderBadges(provider, providers);
+                    
+                    return (
+                      <div key={provider.provider_id || idx} className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-5 border border-purple-200 dark:border-purple-800">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h5 className="font-bold text-xl text-gray-900 dark:text-gray-100">
+                              {provider.business_name}
+                            </h5>
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <div className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400">
+                                <Star size={16} fill="currentColor" />
+                                <span className="font-medium">{typeof provider.rating === 'number' ? provider.rating.toFixed(1) : 'N/A'}</span>
+                              </div>
+                              <span className="text-gray-400">-</span>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                Trust Score: {typeof provider.trust_score === "number" ? provider.trust_score.toFixed(1) : "N/A"}
+                              </span>
+                              {badges.length > 0 && (
+                                <>
+                                  <span className="text-gray-400">-</span>
+                                  {badges.map((badge, bIdx) => (
+                                    <span key={bIdx} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-semibold rounded-full">
+                                      {badge}
+                                    </span>
+                                  ))}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {provider.available_now && (
+                            <div className="px-4 py-2 bg-green-500 text-white text-sm font-semibold rounded-full">
+                              Disponible ahora
+                            </div>
+                          )}
                         </div>
-                        <span className="text-gray-400">-</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Trust Score: {typeof mainProvider.trust_score === "number" ? mainProvider.trust_score.toFixed(1) : "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    {mainProvider.available_now && (
-                      <div className="px-4 py-2 bg-green-500 text-white text-sm font-semibold rounded-full">
-                        Disponible ahora
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-3 mb-4">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                      <DollarSign size={16} className="text-green-600 dark:text-green-400" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{mainProvider.estimated_cost}</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                      <Clock size={16} className="text-purple-600 dark:text-purple-400" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {mainProvider.response_time_hours ? `${mainProvider.response_time_hours}h` : 'Consultar'}
-                      </span>
-                    </div>
-                    {mainProvider.distance_km !== null && mainProvider.distance_km !== undefined && (
-                      <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                        <MapPin size={16} className="text-amber-600 dark:text-amber-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {typeof mainProvider.distance_km === "number" ? mainProvider.distance_km.toFixed(1) : mainProvider.distance_km} km
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                        
+                        <div className="flex flex-wrap gap-3 mb-4">
+                          <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                            <DollarSign size={16} className="text-green-600 dark:text-green-400" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{provider.estimated_cost || 'Consultar'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                            <Clock size={16} className="text-purple-600 dark:text-purple-400" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {typeof provider.response_time_hours === 'number' ? `${provider.response_time_hours}h` : 'Consultar'}
+                            </span>
+                          </div>
+                          {provider.distance_km !== null && provider.distance_km !== undefined && (
+                            <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+                              <MapPin size={16} className="text-amber-600 dark:text-amber-400" />
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {typeof provider.distance_km === "number" ? provider.distance_km.toFixed(1) : provider.distance_km} km
+                              </span>
+                            </div>
+                          )}
+                        </div>
 
-                  <div className="space-y-2 mb-4">
-                    {(mainProvider.reason_bullets || []).slice(0, 2).map((reason, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                        <span className="text-green-500 mt-0.5">-</span>
-                        <span>{reason}</span>
-                      </div>
-                    ))}
-                  </div>
+                        <div className="space-y-2 mb-4">
+                          {(provider.reason_bullets || []).slice(0, 2).map((reason, rIdx) => (
+                            <div key={rIdx} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+                              <span className="text-green-500 mt-0.5">-</span>
+                              <span>{reason}</span>
+                            </div>
+                          ))}
+                        </div>
 
-                  <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
-                    <Phone size={18} />
-                    Contactar proveedor
-                  </button>
+                        <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+                          <Phone size={18} />
+                          Contactar proveedor
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             ) : (
