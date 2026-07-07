@@ -236,7 +236,67 @@ class AIEngine:
                     }
                 }
 
-        # 3. Si hay restricted_category_warning, devolver eso y no buscar proveedores
+        # 3. Validar y completar instant_solutions si está vacío o inválido
+        instant_solutions = ai_result.get("instant_solutions")
+        
+        # Normalizar instant_solutions
+        if isinstance(instant_solutions, str):
+            # Si viene como string, convertir a lista
+            instant_solutions = [instant_solutions]
+        elif isinstance(instant_solutions, list):
+            # Si viene como lista, limpiar elementos vacíos y conservar solo strings útiles
+            instant_solutions = [
+                s.strip() for s in instant_solutions
+                if isinstance(s, str) and s.strip()
+            ]
+        else:
+            # Si no es ni string ni lista, tratar como vacío
+            instant_solutions = []
+        
+        # Si después de normalizar queda vacío, generar soluciones locales
+        if not instant_solutions:
+            # Detectar tipo de problema para generar soluciones apropiadas
+            health_keywords = [
+                'dolor', 'cabeza', 'pecho', 'garganta', 'mareo',
+                'estomago', 'estómago', 'estomacal', 'abdominal', 'abdomen',
+                'indigestion', 'indigestión', 'acidez', 'gases', 'intestinal', 'alimentaria',
+                'nausea', 'náusea', 'vomito', 'vómito', 'diarrea', 'fiebre',
+                'respiracion', 'respiración', 'herida', 'fractura', 'quemadura',
+                'medico', 'médico', 'salud', 'enfermedad', 'ataque', 'cardíaco'
+            ]
+            
+            tech_keywords = [
+                'internet', 'router', 'wifi', 'wi-fi', 'red', 'redes', 
+                'conectividad', 'senal', 'señal', 'modem', 'módem',
+                'laptop', 'computadora', 'pc', 'portátil'
+            ]
+            
+            problem_lower = problem.lower()
+            is_health_related = any(kw in problem_lower for kw in health_keywords)
+            is_tech_related = any(kw in problem_lower for kw in tech_keywords)
+            
+            if is_health_related:
+                instant_solutions = [
+                    "**Descansa y observa los síntomas:** Evita esfuerzos y presta atención a si el dolor aumenta, cambia o se mantiene.",
+                    "**Toma agua en pequeños sorbos:** Mantente hidratado, especialmente si hay náuseas, diarrea o malestar general.",
+                    "**Evita automedicarte:** Si el dolor es fuerte, continúa, empeora o viene con fiebre, vómitos persistentes, sangre, dolor en el pecho o dificultad para respirar, busca atención médica."
+                ]
+            elif is_tech_related:
+                instant_solutions = [
+                    "**Reinicia el equipo:** Apaga el router, espera 30 segundos y vuelve a encenderlo.",
+                    "**Revisa cables y energía:** Verifica que el cable de corriente y de internet estén bien conectados.",
+                    "**Prueba con otro dispositivo:** Confirma si el problema ocurre solo en un equipo o en toda la red."
+                ]
+            else:
+                instant_solutions = [
+                    "**Revisa lo básico:** Verifica energía, conexión, configuración o condiciones visibles del problema.",
+                    "**Anota cuándo ocurre:** Registra hora, frecuencia y cualquier mensaje de error o señal extraña.",
+                    "**Busca ayuda si continúa:** Si el problema no mejora, considera contactar a un especialista."
+                ]
+        
+        ai_result["instant_solutions"] = instant_solutions
+
+        # 4. Si hay restricted_category_warning, devolver eso y no buscar proveedores
         if ai_result.get("restricted_category_warning"):
             return {
                 "confidence_score": ai_result.get("confidence_score", 0.5),
