@@ -1,7 +1,7 @@
 "use client";
 
 import { AISolveResponse, ProviderRecommendation } from '@/types';
-import { CheckCircle, AlertCircle, Wrench, User, ChevronDown, ChevronUp, Star, Phone, MapPin, DollarSign, Clock } from 'lucide-react';
+import { AlertCircle, Wrench, User, ChevronDown, ChevronUp, Star, Phone, MapPin, DollarSign, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -40,7 +40,39 @@ export const SolutionJourney = ({ response }: Props) => {
   const topCauses = response.diagnosis.possible_causes.slice(0, 3);
   const hasMoreCauses = response.diagnosis.possible_causes.length > 3;
   const providers = response.has_providers && response.providers ? response.providers : [];
-  const topSolutions = response.instant_solutions.slice(0, 3);
+  const instantSolutions = response.instant_solutions || [];
+  const topSolutions = instantSolutions.slice(0, 3);
+  const hasSolutions = instantSolutions.length > 0;
+
+  // Detectar si es tema de salud
+  const healthKeywords = [
+    'dolor', 'cabeza', 'pecho', 'garganta', 'mareo',
+    'estomago', 'estómago', 'estomacal', 'abdominal', 'abdomen',
+    'indigestion', 'indigestión', 'acidez', 'gases', 'intestinal', 'alimentaria',
+    'nausea', 'náusea', 'vomito', 'vómito', 'diarrea', 'fiebre',
+    'respiracion', 'respiración', 'herida', 'fractura', 'quemadura',
+    'medico', 'médico', 'salud', 'enfermedad', 'ataque', 'cardíaco'
+  ];
+  
+  const isHealthRelated = healthKeywords.some(keyword => {
+    const lowerKeyword = keyword.toLowerCase();
+    return (
+      response.diagnosis.possible_causes.some(cause => cause.toLowerCase().includes(lowerKeyword)) ||
+      (response.diagnosis.questions || []).some(q => q.toLowerCase().includes(lowerKeyword)) ||
+      instantSolutions.some(sol => sol.toLowerCase().includes(lowerKeyword))
+    );
+  });
+
+  // Generar mensaje natural basado en contexto
+  const getNaturalMessage = () => {
+    if (isHealthRelated) {
+      return "Siento que estés pasando por eso. Te dejo una orientación general; si el dolor es fuerte, empeora o continúa, busca atención médica.";
+    }
+    if (providers.length > 0) {
+      return "Encontré una posible explicación y también especialistas disponibles que podrían ayudarte.";
+    }
+    return "Por ahora no encontré especialistas disponibles para este caso, pero te dejo posibles causas y acciones inmediatas.";
+  };
 
   // Calcular badges comparativos si hay múltiples proveedores
   const getProviderBadges = (provider: RecommendedProvider, allProviders: RecommendedProvider[]) => {
@@ -95,14 +127,10 @@ export const SolutionJourney = ({ response }: Props) => {
 
   return (
     <div className="my-6 space-y-4">
-      {/* Header */}
+      {/* Mensaje natural del asistente */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 shadow-lg">
-        <h3 className="text-2xl font-bold text-white flex items-center gap-3">
-          <CheckCircle size={28} className="text-white/90" />
-          Tu Solution Journey
-        </h3>
-        <p className="text-blue-100 text-sm mt-2">
-          Resumen interactivo de diagnóstico, acciones y recomendaciones
+        <p className="text-white text-base leading-relaxed">
+          {getNaturalMessage()}
         </p>
       </div>
 
@@ -242,53 +270,64 @@ export const SolutionJourney = ({ response }: Props) => {
               <Wrench size={20} className="text-green-600 dark:text-green-400" />
               Acciones recomendadas
             </h4>
-            <div className="space-y-3">
-              {topSolutions.map((solution, idx) => {
-                const { title, detail } = parseSolution(solution);
-                const isExpanded = expandedSolutions[idx];
-                
-                return (
-                  <div key={idx} className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 overflow-hidden">
-                    <div className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold flex items-center justify-center">
-                          {idx + 1}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                            {title}
+            {hasSolutions ? (
+              <div className="space-y-3">
+                {topSolutions.map((solution, idx) => {
+                  const { title, detail } = parseSolution(solution);
+                  const isExpanded = expandedSolutions[idx];
+                  
+                  return (
+                    <div key={idx} className="bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 overflow-hidden">
+                      <div className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold flex items-center justify-center">
+                            {idx + 1}
                           </div>
-                          {isExpanded && (
-                            <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
-                              {detail}
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                              {title}
                             </div>
-                          )}
+                            {isExpanded && (
+                              <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
+                                {detail}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSolution(idx);
+                            }}
+                            className="flex-shrink-0 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/40 transition-colors"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <ChevronUp size={14} />
+                                Ocultar
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown size={14} />
+                                Más detalle
+                              </>
+                            )}
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSolution(idx);
-                          }}
-                          className="flex-shrink-0 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 text-xs font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/40 transition-colors"
-                        >
-                          {isExpanded ? (
-                            <>
-                              <ChevronUp size={14} />
-                              Ocultar
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown size={14} />
-                              Más detalle
-                            </>
-                          )}
-                        </button>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-3">
+                  <Wrench size={24} className="text-gray-400" />
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Por ahora no tengo acciones inmediatas claras para este caso, pero puedes revisar el diagnóstico y considerar ayuda profesional si el problema continúa.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
