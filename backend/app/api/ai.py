@@ -60,22 +60,40 @@ async def solve_problem(
     
     # Guardar conversación si usuario autenticado
     if user_id:
+        # Calcular category de forma segura
+        diagnosis = result.get("diagnosis") or {}
+        possible_causes = diagnosis.get("possible_causes") or []
+        
+        if possible_causes:
+            category = possible_causes[0]
+        else:
+            category = result.get("response_mode") or "unknown"
+        
         save_conversation(
             db=db,
             user_id=user_id,
             problem_text=request.problem,
             ai_response=result,
             confidence_score=result.get("confidence_score", 0.5),
-            category=result.get("diagnosis", {}).get("possible_causes", [])[0] if result.get("diagnosis") else "unknown",
+            category=category,
             urgency=result.get("urgency", "medium")
         )
     
     # Si no hay proveedores y hay fallback con waitlist, añadir a lista de espera
     if not result.get("has_providers") and fallback.get("waitlist_enabled") and user_id:
+        # Calcular problem_category de forma segura
+        diagnosis = result.get("diagnosis") or {}
+        possible_causes = diagnosis.get("possible_causes") or []
+        
+        if possible_causes:
+            problem_category = possible_causes[0]
+        else:
+            problem_category = result.get("response_mode") or "unknown"
+        
         add_to_waiting_list(
             db=db,
             user_id=user_id,
-            problem_category=result.get("diagnosis", {}).get("possible_causes", [""])[0]
+            problem_category=problem_category
         )
         # Añadir guías externas
         external = get_external_resources(db, category="general")  # simplificado
