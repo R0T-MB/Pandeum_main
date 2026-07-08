@@ -10,12 +10,21 @@ interface Props {
 
 type RecommendedProvider = ProviderRecommendation;
 
-// Función para parsear solución en formato **Título:** detalle
+// Función para parsear solución en múltiples formatos
 const parseSolution = (text: string) => {
-  const match = text.match(/\*\*(.+?):\*\*([\s\S]*)/);
-  if (match) {
-    return { title: match[1].trim(), detail: match[2].trim() };
+  // Formato 1: "**Título:** detalle"
+  const boldMatch = text.match(/\*\*(.+?):\*\*([\s\S]*)/);
+  if (boldMatch) {
+    return { title: boldMatch[1].trim(), detail: boldMatch[2].trim() };
   }
+  
+  // Formato 2: "Título: detalle" (sin negritas)
+  const colonMatch = text.match(/^([^:]+):(.+)$/);
+  if (colonMatch) {
+    return { title: colonMatch[1].trim(), detail: colonMatch[2].trim() };
+  }
+  
+  // Formato 3: Texto simple sin dos puntos
   const summary = text.length > 50 ? text.substring(0, 50) + '...' : text;
   return { title: summary, detail: text };
 };
@@ -61,6 +70,12 @@ export const SolutionJourney = ({ response }: Props) => {
 
   // Generar mensaje natural basado en contexto
   const getNaturalMessage = () => {
+    // Priorizar mensaje del backend si existe
+    if (response.natural_message) {
+      return response.natural_message;
+    }
+    
+    // Fallback a lógica local
     if (isHealthRelated) {
       return "Siento que estés pasando por eso. Te dejo una orientación general; si el dolor es fuerte, empeora o continúa, busca atención médica.";
     }

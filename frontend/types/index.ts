@@ -35,6 +35,7 @@ export interface AISolveResponse {
   providers: ProviderRecommendation[];
   composite_solution?: unknown;
   fallback?: Fallback;
+  natural_message?: string;
 }
 
 export interface ProviderRecommendation {

@@ -116,6 +116,7 @@ class AISolveResponse(BaseModel):
     providers: List[ProviderRecommendation] = []
     composite_solution: Optional[CompositeSolution] = None
     fallback: Optional[Dict] = None  # para Plan B
+    natural_message: Optional[str] = None  # mensaje natural contextual
 
 # ========== Reviews ==========
 class ReviewCreate(BaseModel):

@@ -1,4 +1,5 @@
 import json
+import re
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
 import httpx
@@ -75,6 +76,80 @@ class AIEngine:
             "composite_solution": ai_result.get("composite_solution"),
             "fallback": ai_result.get("fallback")
         }
+
+    @staticmethod
+    def _generate_natural_message(problem: str, has_providers: bool, is_health_related: bool) -> str:
+        """Genera mensaje natural contextual basado en el problema."""
+        problem_lower = problem.lower()
+        
+        # Temas de salud
+        if is_health_related:
+            return "Siento que estés pasando por eso. Te dejo una orientación general; si el dolor es fuerte, empeora o continúa, busca atención médica."
+        
+        # Compras/conseguir algo (antes de aprendizaje para evitar falsos positivos)
+        if any(kw in problem_lower for kw in ['conseguir', 'comprar', 'donde', 'dónde', 'barata', 'barato', 'precio', 'oferta']):
+            if has_providers:
+                return "Claro, veamos opciones prácticas para conseguir lo que necesitas sin descuidar la calidad."
+            return "Claro, veamos opciones prácticas para conseguir lo que necesitas sin descuidar la calidad."
+        
+        # Aprender/educación (requiere verbos de acción, no solo el instrumento)
+        if any(kw in problem_lower for kw in ['aprender', 'tocar', 'estudiar', 'curso', 'clase', 'practicar']):
+            return "¡Qué buena idea! Te dejo una ruta sencilla para empezar desde cero y avanzar sin confundirte."
+        
+        # Dinero/finanzas
+        if any(kw in problem_lower for kw in ['dinero', 'ingreso', 'ganar', 'ganancia', 'sueldo', 'trabajo']):
+            return "Entiendo. Te dejo ideas realistas para organizarte mejor y buscar ingresos adicionales de forma segura."
+        
+        # Problemas técnicos
+        if any(kw in problem_lower for kw in ['internet', 'router', 'wifi', 'conectividad', 'red', 'no funciona', 'error', 'computadora', 'pc', 'laptop', 'celular', 'telefono', 'teléfono', 'bateria', 'batería', 'pantalla', 'carga', 'apagando', 'apaga']):
+            return "Vamos por partes. Esto puede tener varias causas, así que te dejo pruebas rápidas para identificar el problema."
+        
+        # Caso general con proveedores
+        if has_providers:
+            return "Encontré una posible explicación y también especialistas disponibles que podrían ayudarte."
+        
+        # Caso general sin proveedores
+        return "Te dejo una guía práctica para revisar el problema y decidir qué hacer después."
+
+    @staticmethod
+    def _detect_follow_up(problem: str) -> tuple[bool, Optional[int]]:
+        """Detecta si el mensaje es un follow-up y extrae el número de opción si existe."""
+        problem_lower = problem.lower()
+        
+        follow_up_keywords = [
+            'me interesa la', 'la opcion', 'la opción', 'opcion', 'opción',
+            'hablame mas', 'háblame más', 'dame mas detalle', 'explícame mejor',
+            'lo anterior', 'nada funcionó', 'recomiéndame un profesional',
+            'quiero la', 'más sobre', 'mas sobre', 'sobre eso', 'hablame más de eso', 'háblame más de eso'
+        ]
+        
+        is_follow_up = any(kw in problem_lower for kw in follow_up_keywords)
+        
+        # Detectar "eso" como palabra completa para evitar falsos positivos
+        if not is_follow_up:
+            if re.search(r'\beso\b', problem_lower):
+                is_follow_up = True
+        
+        # Extraer número de opción si existe - regex más segura
+        option_number = None
+        
+        # Patrones específicos en orden de prioridad
+        patterns = [
+            r'(?:opcion|opción)\s*(\d+)',  # "opcion 2", "opción 3"
+            r'la\s+(\d+)',  # "la 2", "la 3"
+            r'quiero\s+la\s+(\d+)',  # "quiero la 1"
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, problem_lower)
+            if match and match.group(1):
+                try:
+                    option_number = int(match.group(1))
+                    break
+                except (ValueError, TypeError):
+                    continue
+        
+        return is_follow_up, option_number
     @staticmethod
     async def solve_problem(
         problem: str,
@@ -82,13 +157,17 @@ class AIEngine:
         budget: Optional[int],
         db: Session,
         user_id: Optional[str] = None,
-        memory_context: Optional[Dict] = None
+        memory_context: Optional[Dict] = None,
+        conversation_context: Optional[List[Dict]] = None
     ) -> Dict[str, Any]:
         """
         Llama a Gemini, parsea respuesta, enriquece con datos de BD,
         aplica ranking por urgencia y trust score.
         """
-        # 1. Construir prompt con contexto de memoria si existe
+        # 1. Detectar si es follow-up y extraer número de opción
+        is_follow_up, option_number = AIEngine._detect_follow_up(problem)
+        
+        # 2. Construir prompt con contexto de memoria si existe
         memory_text = ""
         if memory_context:
             devices = memory_context.get("known_devices", [])
@@ -97,6 +176,29 @@ class AIEngine:
             pref_cat = memory_context.get("preferred_categories")
             if pref_cat:
                 memory_text += f"Categorías preferidas: {', '.join(pref_cat)}. "
+        
+        # 3. Agregar contexto de conversación si es follow-up
+        conversation_text = ""
+        if is_follow_up and conversation_context:
+            last_conv = conversation_context[0] if conversation_context else None
+            if last_conv:
+                last_problem = last_conv.get("problem_text", "")
+                last_response = last_conv.get("ai_response", {})
+                last_solutions = last_response.get("instant_solutions", [])
+                
+                conversation_text = f"""
+CONTEXTO DE CONVERSACIÓN ANTERIOR:
+Pregunta anterior: {last_problem}
+Soluciones anteriores:
+"""
+                for idx, sol in enumerate(last_solutions, 1):
+                    conversation_text += f"{idx}. {sol}\n"
+                
+                if option_number and 1 <= option_number <= len(last_solutions):
+                    selected_solution = last_solutions[option_number - 1]
+                    conversation_text += f"\nEl usuario está preguntando específicamente sobre la opción {option_number}: {selected_solution}\n"
+                
+                conversation_text += "\nResponde considerando este contexto. No trates la pregunta como si fuera aislada.\n"
 
         prompt = f"""
         Eres Pandeum, un asistente experto en resolver problemas de los usuarios. NO eres un motor de búsqueda de proveedores genérico.
@@ -105,6 +207,7 @@ class AIEngine:
         Ubicación: {user_location or "No especificada"}
         Presupuesto máximo sugerido: {budget if budget else "No especificado"}
         {memory_text}
+        {conversation_text}
 
         Tu tarea es:
         1. Diagnosticar el problema (posibles causas).
@@ -239,6 +342,24 @@ class AIEngine:
         # 3. Validar y completar instant_solutions si está vacío o inválido
         instant_solutions = ai_result.get("instant_solutions")
         
+        # Detectar tipo de problema para generar soluciones apropiadas y mensajes naturales
+        health_keywords = [
+            'cuello', 'espalda', 'hombro', 'brazo', 'pierna', 'rodilla', 'muscular',
+            'contractura', 'postura', 'tension', 'tensión', 'dolor', 'estomago', 'estómago',
+            'cabeza', 'pecho', 'fiebre', 'mareo', 'nausea', 'náusea', 'vomito', 'vómito', 'diarrea'
+        ]
+        
+        tech_keywords = [
+            'internet', 'router', 'wifi', 'wi-fi', 'red', 'redes', 
+            'conectividad', 'senal', 'señal', 'modem', 'módem',
+            'laptop', 'computadora', 'pc', 'portátil',
+            'celular', 'telefono', 'teléfono', 'bateria', 'batería', 'pantalla', 'carga', 'apagando', 'apaga'
+        ]
+        
+        problem_lower = problem.lower()
+        is_health_related = any(kw in problem_lower for kw in health_keywords)
+        is_tech_related = any(kw in problem_lower for kw in tech_keywords)
+        
         # Normalizar instant_solutions
         if isinstance(instant_solutions, str):
             # Si viene como string, convertir a lista
@@ -255,22 +376,6 @@ class AIEngine:
         
         # Si después de normalizar queda vacío, generar soluciones locales
         if not instant_solutions:
-            # Detectar tipo de problema para generar soluciones apropiadas
-            health_keywords = [
-                'cuello', 'espalda', 'hombro', 'brazo', 'pierna', 'rodilla', 'muscular',
-                'contractura', 'postura', 'tension', 'tensión', 'dolor', 'estomago', 'estómago',
-                'cabeza', 'pecho', 'fiebre', 'mareo', 'nausea', 'náusea', 'vomito', 'vómito', 'diarrea'
-            ]
-            
-            tech_keywords = [
-                'internet', 'router', 'wifi', 'wi-fi', 'red', 'redes', 
-                'conectividad', 'senal', 'señal', 'modem', 'módem',
-                'laptop', 'computadora', 'pc', 'portátil'
-            ]
-            
-            problem_lower = problem.lower()
-            is_health_related = any(kw in problem_lower for kw in health_keywords)
-            is_tech_related = any(kw in problem_lower for kw in tech_keywords)
             
             if is_health_related:
                 instant_solutions = [
@@ -305,7 +410,8 @@ class AIEngine:
                 "fallback": {
                     "type": "restricted",
                     "message": ai_result["restricted_category_warning"]
-                }
+                },
+                "natural_message": AIEngine._generate_natural_message(problem, False, is_health_related)
             }
 
         # 4. Buscar proveedores en BD que coincidan por nombre o categoría
@@ -396,6 +502,9 @@ class AIEngine:
         else:
             recommended_providers.sort(key=lambda x: x.get("trust_score", 0), reverse=True)
 
+        # 6. Generar mensaje natural contextual
+        natural_message = AIEngine._generate_natural_message(problem, has_providers, is_health_related)
+
         return {
             "confidence_score": ai_result.get("confidence_score", 0.5),
             "diagnosis": ai_result["diagnosis"],
@@ -404,7 +513,8 @@ class AIEngine:
             "providers": recommended_providers,
             "composite_solution": ai_result.get("composite_solution"),
             "fallback": fallback,
-            "urgency": urgency
+            "urgency": urgency,
+            "natural_message": natural_message
         }
 
     @staticmethod

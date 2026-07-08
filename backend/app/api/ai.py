@@ -5,7 +5,7 @@ from ..schemas import ProblemRequest, AISolveResponse
 from ..ai_engine import AIEngine
 from ..auth import get_current_user, get_current_active_user
 from ..models import User
-from ..crud import get_user_memory, save_conversation, add_to_waiting_list, get_external_resources
+from ..crud import get_user_memory, save_conversation, add_to_waiting_list, get_external_resources, get_user_conversations
 from typing import Optional
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -25,6 +25,19 @@ async def solve_problem(
         if memory:
             memory_context = memory.context_data
     
+    # Obtener conversaciones recientes para contexto de follow-up
+    conversation_context = None
+    if user_id:
+        recent_conversations = get_user_conversations(db, user_id, limit=3)
+        if recent_conversations:
+            conversation_context = [
+                {
+                    "problem_text": conv.problem_text,
+                    "ai_response": conv.ai_response
+                }
+                for conv in recent_conversations
+            ]
+    
     # Llamar al motor IA
     result = await AIEngine.solve_problem(
         problem=request.problem,
@@ -32,7 +45,8 @@ async def solve_problem(
         budget=request.budget,
         db=db,
         user_id=user_id,
-        memory_context=memory_context
+        memory_context=memory_context,
+        conversation_context=conversation_context
     )
     
     # Normalizar fallback para asegurar que sea dict
