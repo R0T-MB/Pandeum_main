@@ -46,20 +46,16 @@ export const SolutionJourney = ({ response }: Props) => {
 
   // Detectar si es tema de salud
   const healthKeywords = [
-    'dolor', 'cabeza', 'pecho', 'garganta', 'mareo',
-    'estomago', 'estómago', 'estomacal', 'abdominal', 'abdomen',
-    'indigestion', 'indigestión', 'acidez', 'gases', 'intestinal', 'alimentaria',
-    'nausea', 'náusea', 'vomito', 'vómito', 'diarrea', 'fiebre',
-    'respiracion', 'respiración', 'herida', 'fractura', 'quemadura',
-    'medico', 'médico', 'salud', 'enfermedad', 'ataque', 'cardíaco'
+    'cuello', 'espalda', 'hombro', 'brazo', 'pierna', 'rodilla', 'muscular',
+    'contractura', 'postura', 'tension', 'tensión', 'dolor', 'estomago', 'estómago',
+    'cabeza', 'pecho', 'fiebre', 'mareo', 'nausea', 'náusea', 'vomito', 'vómito', 'diarrea'
   ];
   
   const isHealthRelated = healthKeywords.some(keyword => {
     const lowerKeyword = keyword.toLowerCase();
     return (
       response.diagnosis.possible_causes.some(cause => cause.toLowerCase().includes(lowerKeyword)) ||
-      (response.diagnosis.questions || []).some(q => q.toLowerCase().includes(lowerKeyword)) ||
-      instantSolutions.some(sol => sol.toLowerCase().includes(lowerKeyword))
+      (response.diagnosis.questions || []).some(q => q.toLowerCase().includes(lowerKeyword))
     );
   });
 
@@ -71,7 +67,7 @@ export const SolutionJourney = ({ response }: Props) => {
     if (providers.length > 0) {
       return "Encontré una posible explicación y también especialistas disponibles que podrían ayudarte.";
     }
-    return "Por ahora no encontré especialistas disponibles para este caso, pero te dejo posibles causas y acciones inmediatas.";
+    return "Te dejo una guía rápida para entender qué puede estar pasando y qué puedes intentar ahora.";
   };
 
   // Calcular badges comparativos si hay múltiples proveedores

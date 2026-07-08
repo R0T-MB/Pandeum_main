@@ -257,12 +257,9 @@ class AIEngine:
         if not instant_solutions:
             # Detectar tipo de problema para generar soluciones apropiadas
             health_keywords = [
-                'dolor', 'cabeza', 'pecho', 'garganta', 'mareo',
-                'estomago', 'estómago', 'estomacal', 'abdominal', 'abdomen',
-                'indigestion', 'indigestión', 'acidez', 'gases', 'intestinal', 'alimentaria',
-                'nausea', 'náusea', 'vomito', 'vómito', 'diarrea', 'fiebre',
-                'respiracion', 'respiración', 'herida', 'fractura', 'quemadura',
-                'medico', 'médico', 'salud', 'enfermedad', 'ataque', 'cardíaco'
+                'cuello', 'espalda', 'hombro', 'brazo', 'pierna', 'rodilla', 'muscular',
+                'contractura', 'postura', 'tension', 'tensión', 'dolor', 'estomago', 'estómago',
+                'cabeza', 'pecho', 'fiebre', 'mareo', 'nausea', 'náusea', 'vomito', 'vómito', 'diarrea'
             ]
             
             tech_keywords = [
@@ -278,8 +275,8 @@ class AIEngine:
             if is_health_related:
                 instant_solutions = [
                     "**Descansa y observa los síntomas:** Evita esfuerzos y presta atención a si el dolor aumenta, cambia o se mantiene.",
-                    "**Toma agua en pequeños sorbos:** Mantente hidratado, especialmente si hay náuseas, diarrea o malestar general.",
-                    "**Evita automedicarte:** Si el dolor es fuerte, continúa, empeora o viene con fiebre, vómitos persistentes, sangre, dolor en el pecho o dificultad para respirar, busca atención médica."
+                    "**Evita movimientos que empeoren el dolor:** Mantén una postura cómoda y no fuerces la zona afectada.",
+                    "**Busca atención médica si empeora:** Si el dolor es fuerte, continúa, empeora o aparece con fiebre, vómitos persistentes, sangre, dolor en el pecho, debilidad o dificultad para respirar, busca atención médica."
                 ]
             elif is_tech_related:
                 instant_solutions = [
@@ -301,7 +298,7 @@ class AIEngine:
             return {
                 "confidence_score": ai_result.get("confidence_score", 0.5),
                 "diagnosis": ai_result["diagnosis"],
-                "instant_solutions": [],
+                "instant_solutions": instant_solutions,
                 "has_providers": False,
                 "providers": [],
                 "composite_solution": None,
