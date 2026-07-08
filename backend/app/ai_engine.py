@@ -171,6 +171,24 @@ class AIEngine:
         if is_follow_up and conversation_context:
             return "follow_up"
         
+        # Modo food: detectar si menciona comida específica
+        food_type = AIEngine._detect_food_type(problem_lower)
+        if food_type:
+            return "suggestions"
+        
+        # Si la conversación anterior fue food, tratar respuestas cortas como comida
+        if conversation_context:
+            last_response = conversation_context[0].get("ai_response", {})
+            if last_response.get("response_mode") == "food" or last_response.get("response_mode") == "suggestions":
+                # Si es respuesta corta (menos de 5 palabras), asumir que responde sobre comida
+                if len(problem_lower.split()) <= 4:
+                    # Detectar si menciona comida específica
+                    food_type = AIEngine._detect_food_type(problem_lower)
+                    if food_type:
+                        return "suggestions"
+                    else:
+                        return "food"
+        
         # Modo direct: preguntas simples, sociales, o que no requieren diagnóstico
         # Excluir "lo de" si no hay contexto, ya que podría ser follow-up sin contexto disponible
         direct_keywords = [
@@ -268,7 +286,7 @@ class AIEngine:
         if problem_lower == 'tengo hambre' or problem_lower == 'quiero comer':
             return {
                 "response_mode": "food",
-                "direct_answer": "¿Se te antoja algo rápido, económico, saludable o algo específico como pizza, hamburguesa o comida casera?",
+                "direct_answer": "¿Se te antoja algo rápido, económico, saludable o algo específico como pescado, pizza, hamburguesa o comida casera?",
                 "confidence_score": 0.5,
                 "diagnosis": {"possible_causes": [], "questions": []},
                 "instant_solutions": [],
@@ -279,21 +297,260 @@ class AIEngine:
                 "natural_message": None
             }
         
-        # Si especifica comida, buscar restaurantes (por ahora placeholder)
-        # TODO: Implementar búsqueda real de restaurantes cuando existan en BD
+        # Detectar si especificó un tipo de comida
+        food_type = AIEngine._detect_food_type(problem_lower)
+        
+        if food_type:
+            # Generar sugerencias de platos
+            suggestions = AIEngine._generate_food_suggestions(food_type)
+            suggestions_label = f"Sugerencias con {food_type}"
+            direct_answer = f"Claro, si se te antoja {food_type}, aquí tienes algunas opciones que podrías buscar o preparar."
+            
+            return {
+                "response_mode": "suggestions",
+                "direct_answer": direct_answer,
+                "suggestions_label": suggestions_label,
+                "suggestions": suggestions,
+                "confidence_score": 0.7,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        # Si no detecta tipo específico, respuesta genérica
         return {
             "response_mode": "food",
-            "direct_answer": "Por ahora no tengo restaurantes registrados cerca, pero puedo ayudarte a decidir qué tipo de comida buscar.",
-            "confidence_score": 0.3,
+            "direct_answer": "¿Podrías especificar qué tipo de comida se te antoja? Por ejemplo: pescado, pizza, hamburguesa, pollo, carne, pasta, etc.",
+            "confidence_score": 0.4,
             "diagnosis": {"possible_causes": [], "questions": []},
             "instant_solutions": [],
             "has_providers": False,
             "providers": [],
             "composite_solution": None,
             "fallback": None,
-            "natural_message": None,
-            "recommendation_label": "Restaurantes o puestos recomendados"
+            "natural_message": None
         }
+
+    @staticmethod
+    def _detect_food_type(problem: str) -> Optional[str]:
+        """Detecta el tipo de comida mencionado en el problema."""
+        food_types = {
+            'pescado': 'pescado',
+            'ceviche': 'pescado',
+            'mariscos': 'pescado',
+            'camarones': 'pescado',
+            'pizza': 'pizza',
+            'hamburguesa': 'hamburguesa',
+            'burger': 'hamburguesa',
+            'pollo': 'pollo',
+            'carne': 'carne',
+            'asado': 'carne',
+            'pasta': 'pasta',
+            'spaghetti': 'pasta',
+            'lasagna': 'pasta',
+            'lasaña': 'pasta',
+            'arroz': 'arroz',
+            'ensalada': 'ensalada',
+            'sopa': 'sopa',
+            'tacos': 'tacos',
+            'burritos': 'tacos',
+            'sandwich': 'sandwich',
+            'sándwich': 'sandwich',
+            'pan': 'pan',
+            'postre': 'postre',
+            'dulce': 'postre',
+            'helado': 'postre',
+            'fruta': 'fruta',
+            'verduras': 'verduras',
+            'vegetales': 'verduras'
+        }
+        
+        problem_lower = problem.lower()
+        for keyword, food_type in food_types.items():
+            if keyword in problem_lower:
+                return food_type
+        
+        return None
+
+    @staticmethod
+    def _generate_food_suggestions(food_type: str) -> List[str]:
+        """Genera sugerencias de platos según el tipo de comida."""
+        suggestions_map = {
+            'pescado': [
+                "Ceviche de pescado",
+                "Encebollado",
+                "Pescado frito con arroz y ensalada",
+                "Corvina apanada",
+                "Pescado al ajillo",
+                "Arroz marinero",
+                "Sudado de pescado",
+                "Tacos de pescado",
+                "Filete de pescado a la plancha",
+                "Sopa marinera"
+            ],
+            'pizza': [
+                "Pizza margarita",
+                "Pizza pepperoni",
+                "Pizza hawaiana",
+                "Pizza vegetariana",
+                "Pizza de pollo",
+                "Pizza cuatro quesos",
+                "Pizza napolitana",
+                "Pizza carbonara",
+                "Pizza mexicana",
+                "Pizza de mariscos"
+            ],
+            'hamburguesa': [
+                "Hamburguesa clásica con queso",
+                "Hamburguesa con bacon",
+                "Hamburguesa doble carne",
+                "Hamburguesa de pollo",
+                "Hamburguesa vegetariana",
+                "Hamburguesa con huevo",
+                "Hamburguesa con cebolla caramelizada",
+                "Hamburguesa con aguacate",
+                "Hamburguesa con champiñones",
+                "Hamburguesa BBQ"
+            ],
+            'pollo': [
+                "Pollo frito",
+                "Pollo a la parrilla",
+                "Pollo asado",
+                "Pollo al horno",
+                "Pollo empanizado",
+                "Arroz con pollo",
+                "Sopa de pollo",
+                "Tacos de pollo",
+                "Sandwich de pollo",
+                "Alitas de pollo"
+            ],
+            'carne': [
+                "Carne asada",
+                "Bife de chorizo",
+                "Lomo fino",
+                "Churrasco",
+                "Milanesa de carne",
+                "Carne a la parrilla",
+                "Estofado de carne",
+                "Carne mechada",
+                "Bife de lomo",
+                "Tacos de carne"
+            ],
+            'pasta': [
+                "Spaghetti a la boloñesa",
+                "Spaghetti con albóndigas",
+                "Fettuccine alfredo",
+                "Lasagna de carne",
+                "Macarrones con queso",
+                "Ravioli de espinaca",
+                "Penne con vegetales",
+                "Canelones de ricota",
+                "Ñoquis",
+                "Pasta con pesto"
+            ],
+            'arroz': [
+                "Arroz con pollo",
+                "Arroz con mariscos",
+                "Arroz chaufa",
+                "Arroz con leche",
+                "Arroz con vegetales",
+                "Paella",
+                "Arroz frito",
+                "Arroz con huevo",
+                "Arroz con lentejas",
+                "Arroz con carne"
+            ],
+            'ensalada': [
+                "Ensalada cesar",
+                "Ensalada griega",
+                "Ensalada de pollo",
+                "Ensalada de frutas",
+                "Ensalada verde",
+                "Ensalada de atún",
+                "Ensalada rusa",
+                "Ensalada de pasta",
+                "Ensalada de quinoa",
+                "Ensalada de tomate"
+            ],
+            'sopa': [
+                "Sopa de verduras",
+                "Sopa de pollo",
+                "Sopa de carne",
+                "Sopa de mariscos",
+                "Sopa de fideos",
+                "Sopa de lentejas",
+                "Sopa de calabaza",
+                "Sopa de tomate",
+                "Sopa minestrone",
+                "Consomé"
+            ],
+            'tacos': [
+                "Tacos al pastor",
+                "Tacos de carnitas",
+                "Tacos de bistec",
+                "Tacos de pollo",
+                "Tacos de pescado",
+                "Tacos de camarones",
+                "Tacos de cochinita",
+                "Tacos de suadero",
+                "Tacos de barbacoa",
+                "Tacos dorados"
+            ],
+            'sandwich': [
+                "Sandwich de jamón y queso",
+                "Sandwich de pollo",
+                "Sandwich club",
+                "Sandwich de atún",
+                "Sandwich vegetal",
+                "Sandwich de carne",
+                "Sandwich de pavo",
+                "Sandwich de huevo",
+                "Panini",
+                "Baguette"
+            ],
+            'postre': [
+                "Pastel de chocolate",
+                "Helado de vainilla",
+                "Tiramisú",
+                "Flan",
+                "Cheesecake",
+                "Brownie",
+                "Gelatina",
+                "Arroz con leche",
+                "Tarta de frutas",
+                "Crepes"
+            ],
+            'fruta': [
+                "Manzana",
+                "Banana",
+                "Naranja",
+                "Uvas",
+                "Fresas",
+                "Mango",
+                "Piña",
+                "Sandía",
+                "Melón",
+                "Pera"
+            ],
+            'verduras': [
+                "Brócoli al vapor",
+                "Espinacas salteadas",
+                "Zanahorias glaseadas",
+                "Calabaza asada",
+                "Papas al horno",
+                "Ensalada mixta",
+                "Vegetales a la parrilla",
+                "Coliflor gratinada",
+                "Espárragos",
+                "Champiñones"
+            ]
+        }
+        
+        return suggestions_map.get(food_type, [])
 
     @staticmethod
     async def _handle_follow_up_mode(problem: str, conversation_context: List[Dict], db: Session) -> Dict[str, Any]:
@@ -403,7 +660,7 @@ Soluciones anteriores:
             }
         
         # 3. Manejar modo food: preguntas de comida
-        if response_mode == "food":
+        if response_mode == "food" or response_mode == "suggestions":
             return await AIEngine._handle_food_mode(problem, user_location, db)
         
         # 4. Manejar modo follow_up: continuar conversación anterior

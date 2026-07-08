@@ -117,9 +117,11 @@ class AISolveResponse(BaseModel):
     composite_solution: Optional[CompositeSolution] = None
     fallback: Optional[Dict] = None  # para Plan B
     natural_message: Optional[str] = None  # mensaje natural contextual
-    response_mode: Optional[str] = None  # direct, journey, providers, food, follow_up
+    response_mode: Optional[str] = None  # direct, journey, providers, food, follow_up, suggestions
     direct_answer: Optional[str] = None  # respuesta directa para modo direct
     recommendation_label: Optional[str] = None  # etiqueta para recomendaciones (ej: "Restaurantes o puestos recomendados")
+    suggestions_label: Optional[str] = None  # etiqueta para sugerencias de comida (ej: "Sugerencias con pescado")
+    suggestions: Optional[List[str]] = None  # lista de sugerencias de platos
 
 # ========== Reviews ==========
 class ReviewCreate(BaseModel):
