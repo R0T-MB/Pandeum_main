@@ -229,7 +229,9 @@ export const SolutionJourney = ({ response }: Props) => {
               <User size={32} />
             </div>
             <div>
-              <h4 className="font-bold text-lg text-gray-900 dark:text-gray-100">Proveedor recomendado</h4>
+              <h4 className="font-bold text-lg text-gray-900 dark:text-gray-100">
+                {response.recommendation_label || 'Proveedor recomendado'}
+              </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {providers.length > 0 
                   ? `${providers.length} especialista${providers.length > 1 ? 's' : ''} encontrado${providers.length > 1 ? 's' : ''}`

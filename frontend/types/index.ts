@@ -36,6 +36,9 @@ export interface AISolveResponse {
   composite_solution?: unknown;
   fallback?: Fallback;
   natural_message?: string;
+  response_mode?: string; // direct, journey, providers, food, follow_up
+  direct_answer?: string; // respuesta directa para modo direct
+  recommendation_label?: string; // etiqueta para recomendaciones
 }
 
 export interface ProviderRecommendation {

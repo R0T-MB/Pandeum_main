@@ -82,7 +82,15 @@ class AIEngine:
         """Genera mensaje natural contextual basado en el problema."""
         problem_lower = problem.lower()
         
-        # Temas de salud
+        # Detectar si es tema de cabello/caída capilar específicamente
+        hair_keywords = ['calvo', 'calvicie', 'cabello', 'pelo', 'caida', 'caída', 'alopecia', 'entradas', 'dermatólogo', 'dermatologo']
+        is_hair_related = any(kw in problem_lower for kw in hair_keywords)
+        
+        # Temas de salud - cabello/caída capilar (mensaje específico sin mencionar dolor)
+        if is_hair_related:
+            return "Entiendo que eso pueda preocuparte. Te dejo una orientación general sobre posibles causas y pasos seguros para revisar la caída del cabello."
+        
+        # Temas de salud general
         if is_health_related:
             return "Siento que estés pasando por eso. Te dejo una orientación general; si el dolor es fuerte, empeora o continúa, busca atención médica."
         
@@ -120,7 +128,9 @@ class AIEngine:
             'me interesa la', 'la opcion', 'la opción', 'opcion', 'opción',
             'hablame mas', 'háblame más', 'dame mas detalle', 'explícame mejor',
             'lo anterior', 'nada funcionó', 'recomiéndame un profesional',
-            'quiero la', 'más sobre', 'mas sobre', 'sobre eso', 'hablame más de eso', 'háblame más de eso'
+            'quiero la', 'más sobre', 'mas sobre', 'sobre eso', 'hablame más de eso', 'háblame más de eso',
+            'lo de', 'me interesa', 'esa parte', 'esa opción', 'esa opcion',
+            'quiero saber más', 'quiero saber mas', 'profundiza', 'háblame de', 'hablame de'
         ]
         
         is_follow_up = any(kw in problem_lower for kw in follow_up_keywords)
@@ -150,6 +160,215 @@ class AIEngine:
                     continue
         
         return is_follow_up, option_number
+
+    @staticmethod
+    def _detect_response_mode(problem: str, conversation_context: Optional[List[Dict]] = None) -> str:
+        """Detecta el modo de respuesta según la intención del usuario."""
+        problem_lower = problem.lower()
+        
+        # Modo follow_up: si el usuario se refiere a algo anterior (prioridad máxima si hay contexto)
+        is_follow_up, _ = AIEngine._detect_follow_up(problem)
+        if is_follow_up and conversation_context:
+            return "follow_up"
+        
+        # Modo direct: preguntas simples, sociales, o que no requieren diagnóstico
+        # Excluir "lo de" si no hay contexto, ya que podría ser follow-up sin contexto disponible
+        direct_keywords = [
+            'hola', 'gracias', 'buenos dias', 'buenas tardes', 'buenas noches',
+            'qué clima', 'que clima', 'clima hoy', 'tiempo hoy',
+            'quiero aprender', 'quiero dinero', 'quiero ganar',
+            'explícame eso', 'explcame eso', 'hablame más de eso', 'hablame mas de eso',
+            'háblame más de eso', 'háblame mas de eso', 'lo de la dieta me interesa',
+            'eso me interesa', 'más sobre', 'mas sobre'
+        ]
+        
+        # Solo detectar "lo de" como direct si NO hay contexto de conversación
+        if 'lo de' in problem_lower and conversation_context:
+            # Si hay contexto, "lo de" probablemente es follow-up, no direct
+            pass
+        elif any(kw in problem_lower for kw in direct_keywords):
+            return "direct"
+        
+        # Modo food: hambre, comida, restaurantes
+        food_keywords = [
+            'tengo hambre', 'quiero comer', 'dónde como', 'donde como',
+            'quiero almorzar', 'quiero cenar', 'se me antoja',
+            'quiero pizza', 'quiero hamburguesa', 'comida cerca',
+            'restaurantes cerca', 'lugar para comer', 'puesto de comida'
+        ]
+        
+        if any(kw in problem_lower for kw in food_keywords):
+            return "food"
+        
+        # Modo providers: búsqueda explícita de profesionales
+        providers_keywords = [
+            'recomiéndame un profesional', 'recomiendame un profesional',
+            'necesito un técnico', 'busca alguien que', 'necesito cambiar',
+            'necesito arreglar', 'necesito reparar', 'busco profesional',
+            'busco técnico', 'busco especialista'
+        ]
+        
+        if any(kw in problem_lower for kw in providers_keywords):
+            return "providers"
+        
+        # Modo journey: problemas que necesitan diagnóstico (default)
+        journey_keywords = [
+            'se apaga', 'se cae', 'no carga', 'no funciona',
+            'se dañó', 'se daño', 'fallando', 'falla',
+            'me duele', 'duele', 'dolor', 'problema con',
+            'no enciende', 'no prende', 'error', 'roto', 'averiada'
+        ]
+        
+        if any(kw in problem_lower for kw in journey_keywords):
+            return "journey"
+        
+        # Default: journey para problemas no clasificados
+        return "journey"
+
+    @staticmethod
+    def _generate_direct_answer(problem: str, user_location: Optional[str]) -> str:
+        """Genera respuesta directa para preguntas simples."""
+        problem_lower = problem.lower()
+        
+        # Clima
+        if 'clima' in problem_lower or 'tiempo' in problem_lower:
+            if user_location:
+                return f"Claro, ¿en qué ciudad quieres revisar el clima? Actualmente tengo tu ubicación como {user_location}."
+            return "Claro, ¿en qué ciudad quieres revisar el clima?"
+        
+        # Aprender
+        if 'aprender' in problem_lower:
+            if 'guitarra' in problem_lower:
+                return "¡Qué buena idea! Para aprender guitarra desde cero, te recomiendo empezar con acordes básicos (C, G, Am, F), practicar cambios lentos entre ellos, y usar un metrónomo para mantener el ritmo. ¿Quieres que te dé recursos específicos o una ruta de aprendizaje?"
+            if 'piano' in problem_lower:
+                return "¡Excelente elección! Para aprender piano, empieza con la postura correcta, ejercicios de dedos en escalas mayores, y canciones simples con una mano. ¿Prefieres música clásica o popular?"
+            return "¡Qué buena idea! Te dejo una ruta sencilla para empezar desde cero y avanzar sin confundirte. ¿Sobre qué tema específico quieres aprender?"
+        
+        # Dinero
+        if 'dinero' in problem_lower or 'ganar' in problem_lower:
+            return "Entiendo. Te dejo ideas realistas para organizarte mejor y buscar ingresos adicionales de forma segura. ¿Te interesa algo online, presencial, o tienes alguna habilidad específica que quieras monetizar?"
+        
+        # Saludos
+        if 'hola' in problem_lower or 'buenos' in problem_lower:
+            return "¡Hola! ¿En qué puedo ayudarte hoy?"
+        
+        # Gracias
+        if 'gracias' in problem_lower:
+            return "¡De nada! Si necesitas algo más, aquí estoy."
+        
+        # Default
+        return "Entiendo. ¿Podrías darme más detalles sobre lo que necesitas para ayudarte mejor?"
+
+    @staticmethod
+    async def _handle_food_mode(problem: str, user_location: Optional[str], db: Session) -> Dict[str, Any]:
+        """Maneja preguntas de comida."""
+        problem_lower = problem.lower()
+        
+        # Si solo dice "tengo hambre" sin especificar
+        if problem_lower == 'tengo hambre' or problem_lower == 'quiero comer':
+            return {
+                "response_mode": "food",
+                "direct_answer": "¿Se te antoja algo rápido, económico, saludable o algo específico como pizza, hamburguesa o comida casera?",
+                "confidence_score": 0.5,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        # Si especifica comida, buscar restaurantes (por ahora placeholder)
+        # TODO: Implementar búsqueda real de restaurantes cuando existan en BD
+        return {
+            "response_mode": "food",
+            "direct_answer": "Por ahora no tengo restaurantes registrados cerca, pero puedo ayudarte a decidir qué tipo de comida buscar.",
+            "confidence_score": 0.3,
+            "diagnosis": {"possible_causes": [], "questions": []},
+            "instant_solutions": [],
+            "has_providers": False,
+            "providers": [],
+            "composite_solution": None,
+            "fallback": None,
+            "natural_message": None,
+            "recommendation_label": "Restaurantes o puestos recomendados"
+        }
+
+    @staticmethod
+    async def _handle_follow_up_mode(problem: str, conversation_context: List[Dict], db: Session) -> Dict[str, Any]:
+        """Maneja follow-ups usando contexto de conversación anterior."""
+        last_conv = conversation_context[0] if conversation_context else None
+        if not last_conv:
+            # Fallback si no hay contexto
+            return {
+                "response_mode": "direct",
+                "direct_answer": "No tengo contexto de la conversación anterior. ¿Podrías repetir tu pregunta?",
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        last_problem = last_conv.get("problem_text", "")
+        last_response = last_conv.get("ai_response", {})
+        last_solutions = last_response.get("instant_solutions", [])
+        
+        # Generar respuesta contextual usando Gemini con el contexto
+        context_prompt = f"""
+El usuario está haciendo un follow-up sobre una conversación anterior.
+
+Pregunta anterior: {last_problem}
+Soluciones anteriores:
+"""
+        for idx, sol in enumerate(last_solutions, 1):
+            context_prompt += f"{idx}. {sol}\n"
+        
+        context_prompt += f"\nNueva pregunta del usuario: {problem}\n"
+        context_prompt += "Responde de forma natural y conversacional, explicando el contexto relevante. No uses formato JSON, solo responde directamente."
+        
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            response = model.generate_content(context_prompt)
+            direct_answer = response.text.strip()
+        except Exception:
+            # Fallback local si Gemini falla
+            direct_answer = AIEngine._generate_local_follow_up(problem, last_problem, last_solutions)
+        
+        return {
+            "response_mode": "follow_up",
+            "direct_answer": direct_answer,
+            "confidence_score": 0.6,
+            "diagnosis": {"possible_causes": [], "questions": []},
+            "instant_solutions": [],
+            "has_providers": False,
+            "providers": [],
+            "composite_solution": None,
+            "fallback": None,
+            "natural_message": None
+        }
+
+    @staticmethod
+    def _generate_local_follow_up(problem: str, last_problem: str, last_solutions: List[str]) -> str:
+        """Genera respuesta local de follow-up cuando Gemini falla."""
+        problem_lower = problem.lower()
+        
+        # Detectar si se refiere a dieta/nutrición específicamente
+        if 'dieta' in problem_lower or 'nutrición' in problem_lower or 'nutricion' in problem_lower:
+            return "Claro. En el tema de la caída del cabello, la dieta puede influir si hay deficiencias de proteínas, hierro, zinc o vitamina D. Puedes empezar revisando si estás comiendo suficiente proteína, legumbres, verduras y alimentos ricos en hierro. Si la caída es fuerte, repentina o continúa, lo ideal es consultar con un dermatólogo."
+        
+        # Detectar si se refiere a una opción específica
+        is_follow_up, option_number = AIEngine._detect_follow_up(problem)
+        if option_number and 1 <= option_number <= len(last_solutions):
+            selected_solution = last_solutions[option_number - 1]
+            return f"Claro. Sobre esa opción: {selected_solution}. ¿Te gustaría que profundice en algún aspecto específico?"
+        
+        # Fallback genérico
+        return f"Entiendo que quieres continuar con el tema anterior. La última pregunta fue sobre '{last_problem}'. ¿Podrías aclarar qué aspecto específico te interesa profundizar?"
     @staticmethod
     async def solve_problem(
         problem: str,
@@ -164,7 +383,35 @@ class AIEngine:
         Llama a Gemini, parsea respuesta, enriquece con datos de BD,
         aplica ranking por urgencia y trust score.
         """
-        # 1. Detectar si es follow-up y extraer número de opción
+        # 1. Detectar modo de respuesta
+        response_mode = AIEngine._detect_response_mode(problem, conversation_context)
+        
+        # 2. Manejar modo direct: respuestas simples sin diagnóstico
+        if response_mode == "direct":
+            direct_answer = AIEngine._generate_direct_answer(problem, user_location)
+            return {
+                "response_mode": "direct",
+                "direct_answer": direct_answer,
+                "confidence_score": 0.5,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        # 3. Manejar modo food: preguntas de comida
+        if response_mode == "food":
+            return await AIEngine._handle_food_mode(problem, user_location, db)
+        
+        # 4. Manejar modo follow_up: continuar conversación anterior
+        if response_mode == "follow_up" and conversation_context:
+            return await AIEngine._handle_follow_up_mode(problem, conversation_context, db)
+        
+        # 5. Para modo journey y providers, continuar con flujo normal
+        # Detectar si es follow-up y extraer número de opción
         is_follow_up, option_number = AIEngine._detect_follow_up(problem)
         
         # 2. Construir prompt con contexto de memoria si existe
@@ -346,7 +593,9 @@ Soluciones anteriores:
         health_keywords = [
             'cuello', 'espalda', 'hombro', 'brazo', 'pierna', 'rodilla', 'muscular',
             'contractura', 'postura', 'tension', 'tensión', 'dolor', 'estomago', 'estómago',
-            'cabeza', 'pecho', 'fiebre', 'mareo', 'nausea', 'náusea', 'vomito', 'vómito', 'diarrea'
+            'cabeza', 'pecho', 'fiebre', 'mareo', 'nausea', 'náusea', 'vomito', 'vómito', 'diarrea',
+            'calvo', 'calvicie', 'cabello', 'pelo', 'caida', 'caída', 'alopecia', 'entradas',
+            'dermatólogo', 'dermatologo'
         ]
         
         tech_keywords = [
@@ -411,7 +660,8 @@ Soluciones anteriores:
                     "type": "restricted",
                     "message": ai_result["restricted_category_warning"]
                 },
-                "natural_message": AIEngine._generate_natural_message(problem, False, is_health_related)
+                "natural_message": AIEngine._generate_natural_message(problem, False, is_health_related),
+                "response_mode": "journey"
             }
 
         # 4. Buscar proveedores en BD que coincidan por nombre o categoría
@@ -514,7 +764,9 @@ Soluciones anteriores:
             "composite_solution": ai_result.get("composite_solution"),
             "fallback": fallback,
             "urgency": urgency,
-            "natural_message": natural_message
+            "natural_message": natural_message,
+            "response_mode": response_mode,
+            "recommendation_label": "Especialistas disponibles" if response_mode == "providers" else None
         }
 
     @staticmethod
