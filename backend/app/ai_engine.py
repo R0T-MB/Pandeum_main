@@ -14,8 +14,149 @@ model = genai.GenerativeModel('gemini-2.5-flash')
 
 class AIEngine:
     @staticmethod
-    async def _generate_with_openrouter(prompt: str) -> Optional[Dict[str, Any]]:
-        """Fallback a OpenRouter si está configurado."""
+    def _is_confirmation(problem_lower: str) -> bool:
+        """Detecta si el mensaje es una confirmación."""
+        normalized = problem_lower.strip().lower().replace(".", "").replace(",", "").replace("!", "").replace("¡", "").replace("?", "").replace("¿", "")
+        
+        exact_confirmations = {
+            'si', 'sí', 'ok', 'dale', 'eso', 'exacto', 'correcto', 'claro'
+        }
+        
+        phrase_confirmations = [
+            'me interesa', 'quiero esa', 'esa opción', 'esa opcion',
+            'la primera', 'la segunda', 'la tercera', 'la 1', 'la 2', 'la 3'
+        ]
+        
+        return normalized in exact_confirmations or any(phrase in normalized for phrase in phrase_confirmations)
+    
+    @staticmethod
+    def _is_clothing_related(problem_lower: str) -> bool:
+        """Detecta si el mensaje habla de ropa/prendas."""
+        garment_keywords = [
+            'suéter', 'sueter', 'camisa', 'blusa', 'pantalón', 'pantalon',
+            'zapato', 'zapatos', 'vestido', 'chaqueta', 'chaleco', 'abrigo',
+            'camiseta', 'polo', 'prenda', 'ropa', 'vestimenta', 'calzado',
+            'talla'
+        ]
+        return any(kw in problem_lower for kw in garment_keywords)
+    
+    @staticmethod
+    def _is_health_related(problem_lower: str) -> bool:
+        """Detecta si el mensaje habla de salud."""
+        health_keywords = [
+            'dolor', 'duele', 'me duele', 'pecho', 'presión', 'presion',
+            'cabeza', 'fiebre', 'mareo', 'náusea', 'nausea', 'vomito', 'vómito',
+            'estómago', 'estomago', 'espalda', 'cuello', 'hombro', 'brazo',
+            'pierna', 'rodilla', 'muscular', 'contractura', 'postura',
+            'tension', 'tensión', 'calvo', 'calvicie', 'cabello', 'pelo',
+            'caida', 'caída', 'alopecia', 'entradas', 'dermatólogo', 'dermatologo'
+        ]
+        # Solo es salud si NO es ropa
+        return not AIEngine._is_clothing_related(problem_lower) and any(kw in problem_lower for kw in health_keywords)
+    
+    @staticmethod
+    def _is_food_related(problem_lower: str) -> bool:
+        """Detecta si el mensaje habla de comida."""
+        food_keywords = [
+            'hambre', 'comer', 'almorz', 'almuerzo', 'cenar', 'cena',
+            'comida', 'snack', 'desayunar', 'desayuno', 'merendar', 'merienda',
+            'sushi', 'pizza', 'arepa', 'arepas', 'encebollado', 'pollo', 'pescado',
+            'queso', 'hamburguesa', 'tacos', 'pasta', 'arroz', 'ensalada', 'sopa'
+        ]
+        return any(kw in problem_lower for kw in food_keywords)
+    
+    @staticmethod
+    def _is_tech_related(problem_lower: str) -> bool:
+        """Detecta si el mensaje habla de tecnología."""
+        tech_keywords = [
+            'internet', 'router', 'wifi', 'wi-fi', 'red', 'redes',
+            'conectividad', 'senal', 'señal', 'modem', 'módem',
+            'laptop', 'computadora', 'pc', 'portátil', 'portatil',
+            'celular', 'telefono', 'teléfono', 'bateria', 'batería',
+            'pantalla', 'carga', 'apagando', 'apaga', 'audífono', 'audifono'
+        ]
+        return any(kw in problem_lower for kw in tech_keywords)
+    
+    @staticmethod
+    def _is_product_related(problem_lower: str) -> bool:
+        """Detecta si el mensaje habla de productos/compras."""
+        purchase_intent_keywords = [
+            'comprar', 'quiero comprar', 'conseguir', 'dónde consigo', 'donde consigo',
+            'necesito una', 'necesito un', 'busco una', 'busco un',
+            'quiero una', 'quiero un', 'me hace falta'
+        ]
+        
+        product_item_keywords = [
+            'guitarra', 'zapatos nuevos', 'batería', 'bateria', 'repuesto',
+            'cargador', 'audífonos', 'audifonos', 'celular', 'ropa nueva',
+            'pantalla', 'cable', 'adaptador'
+        ]
+        
+        return any(i in problem_lower for i in purchase_intent_keywords) and any(p in problem_lower for p in product_item_keywords)
+    
+    @staticmethod
+    def _is_service_related(problem_lower: str) -> bool:
+        """Detecta si el mensaje habla de servicios/proveedores."""
+        service_keywords = [
+            'zapatero', 'costurera', 'sastre', 'técnico', 'tecnico',
+            'reparar', 'arreglar', 'instalar', 'mantenimiento',
+            'alguien que', 'quien arregla', 'quién arregla',
+            'donde arreglo', 'dónde arreglo',
+            'llevar a reparar', 'mandar a arreglar',
+            'quiero un proveedor', 'necesito un proveedor', 'busco proveedor',
+            'quiero un especialista', 'necesito un especialista', 'busco especialista'
+        ]
+        return any(kw in problem_lower for kw in service_keywords)
+    
+    @staticmethod
+    def _detect_intent_category(problem: str, conversation_context: Optional[List[Dict]] = None) -> str:
+        """Detecta la categoría de intención del usuario."""
+        problem_lower = problem.lower()
+        
+        # 1. Service tiene intención explícita de buscar/comprar/arreglar
+        if AIEngine._is_service_related(problem_lower):
+            return "service"
+        
+        # 2. Product tiene intención explícita de compra
+        if AIEngine._is_product_related(problem_lower):
+            return "product"
+        
+        # 3. Clothing para problemas de prenda
+        if AIEngine._is_clothing_related(problem_lower):
+            return "clothing"
+        
+        # 4. Health (solo si no es ropa)
+        if AIEngine._is_health_related(problem_lower):
+            return "health"
+        
+        # 5. Food
+        if AIEngine._is_food_related(problem_lower):
+            return "food"
+        
+        # 6. Tech para problemas reales
+        if AIEngine._is_tech_related(problem_lower):
+            return "tech"
+        
+        # 7. Si es confirmación y hay contexto, usar categoría anterior
+        if AIEngine._is_confirmation(problem_lower) and conversation_context:
+            last_response = conversation_context[0].get("ai_response", {})
+            # Intentar inferir categoría anterior del response_mode o suggestions_label
+            if last_response.get("response_mode") == "food":
+                return "food"
+            if last_response.get("response_mode") == "suggestions":
+                # Inferir de suggestions_label
+                suggestions_label = last_response.get("suggestions_label", "").lower()
+                if "comida" in suggestions_label or "sushi" in suggestions_label or "pizza" in suggestions_label:
+                    return "food"
+                if "ropa" in suggestions_label or "prenda" in suggestions_label:
+                    return "clothing"
+                return "general"
+        
+        # 6. General por defecto
+        return "general"
+    @staticmethod
+    async def _generate_with_openrouter(prompt: str) -> Optional[str]:
+        """Fallback a OpenRouter si está configurado. Retorna texto crudo."""
         if not settings.OPENROUTER_API_KEY:
             return None
         
@@ -28,11 +169,11 @@ class AIEngine:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": settings.OPENROUTER_MODEL,
+                        "model": settings.OPENROUTER_MODEL or "openai/gpt-3.5-turbo",
                         "messages": [
                             {
                                 "role": "system",
-                                "content": "Eres Pandeum, un asistente experto en resolver problemas. Devuelve SOLO JSON válido sin texto adicional."
+                                "content": "Eres Pandeum, un asistente experto en resolver problemas."
                             },
                             {
                                 "role": "user",
@@ -44,23 +185,71 @@ class AIEngine:
                 
                 if response.status_code == 200:
                     data = response.json()
-                    content = data["choices"][0]["message"]["content"]
-                    # Limpiar posibles marcadores de código
-                    if content.startswith("```json"):
-                        content = content[7:]
-                    if content.startswith("```"):
-                        content = content[3:]
-                    if content.endswith("```"):
-                        content = content[:-3]
-                    content = content.strip()
-                    
-                    try:
-                        return json.loads(content)
-                    except json.JSONDecodeError:
-                        return None
+                    return data["choices"][0]["message"]["content"]
                 return None
         except Exception:
             # Si OpenRouter falla, no romper el endpoint
+            return None
+
+    @staticmethod
+    async def _generate_with_fallback_ai(prompt: str) -> Optional[str]:
+        """Genera respuesta con Gemini como principal y OpenRouter como fallback."""
+        # Intentar Gemini primero
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            response = model.generate_content(prompt)
+            return response.text.strip()
+        except Exception:
+            # Si Gemini falla, intentar OpenRouter
+            return await AIEngine._generate_with_openrouter(prompt)
+
+    @staticmethod
+    async def _generate_json_with_fallback_ai(prompt: str) -> Optional[Dict[str, Any]]:
+        """Genera JSON con Gemini como principal y OpenRouter como fallback."""
+        # Intentar Gemini primero
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            response = model.generate_content(prompt)
+            response_text = response.text.strip()
+            
+            # Limpiar markdown si existe
+            if response_text.startswith('```json'):
+                response_text = response_text[7:]
+            if response_text.startswith('```'):
+                response_text = response_text[3:]
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]
+            response_text = response_text.strip()
+            
+            # Parsear JSON
+            ai_response = json.loads(response_text)
+            
+            if isinstance(ai_response, dict):
+                return ai_response
+            return None
+        except Exception:
+            # Si Gemini falla, intentar OpenRouter
+            openrouter_text = await AIEngine._generate_with_openrouter(prompt)
+            if not openrouter_text:
+                return None
+            
+            # Limpiar markdown si existe
+            if openrouter_text.startswith('```json'):
+                openrouter_text = openrouter_text[7:]
+            if openrouter_text.startswith('```'):
+                openrouter_text = openrouter_text[3:]
+            if openrouter_text.endswith('```'):
+                openrouter_text = openrouter_text[:-3]
+            openrouter_text = openrouter_text.strip()
+            
+            # Parsear JSON
+            try:
+                ai_response = json.loads(openrouter_text)
+                if isinstance(ai_response, dict):
+                    return ai_response
+            except Exception:
+                pass
+            
             return None
 
     @staticmethod
@@ -171,34 +360,31 @@ class AIEngine:
         if is_follow_up and conversation_context:
             return "follow_up"
         
+        # Detectar categoría de intención
+        intent_category = AIEngine._detect_intent_category(problem, conversation_context)
+        
         # Modo food: primera pregunta abierta (sin especificar)
         if problem_lower == 'tengo hambre' or problem_lower == 'quiero comer' or problem_lower == 'se me antoja algo':
             return "food"
         
+        # Modo suggestions: ropa, comida específica, productos, servicios
+        if intent_category in ["clothing", "food", "product", "service"]:
+            return "suggestions"
+        
+        # Modo journey: solo para problemas reales de salud o tecnología
+        if intent_category in ["health", "tech"]:
+            return "journey"
+        
         # Si la conversación anterior fue food o suggestions, tratar respuestas cortas como suggestions
+        # PERO solo si el mensaje actual NO contiene una nueva categoría clara
         if conversation_context:
             last_response = conversation_context[0].get("ai_response", {})
             if last_response.get("response_mode") == "food" or last_response.get("response_mode") == "suggestions":
-                # Si es respuesta corta (menos de 8 palabras), asumir que responde sobre comida
+                # Si es respuesta corta (menos de 8 palabras) Y NO es una nueva categoría clara
                 if len(problem_lower.split()) <= 7:
-                    return "suggestions"
-        
-        # Modo suggestions: cualquier otra mención de comida o preferencia
-        # Detectar si menciona comida específica
-        food_type = AIEngine._detect_food_type(problem_lower)
-        if food_type:
-            return "suggestions"
-        
-        # Detectar keywords de comida o preferencias
-        food_keywords = [
-            'tengo hambre', 'quiero comer', 'se me antoja',
-            'quiero almorzar', 'quiero cenar', 'comida',
-            'algo que lleve', 'algo con', 'algo barato', 'algo económico', 'algo saludable',
-            'algo rápido', 'comida rápida', 'comida casera'
-        ]
-        
-        if any(kw in problem_lower for kw in food_keywords):
-            return "suggestions"
+                    # Verificar que no sea una nueva categoría
+                    if not AIEngine._is_clothing_related(problem_lower) and not AIEngine._is_health_related(problem_lower) and not AIEngine._is_tech_related(problem_lower):
+                        return "suggestions"
         
         # Modo direct: preguntas simples, sociales, o que no requieren diagnóstico
         # Excluir "lo de" si no hay contexto, ya que podría ser follow-up sin contexto disponible
@@ -342,6 +528,193 @@ class AIEngine:
         }
 
     @staticmethod
+    async def _handle_suggestions_mode(problem: str, conversation_context: Optional[List[Dict]], user_location: Optional[str], db: Session) -> Dict[str, Any]:
+        """Maneja sugerencias genéricas (ropa, comida, productos, servicios)."""
+        intent_category = AIEngine._detect_intent_category(problem, conversation_context)
+        
+        prompt = f"""
+El usuario necesita sugerencias. Responde SOLO con un JSON válido (sin markdown, sin texto adicional).
+
+Solicitud del usuario: "{problem}"
+
+Categoría detectada: "{intent_category}"
+
+Contexto de conversación anterior: {conversation_context[0] if conversation_context else "Ninguno"}
+
+El JSON debe tener esta estructura exacta:
+{{
+  "response_mode": "suggestions",
+  "direct_answer": "Respuesta natural en español, entendiendo la necesidad actual del usuario.",
+  "suggestions_label": "Etiqueta descriptiva para las sugerencias (ej: 'Opciones para una prenda ajustada', 'Opciones rápidas para almorzar').",
+  "suggestions": ["Opción 1", "Opción 2", ..., "Opción 12"],
+  "recommendation_label": "Etiqueta para proveedores si aplica (ej: 'Costureras o sastres disponibles', 'Restaurantes disponibles').",
+  "provider_category": "Categoría de proveedor si aplica (ej: 'costurera', 'restaurante', 'zapatero')."
+}}
+
+Reglas:
+- Analiza primero la necesidad actual del usuario.
+- Usa el contexto solo si el mensaje actual es ambiguo.
+- No asumir comida si el usuario habla de ropa, tecnología, salud, producto o servicio.
+- Si la categoría es "service", orientar a buscar proveedor real (zapatero, costurera, técnico, etc.).
+- Si la categoría es "product", orientar opciones de compra o criterios para elegir.
+- No convertir productos o servicios en diagnóstico técnico o de salud.
+- No inventar proveedores.
+- Para ropa ajustada, orientar a sastre/costurera, talla, arreglo o cambio.
+- Para comida, dar opciones para buscar o preparar.
+- Para productos/servicios, orientar qué buscar y qué proveedor podría ayudar.
+- No mostrar diagnóstico si no es un problema técnico o de salud.
+- Devuelve 6 a 12 sugerencias útiles.
+- Responder en español natural.
+- El JSON debe ser válido y parseable.
+"""
+        
+        ai_response = await AIEngine._generate_json_with_fallback_ai(prompt)
+        
+        if not ai_response:
+            # Si ambas IAs fallan, devolver respuesta directa sin tarjetas
+            return {
+                "response_mode": "direct",
+                "direct_answer": "No pude generar sugerencias en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos.",
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        # Validar estructura
+        if 'direct_answer' not in ai_response or 'suggestions_label' not in ai_response or 'suggestions' not in ai_response:
+            return {
+                "response_mode": "direct",
+                "direct_answer": "No pude generar sugerencias en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos.",
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        if not isinstance(ai_response['suggestions'], list):
+            return {
+                "response_mode": "direct",
+                "direct_answer": "No pude generar sugerencias en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos.",
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        if not isinstance(ai_response['direct_answer'], str) or not ai_response['direct_answer'].strip():
+            return {
+                "response_mode": "direct",
+                "direct_answer": "No pude generar sugerencias en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos.",
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        if not isinstance(ai_response['suggestions_label'], str) or not ai_response['suggestions_label'].strip():
+            return {
+                "response_mode": "direct",
+                "direct_answer": "No pude generar sugerencias en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos.",
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        # Normalizar suggestions
+        suggestions = ai_response['suggestions']
+        suggestions = [s for s in suggestions if isinstance(s, str) and s.strip()]
+        suggestions = suggestions[:12]
+        
+        if len(suggestions) < 6:
+            return {
+                "response_mode": "direct",
+                "direct_answer": "No pude generar sugerencias en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos.",
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
+        
+        ai_response['suggestions'] = suggestions
+        
+        # Buscar proveedores si hay provider_category
+        provider_category = ai_response.get('provider_category')
+        providers = []
+        has_providers = False
+        
+        if provider_category:
+            # Buscar proveedores por categoría
+            db_providers = db.query(Provider).filter(
+                Provider.category.ilike(f"%{provider_category}%")
+            ).all()
+            
+            if db_providers:
+                has_providers = True
+                # Convertir a formato de diccionario y ordenar
+                for db_provider in db_providers:
+                    rating = get_provider_rating(db, db_provider.id)
+                    providers.append({
+                        "provider_id": db_provider.id,
+                        "business_name": db_provider.business_name,
+                        "trust_score": db_provider.trust_score,
+                        "rating": rating,
+                        "distance_km": None,
+                        "reason_bullets": [],
+                        "estimated_cost": f"${db_provider.price_min}-${db_provider.price_max}" if db_provider.price_min else "Consultar",
+                        "available_now": db_provider.available_now,
+                        "response_time_hours": db_provider.response_time_hours
+                    })
+                
+                # Ordenar por available_now, rating, trust_score
+                providers = sorted(providers, key=lambda p: (
+                    not p.get("available_now", False),
+                    -p.get("rating", 0),
+                    -p.get("trust_score", 0)
+                ))
+        
+        return {
+            "response_mode": "suggestions",
+            "direct_answer": ai_response["direct_answer"],
+            "suggestions_label": ai_response["suggestions_label"],
+            "suggestions": ai_response["suggestions"],
+            "recommendation_label": ai_response.get("recommendation_label"),
+            "confidence_score": 0.7,
+            "diagnosis": {"possible_causes": [], "questions": []},
+            "instant_solutions": [],
+            "has_providers": has_providers,
+            "providers": providers,
+            "composite_solution": None,
+            "fallback": None,
+            "natural_message": None
+        }
+
+    @staticmethod
     def _detect_food_type(problem: str) -> Optional[str]:
         """Detecta el tipo de comida mencionado en el problema."""
         food_types = {
@@ -399,7 +772,7 @@ class AIEngine:
 
     @staticmethod
     async def _generate_dynamic_suggestions_with_ai(food_request: str) -> Optional[Dict[str, Any]]:
-        """Genera sugerencias dinámicas usando Gemini."""
+        """Genera sugerencias dinámicas usando Gemini con fallback a OpenRouter."""
         prompt = f"""
 El usuario quiere sugerencias de comida. Responde SOLO con un JSON válido (sin markdown, sin texto adicional).
 
@@ -424,50 +797,34 @@ Reglas:
 - El JSON debe ser válido y parseable.
 """
         
-        try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            response = model.generate_content(prompt)
-            response_text = response.text.strip()
-            
-            # Limpiar markdown si existe
-            if response_text.startswith('```json'):
-                response_text = response_text[7:]
-            if response_text.startswith('```'):
-                response_text = response_text[3:]
-            if response_text.endswith('```'):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
-            
-            # Parsear JSON
-            ai_response = json.loads(response_text)
-            
-            # Validar estructura
-            if not isinstance(ai_response, dict):
-                return None
-            if 'direct_answer' not in ai_response or 'suggestions_label' not in ai_response or 'suggestions' not in ai_response:
-                return None
-            if not isinstance(ai_response['suggestions'], list):
-                return None
-            if not isinstance(ai_response['direct_answer'], str) or not ai_response['direct_answer'].strip():
-                return None
-            if not isinstance(ai_response['suggestions_label'], str) or not ai_response['suggestions_label'].strip():
-                return None
-            
-            # Normalizar suggestions
-            suggestions = ai_response['suggestions']
-            # Conservar solo strings no vacíos
-            suggestions = [s for s in suggestions if isinstance(s, str) and s.strip()]
-            # Máximo 12 opciones
-            suggestions = suggestions[:12]
-            # Si quedan menos de 8, retornar None para usar fallback local
-            if len(suggestions) < 8:
-                return None
-            
-            ai_response['suggestions'] = suggestions
-            
-            return ai_response
-        except Exception:
+        ai_response = await AIEngine._generate_json_with_fallback_ai(prompt)
+        
+        if not ai_response:
             return None
+        
+        # Validar estructura
+        if 'direct_answer' not in ai_response or 'suggestions_label' not in ai_response or 'suggestions' not in ai_response:
+            return None
+        if not isinstance(ai_response['suggestions'], list):
+            return None
+        if not isinstance(ai_response['direct_answer'], str) or not ai_response['direct_answer'].strip():
+            return None
+        if not isinstance(ai_response['suggestions_label'], str) or not ai_response['suggestions_label'].strip():
+            return None
+        
+        # Normalizar suggestions
+        suggestions = ai_response['suggestions']
+        # Conservar solo strings no vacíos
+        suggestions = [s for s in suggestions if isinstance(s, str) and s.strip()]
+        # Máximo 12 opciones
+        suggestions = suggestions[:12]
+        # Si quedan menos de 8, retornar None
+        if len(suggestions) < 8:
+            return None
+        
+        ai_response['suggestions'] = suggestions
+        
+        return ai_response
 
     @staticmethod
     async def _handle_follow_up_mode(problem: str, conversation_context: List[Dict], db: Session) -> Dict[str, Any]:
@@ -577,8 +934,12 @@ Soluciones anteriores:
             }
         
         # 3. Manejar modo food: preguntas de comida
-        if response_mode == "food" or response_mode == "suggestions":
+        if response_mode == "food":
             return await AIEngine._handle_food_mode(problem, user_location, db)
+        
+        # 4. Manejar modo suggestions: sugerencias genéricas (ropa, comida, productos, servicios)
+        if response_mode == "suggestions":
+            return await AIEngine._handle_suggestions_mode(problem, conversation_context, user_location, db)
         
         # 4. Manejar modo follow_up: continuar conversación anterior
         if response_mode == "follow_up" and conversation_context:
@@ -664,124 +1025,42 @@ Soluciones anteriores:
         Si el problema es compuesto (ej: montar tienda online), puedes generar composite_solution.
         """
 
-        # 2. Llamar a Gemini con manejo de cuota
-        try:
-            response = model.generate_content(prompt)
-            raw_text = response.text.strip()
-            # Limpiar posibles marcadores de código
-            if raw_text.startswith("```json"):
-                raw_text = raw_text[7:]
-            if raw_text.startswith("```"):
-                raw_text = raw_text[3:]
-            if raw_text.endswith("```"):
-                raw_text = raw_text[:-3]
-            raw_text = raw_text.strip()
-
-            try:
-                ai_result = json.loads(raw_text)
-            except json.JSONDecodeError:
-                # Fallback mínimo por JSON inválido
-                ai_result = {
-                    "confidence_score": 0.3,
-                    "diagnosis": {"possible_causes": ["No se pudo analizar"], "questions": []},
-                    "instant_solutions": ["Intenta reiniciar o buscar ayuda en línea"],
-                    "urgency": "medium",
-                    "has_providers": False,
-                    "providers": [],
-                    "composite_solution": None,
-                    "fallback": {"type": "error", "message": "La IA no pudo procesar correctamente. Intenta de nuevo."}
-                }
-        except ResourceExhausted:
-            # Intentar fallback con OpenRouter
-            ai_result = await AIEngine._generate_with_openrouter(prompt)
-            if ai_result:
-                # Normalizar respuesta de OpenRouter si está incompleta
-                ai_result = AIEngine._normalize_ai_response(ai_result)
+        # 2. Llamar a Gemini con fallback a OpenRouter
+        ai_result = await AIEngine._generate_json_with_fallback_ai(prompt)
+        
+        if not ai_result:
+            # Si ambas IAs fallan, devolver respuesta directa sin tarjetas
+            # Detectar si es problema de salud para mensaje específico
+            problem_lower = problem.lower()
+            is_clothing_related = AIEngine._is_clothing_related(problem_lower)
+            is_health_related = AIEngine._is_health_related(problem_lower)
+            
+            if is_health_related:
+                direct_answer = "No puedo darte una orientación completa en este momento porque la IA no está disponible. Si el dolor es fuerte, empeora, viene con síntomas preocupantes o no mejora, busca ayuda médica."
             else:
-                # Fallback local cuando Gemini excede cuota y OpenRouter no está disponible
-                ai_result = {
-                    "confidence_score": 0.45,
-                    "diagnosis": {
-                        "possible_causes": [
-                            "El asistente de IA no está disponible temporalmente.",
-                            "El problema requiere revisión con información adicional.",
-                            "Puede ser necesario escalar a un proveedor especializado."
-                        ],
-                        "questions": [
-                            "¿El problema sigue ocurriendo después de reiniciar el equipo?",
-                            "¿Cuándo empezó el problema?",
-                            "¿Has probado con otro dispositivo o conexión?"
-                        ]
-                    },
-                    "instant_solutions": [
-                        "**Revisar lo básico:** Verifica conexiones, energía y reinicio del equipo.",
-                        "**Anotar el problema:** Guarda detalles como hora, frecuencia y mensajes de error.",
-                        "**Solicitar ayuda profesional:** Si el problema continúa, contacta a un especialista."
-                    ],
-                    "urgency": "medium",
-                    "has_providers": False,
-                    "providers": [],
-                    "composite_solution": None,
-                    "fallback": {
-                        "type": "quota_exceeded",
-                        "message": "El asistente de IA alcanzó temporalmente su límite de uso. Te mostramos una respuesta básica mientras se restablece el servicio.",
-                        "waitlist_enabled": False
-                    }
-                }
-        except Exception:
-            # Capturar errores temporales de Gemini sin tumbar el endpoint
-            ai_result = await AIEngine._generate_with_openrouter(prompt)
-            if ai_result:
-                # Normalizar respuesta de OpenRouter si está incompleta
-                ai_result = AIEngine._normalize_ai_response(ai_result)
-            else:
-                # Fallback local para errores generales de Gemini
-                ai_result = {
-                    "confidence_score": 0.4,
-                    "diagnosis": {
-                        "possible_causes": [
-                            "El asistente de IA no está disponible temporalmente.",
-                            "Error temporal en el procesamiento de la consulta."
-                        ],
-                        "questions": []
-                    },
-                    "instant_solutions": [
-                        "Intenta nuevamente en unos momentos.",
-                        "Verifica tu conexión a internet."
-                    ],
-                    "urgency": "medium",
-                    "has_providers": False,
-                    "providers": [],
-                    "composite_solution": None,
-                    "fallback": {
-                        "type": "temporary_error",
-                        "message": "Error temporal en el asistente de IA. Te mostramos una respuesta básica.",
-                        "waitlist_enabled": False
-                    }
-                }
+                direct_answer = "No pude procesar tu solicitud en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos."
+            
+            return {
+                "response_mode": "direct",
+                "direct_answer": direct_answer,
+                "confidence_score": 0.3,
+                "diagnosis": {"possible_causes": [], "questions": []},
+                "instant_solutions": [],
+                "has_providers": False,
+                "providers": [],
+                "composite_solution": None,
+                "fallback": None,
+                "natural_message": None
+            }
 
         # 3. Validar y completar instant_solutions si está vacío o inválido
         instant_solutions = ai_result.get("instant_solutions")
         
         # Detectar tipo de problema para generar soluciones apropiadas y mensajes naturales
-        health_keywords = [
-            'cuello', 'espalda', 'hombro', 'brazo', 'pierna', 'rodilla', 'muscular',
-            'contractura', 'postura', 'tension', 'tensión', 'dolor', 'estomago', 'estómago',
-            'cabeza', 'pecho', 'fiebre', 'mareo', 'nausea', 'náusea', 'vomito', 'vómito', 'diarrea',
-            'calvo', 'calvicie', 'cabello', 'pelo', 'caida', 'caída', 'alopecia', 'entradas',
-            'dermatólogo', 'dermatologo'
-        ]
-        
-        tech_keywords = [
-            'internet', 'router', 'wifi', 'wi-fi', 'red', 'redes', 
-            'conectividad', 'senal', 'señal', 'modem', 'módem',
-            'laptop', 'computadora', 'pc', 'portátil',
-            'celular', 'telefono', 'teléfono', 'bateria', 'batería', 'pantalla', 'carga', 'apagando', 'apaga'
-        ]
-        
         problem_lower = problem.lower()
-        is_health_related = any(kw in problem_lower for kw in health_keywords)
-        is_tech_related = any(kw in problem_lower for kw in tech_keywords)
+        is_clothing_related = AIEngine._is_clothing_related(problem_lower)
+        is_health_related = AIEngine._is_health_related(problem_lower)
+        is_tech_related = AIEngine._is_tech_related(problem_lower)
         
         # Normalizar instant_solutions
         if isinstance(instant_solutions, str):
