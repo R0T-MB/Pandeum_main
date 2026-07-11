@@ -95,23 +95,23 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-dark">
+    <div className="flex h-screen bg-[#F8FAFC] dark:bg-[#0F172A]">
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="glass border-b border-white/20 px-4 py-3 flex items-center justify-between">
+        <header className="bg-white dark:bg-[#1E293B] border-b border-slate-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-white/10 transition"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-400"
           >
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <span className="font-semibold">Pandeum</span>
+            <Sparkles className="w-5 h-5 text-[#1E3A5F] dark:text-slate-300" />
+            <span className="font-semibold text-slate-900 dark:text-slate-100">Pandeum</span>
           </div>
           <div className="w-8" /> {/* spacer */}
         </header>
@@ -121,9 +121,9 @@ export default function HomePage() {
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <div className="max-w-md">
-                <Sparkles className="w-16 h-16 text-primary mx-auto mb-4" />
-                <h1 className="text-3xl font-bold mb-2">¿Qué problema podemos resolver hoy?</h1>
-                <p className="text-gray-500 dark:text-gray-400 mb-8">
+                <Sparkles className="w-16 h-16 text-[#1E3A5F]/30 dark:text-slate-600 mx-auto mb-4" />
+                <h1 className="text-3xl font-bold mb-2 text-slate-900 dark:text-slate-100">¿Qué problema podemos resolver hoy?</h1>
+                <p className="text-slate-500 dark:text-slate-400 mb-8">
                   Describe tu situación de forma natural. Pandeum te ayudará a encontrar la mejor solución.
                 </p>
                 <div className="grid gap-3">
@@ -135,7 +135,7 @@ export default function HomePage() {
                     <button
                       key={example}
                       onClick={() => handleSendMessage(example)}
-                      className="glass rounded-xl p-3 text-left hover:bg-white/20 transition"
+                      className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
                     >
                       {example}
                     </button>
@@ -154,11 +154,11 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex justify-start"
                 >
-                  <div className="glass rounded-2xl p-4 max-w-[80%]">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <div className="bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-3 max-w-[80%]">
+                    <div className="flex gap-1.5">
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 </motion.div>
@@ -169,7 +169,7 @@ export default function HomePage() {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B]">
           <ChatInput onSend={handleSendMessage} disabled={isLoading} />
         </div>
       </div>

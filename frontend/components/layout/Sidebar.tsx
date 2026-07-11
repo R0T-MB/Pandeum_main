@@ -50,15 +50,15 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 h-screen w-64 transform border-r border-gray-200 bg-white transition-transform dark:border-gray-800 dark:bg-gray-900 lg:static lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 h-screen w-64 transform border-r border-slate-200 bg-white transition-transform dark:border-slate-700 dark:bg-[#1E293B] lg:static lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-4 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="p-5 text-lg font-bold text-slate-900 dark:text-slate-100">
           Pandeum
         </div>
 
-        <nav className="flex-1 px-2 space-y-1">
+        <nav className="flex-1 px-3 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -68,10 +68,10 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                    ? 'bg-slate-100 text-slate-900 font-medium dark:bg-slate-700 dark:text-slate-100'
+                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
                 }`}
               >
                 <Icon size={20} />
@@ -81,10 +81,10 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
           <button
             onClick={toggle}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
           >
             {isDark ? <Sun size={20} /> : <Moon size={20} />}
             <span>{isDark ? 'Modo claro' : 'Modo oscuro'}</span>
@@ -92,7 +92,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
           <button
             onClick={logout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
           >
             <LogOut size={20} />
             <span>Cerrar sesión</span>

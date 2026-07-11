@@ -19,18 +19,18 @@ export default function LoginPage() {
   };
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-xl w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Pandeum</h1>
-        <p className="text-center text-gray-600 dark:text-gray-400 mt-2">Inicia sesión para continuar</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+      <div className="bg-white dark:bg-[#1E293B] p-8 rounded-xl border border-slate-200 dark:border-slate-700 w-full max-w-md">
+        <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-slate-100">Pandeum</h1>
+        <p className="text-center text-slate-500 dark:text-slate-400 mt-2">Inicia sesión para continuar</p>
         
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700" required />
-          <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-700" required />
-          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Ingresar</button>
+          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F]/20 transition-shadow" required />
+          <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F]/20 transition-shadow" required />
+          <button type="submit" className="w-full bg-[#1E3A5F] hover:bg-[#2F5D7C] text-white font-medium py-2.5 rounded-lg transition-colors">Ingresar</button>
         </form>
         
-        <p className="mt-4 text-center text-sm">¿No tienes cuenta? <Link href="/register" className="text-blue-600">Regístrate</Link></p>
+        <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">¿No tienes cuenta? <Link href="/register" className="text-[#1E3A5F] dark:text-[#2F5D7C] font-medium hover:underline">Regístrate</Link></p>
       </div>
     </div>
   );

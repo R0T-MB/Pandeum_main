@@ -9,7 +9,7 @@ interface Props {
 export const ProviderCard = ({ provider }: Props) => {
   return (
     <Link href={`/providers/${provider.provider_id}`}>
-      <div className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-all duration-200 cursor-pointer">
+      <div className="group bg-white dark:bg-[#1E293B] rounded-xl border border-slate-200 dark:border-slate-700 p-4 hover:shadow-sm transition-shadow cursor-pointer">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-semibold text-lg">{provider.business_name}</h3>
@@ -18,17 +18,17 @@ export const ProviderCard = ({ provider }: Props) => {
                 <Star size={16} className="text-yellow-400 fill-yellow-400" />
                 <span className="ml-1 text-sm">{provider.rating.toFixed(1)}</span>
               </div>
-              <span className="text-xs text-gray-500">Trust Score: {provider.trust_score}</span>
+              <span className="text-xs text-slate-500">Trust Score: {provider.trust_score}</span>
             </div>
           </div>
           {provider.available_now && (
-            <span className="flex items-center gap-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1 text-xs bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-full">
               <Zap size={12} /> Disponible ahora
             </span>
           )}
         </div>
         
-        <div className="mt-3 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-3 space-y-1 text-sm text-slate-500 dark:text-slate-400">
           {provider.distance_km && (
             <div className="flex items-center gap-2"><MapPin size={14} /> {provider.distance_km.toFixed(1)} km</div>
           )}
@@ -42,11 +42,11 @@ export const ProviderCard = ({ provider }: Props) => {
         
         <div className="mt-3">
           {provider.reason_bullets.map((reason, idx) => (
-            <div key={idx} className="text-sm text-green-600 dark:text-green-400">✓ {reason}</div>
+            <div key={idx} className="text-sm text-slate-600 dark:text-slate-400">✓ {reason}</div>
           ))}
         </div>
         
-        <button className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition">
+        <button className="mt-3 w-full bg-[#1E3A5F] hover:bg-[#2F5D7C] text-white font-medium py-2 rounded-lg transition-colors">
           Contactar
         </button>
       </div>

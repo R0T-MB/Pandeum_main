@@ -34,14 +34,14 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="Describe tu problema..."
-        className="flex-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex-1 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-1 focus:ring-[#1E3A5F]/20 focus:border-[#1E3A5F] disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
         rows={1}
         style={{ minHeight: '48px', maxHeight: '120px' }}
       />
       <button
         onClick={handleSend}
         disabled={disabled || !input.trim()}
-        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl transition-colors flex items-center justify-center"
+        className="bg-[#1E3A5F] hover:bg-[#2F5D7C] disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl transition-colors flex items-center justify-center"
         style={{ minHeight: '48px' }}
       >
         <Send size={20} />

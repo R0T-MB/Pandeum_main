@@ -10,16 +10,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#0066FF',
-        dark: '#0A0A0A',
-        light: '#F5F5F7',
-        glass: 'rgba(255, 255, 255, 0.1)',
+        primary: '#1E3A5F',
+        'primary-hover': '#2F5D7C',
+        dark: '#0F172A',
+        light: '#F8FAFC',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
-      backdropBlur: {
-        xs: '2px',
       },
     },
   },
