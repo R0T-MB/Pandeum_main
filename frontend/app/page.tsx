@@ -8,7 +8,7 @@ import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ProvidersDrawer } from '@/components/chat/ProvidersDrawer'
 import { RouteMapModal } from '@/components/map/RouteMapModal'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, MessageSquare } from 'lucide-react'
+import { Menu, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { Message, ProviderRecommendation } from '@/types'
@@ -102,42 +102,40 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#000000]">
+    <div className="flex h-screen bg-[#0B1020]">
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="bg-[#1d1d22] border-b border-[#3b3b43] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        {/* Minimal header */}
+        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 rounded-lg hover:bg-[#3b3b43] transition-colors text-[#868393] hover:text-white"
+            className="p-2 rounded-2xl hover:bg-[#151E2F] transition-all duration-200 text-[#9CA3AF] hover:text-white"
           >
-            <Menu size={18} />
+            <Menu size={18} strokeWidth={1.75} />
           </button>
-          <div className="flex items-center gap-2">
-            <MessageSquare size={16} className="text-[#868393]" />
-            <span className="text-sm font-medium text-white">Pandeum</span>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center">
+            <Sparkles size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
           </div>
-          <div className="w-7" />
         </header>
 
         {/* Chat area */}
-        <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto px-6 py-2 space-y-5 scrollbar-thin">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center px-4">
-              <div className="max-w-sm">
-                <div className="w-12 h-12 rounded-2xl bg-[#1d1d22] border border-[#3b3b43] flex items-center justify-center mx-auto mb-5">
-                  <MessageSquare size={22} className="text-[#868393]" />
+            <div className="h-full flex flex-col items-center justify-center text-center px-4 -mt-12">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6D5EF8] to-[#5B4FE0] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#6D5EF8]/20">
+                  <Sparkles size={28} className="text-white" strokeWidth={1.5} />
                 </div>
-                <h1 className="text-xl font-semibold text-white mb-2 leading-snug">
+                <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
                   Hola, ¿en qué puedo ayudarte hoy?
                 </h1>
-                <p className="text-sm text-[#868393] mb-6 leading-relaxed">
-                  Describe tu situación de forma natural. Te ayudaré a encontrar la mejor solución.
+                <p className="text-sm text-[#9CA3AF] mb-8 leading-relaxed max-w-sm mx-auto">
+                  Estoy aquí para ayudarte a encontrar la mejor solución para tu problema.
                 </p>
-                <div className="grid gap-2.5">
+                <div className="space-y-2.5 max-w-sm mx-auto">
                   {[
                     "Mi laptop se apaga cuando juego",
                     "Necesito un tutor de cálculo para mi examen",
@@ -146,7 +144,7 @@ export default function HomePage() {
                     <button
                       key={example}
                       onClick={() => handleSendMessage(example)}
-                      className="bg-[#1d1d22] border border-[#3b3b43] rounded-xl px-4 py-3 text-left hover:bg-[#3b3b43] transition-colors text-sm text-white"
+                      className="w-full bg-[#111827] border border-[#1E2D4A] hover:bg-[#151E2F] hover:border-[#1E2D4A]/80 rounded-2xl px-5 py-3 text-left transition-all duration-200 text-sm text-white"
                     >
                       {example}
                     </button>
@@ -165,11 +163,11 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="flex justify-start"
                 >
-                  <div className="bg-[#1d1d22] border border-[#3b3b43] rounded-xl rounded-tl-sm px-4 py-3 max-w-[75%]">
+                  <div className="bg-[#151E2F] border border-[#1E2D4A] rounded-[18px] rounded-tl-sm px-5 py-4">
                     <div className="flex gap-1.5">
-                      <span className="w-2 h-2 bg-[#5e5d69] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 bg-[#5e5d69] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 bg-[#5e5d69] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <span className="w-2 h-2 bg-[#6D5EF8] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 bg-[#6D5EF8] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 bg-[#6D5EF8] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
                 </motion.div>
@@ -180,7 +178,7 @@ export default function HomePage() {
         </div>
 
         {/* Input */}
-        <div className="px-4 py-3 border-t border-[#3b3b43] bg-[#1d1d22] flex-shrink-0">
+        <div className="px-6 py-4 flex-shrink-0">
           <ChatInput onSend={handleSendMessage} disabled={isLoading} />
         </div>
       </div>
@@ -192,6 +190,12 @@ export default function HomePage() {
         providers={drawerProviders}
         recommendationLabel={drawerLabel}
         onDistanceClick={handleDistanceClick}
+        onViewMap={() => {
+          if (drawerProviders.length > 0) {
+            setSelectedProvider(drawerProviders[0])
+            setMapOpen(true)
+          }
+        }}
       />
 
       {/* Route Map Modal */}

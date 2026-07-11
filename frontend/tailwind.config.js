@@ -10,13 +10,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        surface: '#1d1d22',
-        'surface-secondary': '#3b3b43',
-        'border-custom': '#5e5d69',
-        'text-secondary': '#868393',
+        pandeum: {
+          bg: '#0B1020',
+          panel: '#111827',
+          card: '#151E2F',
+          hover: '#1A2440',
+          primary: '#6D5EF8',
+          'text-secondary': '#9CA3AF',
+          border: '#1E2D4A',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        '2xl': '18px',
+        '3xl': '22px',
       },
     },
   },

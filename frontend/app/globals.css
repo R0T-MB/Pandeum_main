@@ -6,12 +6,12 @@
 
 @layer base {
   :root {
-    --background: 0 0 0;
+    --background: 11 16 32;
     --foreground: 255 255 255;
   }
 
   body {
-    @apply bg-[#000000] text-white transition-colors duration-300;
+    @apply bg-[#0B1020] text-white antialiased;
   }
 
   html {
@@ -27,34 +27,35 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #3b3b43;
+    background: #1E2D4A;
     border-radius: 9999px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #5e5d69;
+    background: #2D3F6A;
   }
 }
 
 .leaflet-container {
-  background: #1d1d22 !important;
+  background: #0B1020 !important;
 }
 .leaflet-control-zoom a {
-  background: #3b3b43 !important;
+  background: #151E2F !important;
   color: #FFFFFF !important;
-  border-color: #5e5d69 !important;
+  border-color: #1E2D4A !important;
 }
 .leaflet-control-attribution {
-  background: #1d1d22 !important;
-  color: #868393 !important;
+  background: #111827 !important;
+  color: #9CA3AF !important;
 }
 .leaflet-control-attribution a {
-  color: #868393 !important;
+  color: #9CA3AF !important;
 }
 .leaflet-popup-content-wrapper {
-  background: #1d1d22 !important;
+  background: #151E2F !important;
   color: #FFFFFF !important;
-  border: 1px solid #5e5d69 !important;
+  border: 1px solid #1E2D4A !important;
+  border-radius: 16px !important;
 }
 .leaflet-popup-tip {
-  background: #1d1d22 !important;
+  background: #151E2F !important;
 }
