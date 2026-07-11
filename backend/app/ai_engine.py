@@ -154,6 +154,16 @@ class AIEngine:
         
         # 6. General por defecto
         return "general"
+    
+    @staticmethod
+    def _clean_markdown(text: str) -> str:
+        """Limpia markdown básico de un texto."""
+        text = text.replace("**", "").replace("__", "")
+        text = text.strip()
+        if text.startswith("- ") or text.startswith("* "):
+            text = text[2:].strip()
+        return text
+    
     @staticmethod
     async def _generate_with_openrouter(prompt: str) -> Optional[str]:
         """Fallback a OpenRouter si está configurado. Retorna texto crudo."""
@@ -499,8 +509,8 @@ class AIEngine:
         
         if ai_response:
             # Default recommendation_label y provider_category para food
-            recommendation_label = ai_response.get("recommendation_label") or "Restaurantes disponibles"
-            provider_category = ai_response.get("provider_category") or "restaurante"
+            recommendation_label = "Restaurantes disponibles"
+            provider_category = "restaurante"
             
             # Buscar proveedores si hay provider_category
             providers = []
@@ -673,9 +683,10 @@ Reglas:
                 "natural_message": None
             }
         
-        # Normalizar suggestions
+        # Normalizar suggestions: limpiar markdown y filtrar vacíos
         suggestions = ai_response['suggestions']
-        suggestions = [s for s in suggestions if isinstance(s, str) and s.strip()]
+        suggestions = [AIEngine._clean_markdown(s) for s in suggestions if isinstance(s, str) and s.strip()]
+        suggestions = [s for s in suggestions if s]
         suggestions = suggestions[:12]
         
         if len(suggestions) < 6:
@@ -694,15 +705,15 @@ Reglas:
         
         ai_response['suggestions'] = suggestions
         
-        # Default recommendation_label y provider_category según intent_category
-        if not ai_response.get("recommendation_label"):
-            default_labels = {
-                "food": "Restaurantes disponibles",
-                "clothing": "Costureras o sastres disponibles",
-                "service": "Proveedores disponibles",
-                "product": "Tiendas o proveedores disponibles",
-            }
-            ai_response["recommendation_label"] = default_labels.get(intent_category)
+        # recommendation_label fijo por categoría (no usar el de la IA)
+        fixed_labels = {
+            "food": "Restaurantes disponibles",
+            "clothing": "Costureras o sastres disponibles",
+            "service": "Proveedores disponibles",
+            "product": "Tiendas o proveedores disponibles",
+        }
+        if intent_category in fixed_labels:
+            ai_response["recommendation_label"] = fixed_labels[intent_category]
         
         if not ai_response.get("provider_category"):
             default_categories = {
@@ -863,13 +874,11 @@ Reglas:
         if not isinstance(ai_response['suggestions_label'], str) or not ai_response['suggestions_label'].strip():
             return None
         
-        # Normalizar suggestions
+        # Normalizar suggestions: limpiar markdown y filtrar vacíos
         suggestions = ai_response['suggestions']
-        # Conservar solo strings no vacíos
-        suggestions = [s for s in suggestions if isinstance(s, str) and s.strip()]
-        # Máximo 12 opciones
+        suggestions = [AIEngine._clean_markdown(s) for s in suggestions if isinstance(s, str) and s.strip()]
+        suggestions = [s for s in suggestions if s]
         suggestions = suggestions[:12]
-        # Si quedan menos de 8, retornar None
         if len(suggestions) < 8:
             return None
         
