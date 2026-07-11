@@ -9,11 +9,8 @@ import {
   User,
   Briefcase,
   LogOut,
-  Sun,
-  Moon,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
-import { useDarkMode } from '@/hooks/useDarkMode'
 
 interface SidebarProps {
   isOpen?: boolean
@@ -23,7 +20,6 @@ interface SidebarProps {
 const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const pathname = usePathname()
   const { user, logout } = useAuth()
-  const { isDark, toggle } = useDarkMode()
 
   const navItems = [
     { href: '/', label: 'Chat', icon: MessageSquare },
@@ -50,15 +46,15 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       )}
 
       <aside
-        className={`fixed left-0 top-0 z-50 h-screen w-64 transform border-r border-slate-200 bg-white transition-transform dark:border-slate-700 dark:bg-[#1E293B] lg:static lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 h-screen w-64 transform border-r border-[#5e5d69] bg-[#1d1d22] transition-transform lg:static lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="p-5 text-lg font-bold text-slate-900 dark:text-slate-100">
-          Pandeum
+        <div className="px-5 py-4 border-b border-[#5e5d69]">
+          <p className="text-base font-semibold text-white">Pandeum</p>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 py-3 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -70,32 +66,24 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-slate-100 text-slate-900 font-medium dark:bg-slate-700 dark:text-slate-100'
-                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
+                    ? 'bg-[#3b3b43] text-white font-medium'
+                    : 'text-[#868393] hover:bg-[#3b3b43] hover:text-white'
                 }`}
               >
-                <Icon size={20} />
-                <span>{item.label}</span>
+                <Icon size={18} />
+                <span className="text-sm">{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 space-y-1">
-          <button
-            onClick={toggle}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
-          >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
-            <span>{isDark ? 'Modo claro' : 'Modo oscuro'}</span>
-          </button>
-
+        <div className="p-4 border-t border-[#5e5d69]">
           <button
             onClick={logout}
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-[#868393] hover:bg-[#3b3b43] hover:text-white transition-colors"
           >
-            <LogOut size={20} />
-            <span>Cerrar sesión</span>
+            <LogOut size={18} />
+            <span className="text-sm">Cerrar sesión</span>
           </button>
         </div>
       </aside>

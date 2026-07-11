@@ -34,7 +34,7 @@ export const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder="Describe tu problema..."
-        className="flex-1 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-1 focus:ring-[#1E3A5F]/20 focus:border-[#1E3A5F] disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+        className="flex-1 bg-[#1d1d22] border border-[#5e5d69] rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-1 focus:ring-[#5e5d69] focus:border-[#868393] disabled:opacity-50 disabled:cursor-not-allowed text-white placeholder:text-[#868393]"
         rows={1}
         style={{ minHeight: '48px', maxHeight: '120px' }}
       />
