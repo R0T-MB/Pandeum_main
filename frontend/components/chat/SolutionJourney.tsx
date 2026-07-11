@@ -347,7 +347,7 @@ export const SolutionJourney = ({ response }: Props) => {
         {/* Provider Detail */}
         {activeSection === 'provider' && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-top-4 duration-300">
-            {providers.length > 0 ? (
+            {response.has_providers && providers.length > 0 ? (
               <>
                 <h4 className="font-bold text-lg text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                   <User size={20} className="text-purple-600 dark:text-purple-400" />
@@ -437,7 +437,7 @@ export const SolutionJourney = ({ response }: Props) => {
                   <User size={32} className="text-gray-400" />
                 </div>
                 <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Aún no encontramos un especialista disponible
+                  {response.recommendation_label || 'Aún no encontramos proveedores disponibles para esta categoría'}
                 </h5>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Te notificaremos cuando haya opciones en tu área

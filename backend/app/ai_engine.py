@@ -498,16 +498,47 @@ class AIEngine:
         ai_response = await AIEngine._generate_dynamic_suggestions_with_ai(problem)
         
         if ai_response:
+            # Default recommendation_label y provider_category para food
+            recommendation_label = ai_response.get("recommendation_label") or "Restaurantes disponibles"
+            provider_category = ai_response.get("provider_category") or "restaurante"
+            
+            # Buscar proveedores si hay provider_category
+            providers = []
+            if provider_category:
+                db_providers = db.query(Provider).filter(
+                    Provider.category.ilike(f"%{provider_category}%")
+                ).all()
+                for db_provider in db_providers:
+                    rating = get_provider_rating(db, db_provider.id)
+                    providers.append({
+                        "provider_id": db_provider.id,
+                        "business_name": db_provider.business_name,
+                        "trust_score": db_provider.trust_score,
+                        "rating": rating,
+                        "distance_km": None,
+                        "reason_bullets": [],
+                        "estimated_cost": f"${db_provider.price_min}-${db_provider.price_max}" if db_provider.price_min else "Consultar",
+                        "available_now": db_provider.available_now,
+                        "response_time_hours": db_provider.response_time_hours
+                    })
+                providers = sorted(providers, key=lambda p: (
+                    not p.get("available_now", False),
+                    -p.get("rating", 0),
+                    -p.get("trust_score", 0)
+                ))
+            
             return {
                 "response_mode": "suggestions",
                 "direct_answer": ai_response["direct_answer"],
                 "suggestions_label": ai_response["suggestions_label"],
                 "suggestions": ai_response["suggestions"],
+                "recommendation_label": recommendation_label,
+                "intent_category": "food",
                 "confidence_score": 0.7,
                 "diagnosis": {"possible_causes": [], "questions": []},
                 "instant_solutions": [],
-                "has_providers": False,
-                "providers": [],
+                "has_providers": True,
+                "providers": providers,
                 "composite_solution": None,
                 "fallback": None,
                 "natural_message": None
@@ -663,10 +694,31 @@ Reglas:
         
         ai_response['suggestions'] = suggestions
         
+        # Default recommendation_label y provider_category según intent_category
+        if not ai_response.get("recommendation_label"):
+            default_labels = {
+                "food": "Restaurantes disponibles",
+                "clothing": "Costureras o sastres disponibles",
+                "service": "Proveedores disponibles",
+                "product": "Tiendas o proveedores disponibles",
+            }
+            ai_response["recommendation_label"] = default_labels.get(intent_category)
+        
+        if not ai_response.get("provider_category"):
+            default_categories = {
+                "food": "restaurante",
+                "clothing": "costurera",
+                "service": "servicio",
+                "product": "tienda",
+            }
+            ai_response["provider_category"] = default_categories.get(intent_category)
+        
         # Buscar proveedores si hay provider_category
         provider_category = ai_response.get('provider_category')
         providers = []
-        has_providers = False
+        
+        # Determinar si se solicitó búsqueda de proveedores
+        provider_search_requested = bool(provider_category or ai_response.get("recommendation_label"))
         
         if provider_category:
             # Buscar proveedores por categoría
@@ -674,29 +726,27 @@ Reglas:
                 Provider.category.ilike(f"%{provider_category}%")
             ).all()
             
-            if db_providers:
-                has_providers = True
-                # Convertir a formato de diccionario y ordenar
-                for db_provider in db_providers:
-                    rating = get_provider_rating(db, db_provider.id)
-                    providers.append({
-                        "provider_id": db_provider.id,
-                        "business_name": db_provider.business_name,
-                        "trust_score": db_provider.trust_score,
-                        "rating": rating,
-                        "distance_km": None,
-                        "reason_bullets": [],
-                        "estimated_cost": f"${db_provider.price_min}-${db_provider.price_max}" if db_provider.price_min else "Consultar",
-                        "available_now": db_provider.available_now,
-                        "response_time_hours": db_provider.response_time_hours
-                    })
-                
-                # Ordenar por available_now, rating, trust_score
-                providers = sorted(providers, key=lambda p: (
-                    not p.get("available_now", False),
-                    -p.get("rating", 0),
-                    -p.get("trust_score", 0)
-                ))
+            # Convertir a formato de diccionario y ordenar
+            for db_provider in db_providers:
+                rating = get_provider_rating(db, db_provider.id)
+                providers.append({
+                    "provider_id": db_provider.id,
+                    "business_name": db_provider.business_name,
+                    "trust_score": db_provider.trust_score,
+                    "rating": rating,
+                    "distance_km": None,
+                    "reason_bullets": [],
+                    "estimated_cost": f"${db_provider.price_min}-${db_provider.price_max}" if db_provider.price_min else "Consultar",
+                    "available_now": db_provider.available_now,
+                    "response_time_hours": db_provider.response_time_hours
+                })
+            
+            # Ordenar por available_now, rating, trust_score
+            providers = sorted(providers, key=lambda p: (
+                not p.get("available_now", False),
+                -p.get("rating", 0),
+                -p.get("trust_score", 0)
+            ))
         
         return {
             "response_mode": "suggestions",
@@ -704,10 +754,11 @@ Reglas:
             "suggestions_label": ai_response["suggestions_label"],
             "suggestions": ai_response["suggestions"],
             "recommendation_label": ai_response.get("recommendation_label"),
+            "intent_category": intent_category,
             "confidence_score": 0.7,
             "diagnosis": {"possible_causes": [], "questions": []},
             "instant_solutions": [],
-            "has_providers": has_providers,
+            "has_providers": provider_search_requested,
             "providers": providers,
             "composite_solution": None,
             "fallback": None,

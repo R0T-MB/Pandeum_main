@@ -41,6 +41,7 @@ export interface AISolveResponse {
   recommendation_label?: string; // etiqueta para recomendaciones
   suggestions_label?: string; // etiqueta para sugerencias de comida
   suggestions?: string[]; // lista de sugerencias de platos
+  intent_category?: string; // food, clothing, service, product, health, tech, general
 }
 
 export interface ProviderRecommendation {

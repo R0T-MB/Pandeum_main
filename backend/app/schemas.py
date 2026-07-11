@@ -122,6 +122,7 @@ class AISolveResponse(BaseModel):
     recommendation_label: Optional[str] = None  # etiqueta para recomendaciones (ej: "Restaurantes o puestos recomendados")
     suggestions_label: Optional[str] = None  # etiqueta para sugerencias de comida (ej: "Sugerencias con pescado")
     suggestions: Optional[List[str]] = None  # lista de sugerencias de platos
+    intent_category: Optional[str] = None  # food, clothing, service, product, health, tech, general
 
 # ========== Reviews ==========
 class ReviewCreate(BaseModel):
