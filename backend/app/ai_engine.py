@@ -109,6 +109,223 @@ class AIEngine:
         return any(kw in problem_lower for kw in service_keywords)
     
     @staticmethod
+    def _is_continuation_phrase(problem_lower: str) -> bool:
+        continuation_patterns = [
+            r'\bllevarl[oae]s?\b',
+            r'\bdónde lo llevo\b',
+            r'\bdonde lo llevo\b',
+            r'\bllevo a\b',
+            r'\bmuéstrame\b',
+            r'\bmuestrame\b',
+            r'\bquiero ver (opciones|lugares|tiendas|más)\b',
+            r'\bver (opciones|lugares|tiendas)\b',
+            r'\bdónde (lo|la) (arreglo|compro|consigo)\b',
+            r'\bdonde (lo|la) (arreglo|compro|consigo)\b',
+            r'\b(arreglarl[oa]|repararl[oa]|comprarl[oa])\b',
+        ]
+        words = problem_lower.split()
+        if len(words) > 15:
+            return False
+        return any(re.search(p, problem_lower) for p in continuation_patterns)
+
+    @staticmethod
+    async def _resolve_intent_with_context(
+        problem: str,
+        conversation_context: Optional[List[Dict]]
+    ) -> Dict[str, Any]:
+        """
+        Resuelve la intención del usuario usando contexto de conversación.
+        Siempre intenta IA primero (incluso sin historial).
+        """
+        default = {
+            "is_followup": False,
+            "resolved_problem": problem,
+            "response_mode": None,
+            "need_type": None,
+            "intent_category": None,
+            "domain": None,
+            "target_item": None,
+            "provider_category": None,
+            "recommendation_label": None,
+            "needs_providers": False,
+            "confidence": 1.0
+        }
+
+        ai_result = await AIEngine._resolve_intent_with_ai(problem, conversation_context or [])
+        if ai_result and ai_result.get("confidence", 0) >= 0.4:
+            return ai_result
+
+        if conversation_context:
+            return AIEngine._resolve_intent_locally(problem, conversation_context)
+        return default
+
+    @staticmethod
+    async def _resolve_intent_with_ai(
+        problem: str,
+        conversation_context: List[Dict]
+    ) -> Optional[Dict[str, Any]]:
+        """Usa Gemini + OpenRouter fallback para resolver intención con contexto."""
+        history_lines = []
+        for i, conv in enumerate(conversation_context[:3] if conversation_context else []):
+            msg = conv.get("problem_text", "")
+            resp = conv.get("ai_response", {})
+            mode = resp.get("response_mode", "unknown")
+            history_lines.append(f"{i+1}. Usuario: \"{msg}\"")
+            history_lines.append(f"   Asistente: respondió en modo \"{mode}\"")
+
+        history_text = "\n".join(history_lines) if history_lines else "(Sin historial previo)"
+        prompt = f"""
+Eres Pandeum, un analizador de conversaciones.
+
+### Historial (más reciente primero):
+{history_text}
+
+### Mensaje actual:
+"{problem}"
+
+### Instrucciones:
+Determina si el mensaje actual es continuación del tema anterior o un tema nuevo.
+Si es continuación, interpreta el significado completo usando el contexto.
+
+Responde SOLO con JSON válido (sin markdown, sin texto adicional):
+{{
+  "is_followup": true/false,
+  "resolved_problem": "texto completo interpretado con contexto, o mensaje original si no es follow-up",
+  "response_mode": "suggestions|journey|direct|food|follow_up",
+  "need_type": "buy_product|repair_service|hire_professional|find_place|compare_options|urgent_help|self_guidance|clarification|more_suggestions",
+  "intent_category": "food|clothing|product|service|health|tech|general",
+  "domain": "ámbito del problema en texto libre, ej: mascotas, instrumentos musicales, jardinería, decoración, celulares, muebles, tecnología, comida, ropa, salud",
+  "target_item": "objeto o ser específico en texto libre, ej: perrito, guitarra, laptop, jardín, cuarto, celular",
+  "provider_category": "categoría de proveedor en texto libre, o null si no aplica",
+  "recommendation_label": "etiqueta amigable para UI en texto libre, o null si no aplica",
+  "needs_providers": true/false,
+  "confidence": 0.0-1.0
+}}
+
+### Reglas:
+- is_followup=true: el mensaje usa pronombres (lo, la, eso, esto), frases cortas, o referencias implícitas al tema anterior.
+- is_followup=false: el mensaje introduce un tema NUEVO y claro con términos específicos.
+- resolved_problem: si es follow-up, reescribe el mensaje completo reemplazando ambigüedades con el contexto real.
+- response_mode: "suggestions" para recomendaciones/opciones/proveedores, "journey" para diagnóstico, "direct" para respuestas simples, "food" para comida, "follow_up" para continuar explicación anterior.
+- need_type: qué acción necesita. buy_product=comprar, repair_service=reparar, hire_professional=contratar, find_place=encontrar lugares, compare_options=comparar, urgent_help=ayuda urgente, self_guidance=orientación, clarification=aclaración, more_suggestions=más opciones.
+- intent_category: SOLO estos valores permitidos: food, clothing, product, service, health, tech, general.
+- domain: texto libre describiendo el ámbito. NO uses categorías fijas. Ej: mascotas, instrumentos musicales, jardinería, decoración, celulares.
+- target_item: texto libre del objeto o ser específico. Ej: perrito, guitarra, jardín, cuarto.
+- provider_category: texto libre describiendo qué proveedor se necesita. Ej: "veterinario", "técnico de instrumentos musicales", "jardinero", "tienda de decoración", "tienda de celulares". Pon null si no aplica.
+- recommendation_label: frase amigable en texto libre para UI. Ej: "Veterinarios disponibles", "Técnicos de instrumentos disponibles", "Jardineros disponibles", "Tiendas de decoración disponibles". Pon null si no aplica.
+- needs_providers: true si busca lugares, profesionales, servicios, tiendas o reparación.
+- confidence: 0.0-1.0. Sé honesto si no estás seguro.
+"""
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            response = model.generate_content(prompt)
+            response_text = response.text.strip()
+            if response_text.startswith('```json'):
+                response_text = response_text[7:]
+            if response_text.startswith('```'):
+                response_text = response_text[3:]
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]
+            response_text = response_text.strip()
+            result = json.loads(response_text)
+            if isinstance(result, dict) and "is_followup" in result and "resolved_problem" in result:
+                return AIEngine._validate_resolved_intent(result)
+        except Exception:
+            pass
+
+        openrouter_text = await AIEngine._generate_with_openrouter(prompt)
+        if openrouter_text:
+            try:
+                if openrouter_text.startswith('```json'):
+                    openrouter_text = openrouter_text[7:]
+                if openrouter_text.startswith('```'):
+                    openrouter_text = openrouter_text[3:]
+                if openrouter_text.endswith('```'):
+                    openrouter_text = openrouter_text[:-3]
+                openrouter_text = openrouter_text.strip()
+                result = json.loads(openrouter_text)
+                if isinstance(result, dict) and "is_followup" in result and "resolved_problem" in result:
+                    return AIEngine._validate_resolved_intent(result)
+            except Exception:
+                pass
+        return None
+
+    @staticmethod
+    def _validate_resolved_intent(result: Dict[str, Any]) -> Dict[str, Any]:
+        """Valida y normaliza la salida de la IA."""
+        allowed_response_modes = {"suggestions", "journey", "direct", "food", "follow_up"}
+        allowed_need_types = {"buy_product", "repair_service", "hire_professional", "find_place", "compare_options", "urgent_help", "self_guidance", "clarification", "more_suggestions"}
+        allowed_intent_categories = {"food", "clothing", "product", "service", "health", "tech", "general"}
+
+        if result.get("response_mode") == "providers":
+            result["response_mode"] = "suggestions"
+        elif result.get("response_mode") not in allowed_response_modes:
+            result["response_mode"] = None
+        if result.get("need_type") and result["need_type"] not in allowed_need_types:
+            result["need_type"] = None
+        if result.get("intent_category") and result["intent_category"] not in allowed_intent_categories:
+            result["intent_category"] = "general"
+
+        conf = result.get("confidence")
+        if not isinstance(conf, (int, float)):
+            result["confidence"] = 0.5
+        else:
+            result["confidence"] = max(0.0, min(1.0, float(conf)))
+
+        for key in ["provider_category", "recommendation_label", "domain", "target_item"]:
+            val = result.get(key)
+            if not isinstance(val, str) or not val.strip():
+                result[key] = None
+
+        return result
+
+    @staticmethod
+    def _resolve_intent_locally(
+        problem: str,
+        conversation_context: List[Dict]
+    ) -> Dict[str, Any]:
+        """Fallback local mínimo cuando la IA no está disponible."""
+        problem_lower = problem.lower()
+        words = problem_lower.split()
+        last_response = conversation_context[0].get("ai_response", {})
+        last_intent = last_response.get("intent_category")
+        last_mode = last_response.get("response_mode")
+
+        is_continuation = AIEngine._is_continuation_phrase(problem_lower)
+        is_short = len(words) <= 5
+        has_pronouns = any(p in problem_lower for p in [' lo ', ' la ', ' eso', ' esto', 'llevarl', 'arreglarl', 'repararl', 'comprarl'])
+        is_ambiguous = is_continuation or (is_short and has_pronouns)
+
+        if is_ambiguous:
+            return {
+                "is_followup": True,
+                "resolved_problem": problem,
+                "response_mode": last_mode if last_mode in ["suggestions", "food"] else None,
+                "need_type": "more_suggestions" if last_mode == "suggestions" else "clarification",
+                "intent_category": last_intent if last_intent and last_intent != "general" else None,
+                "domain": None,
+                "target_item": None,
+                "provider_category": None,
+                "recommendation_label": None,
+                "needs_providers": bool(last_intent in ["service", "product", "food"]) if last_intent else False,
+                "confidence": 0.4
+            }
+
+        return {
+            "is_followup": False,
+            "resolved_problem": problem,
+            "response_mode": None,
+            "need_type": None,
+            "intent_category": None,
+            "domain": None,
+            "target_item": None,
+            "provider_category": None,
+            "recommendation_label": None,
+            "needs_providers": False,
+            "confidence": 1.0
+        }
+
+    @staticmethod
     def _detect_intent_category(problem: str, conversation_context: Optional[List[Dict]] = None) -> str:
         """Detecta la categoría de intención del usuario."""
         problem_lower = problem.lower()
@@ -140,11 +357,9 @@ class AIEngine:
         # 7. Si es confirmación y hay contexto, usar categoría anterior
         if AIEngine._is_confirmation(problem_lower) and conversation_context:
             last_response = conversation_context[0].get("ai_response", {})
-            # Intentar inferir categoría anterior del response_mode o suggestions_label
             if last_response.get("response_mode") == "food":
                 return "food"
             if last_response.get("response_mode") == "suggestions":
-                # Inferir de suggestions_label
                 suggestions_label = last_response.get("suggestions_label", "").lower()
                 if "comida" in suggestions_label or "sushi" in suggestions_label or "pizza" in suggestions_label:
                     return "food"
@@ -152,7 +367,7 @@ class AIEngine:
                     return "clothing"
                 return "general"
         
-        # 6. General por defecto
+        # 8. General por defecto
         return "general"
     
     @staticmethod
@@ -569,17 +784,24 @@ class AIEngine:
         }
 
     @staticmethod
-    async def _handle_suggestions_mode(problem: str, conversation_context: Optional[List[Dict]], user_location: Optional[str], db: Session) -> Dict[str, Any]:
+    async def _handle_suggestions_mode(problem: str, conversation_context: Optional[List[Dict]], user_location: Optional[str], db: Session, resolved_intent: Optional[Dict] = None) -> Dict[str, Any]:
         """Maneja sugerencias genéricas (ropa, comida, productos, servicios)."""
-        intent_category = AIEngine._detect_intent_category(problem, conversation_context)
+        if resolved_intent and resolved_intent.get("intent_category") and resolved_intent["intent_category"] not in [None, "general"]:
+            intent_category = resolved_intent["intent_category"]
+        else:
+            intent_category = AIEngine._detect_intent_category(problem, conversation_context)
         
+        domain = resolved_intent.get("domain") if resolved_intent else None
+        target_item = resolved_intent.get("target_item") if resolved_intent else None
+        domain_context = f"\nDominio detectado: \"{domain}\"\nObjeto específico: \"{target_item}\"\n" if domain else ""
+        needs_note = "\n- El usuario necesita un proveedor o lugar. DEBES generar recommendation_label y provider_category obligatoriamente." if (resolved_intent and resolved_intent.get("needs_providers")) else ""
+
         prompt = f"""
 El usuario necesita sugerencias. Responde SOLO con un JSON válido (sin markdown, sin texto adicional).
 
 Solicitud del usuario: "{problem}"
 
-Categoría detectada: "{intent_category}"
-
+Categoría general: "{intent_category}"{domain_context}
 Contexto de conversación anterior: {conversation_context[0] if conversation_context else "Ninguno"}
 
 El JSON debe tener esta estructura exacta:
@@ -595,17 +817,13 @@ El JSON debe tener esta estructura exacta:
 Reglas:
 - Analiza primero la necesidad actual del usuario.
 - Usa el contexto solo si el mensaje actual es ambiguo.
-- No asumir comida si el usuario habla de ropa, tecnología, salud, producto o servicio.
-- Si la categoría es "service", orientar a buscar proveedor real (zapatero, costurera, técnico, etc.).
-- Si la categoría es "product", orientar opciones de compra o criterios para elegir.
+- Las sugerencias deben ser relevantes al dominio y objeto específico del usuario.
 - No convertir productos o servicios en diagnóstico técnico o de salud.
-- No inventar proveedores.
-- Para ropa ajustada, orientar a sastre/costurera, talla, arreglo o cambio.
+- No inventar proveedores ni nombres de negocios reales.
 - Para comida, dar opciones para buscar o preparar.
-- Para productos/servicios, orientar qué buscar y qué proveedor podría ayudar.
-- No mostrar diagnóstico si no es un problema técnico o de salud.
 - Devuelve 6 a 12 sugerencias útiles.
 - Responder en español natural.
+- recommendation_label y provider_category deben ser coherentes con el dominio.{needs_note}
 - El JSON debe ser válido y parseable.
 """
         
@@ -705,31 +923,82 @@ Reglas:
         
         ai_response['suggestions'] = suggestions
         
-        # recommendation_label fijo por categoría (no usar el de la IA)
-        fixed_labels = {
-            "food": "Restaurantes disponibles",
-            "clothing": "Costureras o sastres disponibles",
-            "service": "Proveedores disponibles",
-            "product": "Tiendas o proveedores disponibles",
-        }
-        if intent_category in fixed_labels:
-            ai_response["recommendation_label"] = fixed_labels[intent_category]
-        
-        if not ai_response.get("provider_category"):
-            default_categories = {
-                "food": "restaurante",
-                "clothing": "costurera",
-                "service": "servicio",
-                "product": "tienda",
+        has_dynamic_intent = bool(
+            resolved_intent and (
+                resolved_intent.get("needs_providers")
+                or resolved_intent.get("provider_category")
+                or resolved_intent.get("recommendation_label")
+                or resolved_intent.get("domain")
+                or resolved_intent.get("target_item")
+                or resolved_intent.get("need_type")
+            )
+        )
+
+        # recommendation_label fijo por categoría (solo sin intención dinámica)
+        if not has_dynamic_intent:
+            fixed_labels = {
+                "food": "Restaurantes disponibles",
+                "clothing": "Costureras o sastres disponibles",
+                "service": "Proveedores disponibles",
+                "product": "Tiendas o proveedores disponibles",
             }
-            ai_response["provider_category"] = default_categories.get(intent_category)
-        
+            if intent_category in fixed_labels:
+                ai_response["recommendation_label"] = fixed_labels[intent_category]
+
+            if not ai_response.get("provider_category"):
+                default_categories = {
+                    "food": "restaurante",
+                    "clothing": "costurera",
+                    "service": "servicio",
+                    "product": "tienda",
+                }
+                ai_response["provider_category"] = default_categories.get(intent_category)
+
+        # Override con resolved_intent si tiene información dinámica útil
+        if has_dynamic_intent:
+            if resolved_intent.get("recommendation_label"):
+                ai_response["recommendation_label"] = resolved_intent["recommendation_label"]
+            if resolved_intent.get("provider_category"):
+                ai_response["provider_category"] = resolved_intent["provider_category"]
+
+        # Garantizar provider_category/recommendation_label cuando needs_providers=true
+        needs_providers = resolved_intent.get("needs_providers") if has_dynamic_intent else False
+        if needs_providers:
+            if not ai_response.get("provider_category"):
+                domain = (resolved_intent.get("domain") or "").lower() if has_dynamic_intent else ""
+                target_item = (resolved_intent.get("target_item") or "").lower() if has_dynamic_intent else ""
+                need_type = (resolved_intent.get("need_type") or "").lower() if has_dynamic_intent else ""
+                dc = {
+                    "buy_product": "tienda de",
+                    "repair_service": "técnico de",
+                    "hire_professional": "profesional de",
+                    "find_place": "tienda de",
+                    "urgent_help": "servicio urgente de",
+                    "more_suggestions": "proveedor de",
+                    "clarification": "proveedor de",
+                    "compare_options": "proveedor de",
+                    "self_guidance": "proveedor de",
+                }
+                prefix = dc.get(need_type, "proveedor de")
+                if target_item:
+                    ai_response["provider_category"] = f"{prefix} {target_item}"
+                elif domain:
+                    ai_response["provider_category"] = f"{prefix} {domain}"
+                else:
+                    ai_response["provider_category"] = "servicio"
+            if not ai_response.get("recommendation_label"):
+                pc = ai_response.get("provider_category", "servicio")
+                ai_response["recommendation_label"] = f"{pc.capitalize()} disponibles"
+
         # Buscar proveedores si hay provider_category
         provider_category = ai_response.get('provider_category')
         providers = []
-        
+
         # Determinar si se solicitó búsqueda de proveedores
         provider_search_requested = bool(provider_category or ai_response.get("recommendation_label"))
+        # Si necesita proveedores, forzar búsqueda incluso si category/label están vacíos
+        if needs_providers:
+            provider_search_requested = True
         
         if provider_category:
             # Buscar proveedores por categoría
@@ -974,12 +1243,40 @@ Soluciones anteriores:
         Llama a Gemini, parsea respuesta, enriquece con datos de BD,
         aplica ranking por urgencia y trust score.
         """
+        # 0. Resolver intención con contexto (IA + fallback local)
+        resolved = await AIEngine._resolve_intent_with_context(problem, conversation_context)
+
         # 1. Detectar modo de respuesta
         response_mode = AIEngine._detect_response_mode(problem, conversation_context)
-        
-        # 2. Manejar modo direct: respuestas simples sin diagnóstico
+
+        # 2. Override response_mode cuando la IA tiene un modo específico
+        if (resolved.get("confidence", 0) >= 0.5 and
+            resolved.get("response_mode") and
+            resolved["response_mode"] not in [None, "general"]):
+
+            # Follow-up: override con confianza >= 0.5 (más permisivo porque hay contexto)
+            if resolved.get("is_followup"):
+                if response_mode == "journey" or resolved.get("confidence", 0) >= 0.7:
+                    response_mode = resolved["response_mode"]
+
+            # Mensaje nuevo: override solo si existing cayó en "journey" (catch-all) con confianza >= 0.7
+            elif response_mode == "journey" and resolved.get("confidence", 0) >= 0.7:
+                response_mode = resolved["response_mode"]
+
+        # Si IA devolvió "providers", convertirlo a "suggestions" (frontend lo maneja así)
+        if response_mode == "providers":
+            response_mode = "suggestions"
+
+        # 3. Si needs_providers está activo y no estamos en suggestions, forzarlo
+        if resolved.get("needs_providers") and response_mode not in ("suggestions", "direct"):
+            response_mode = "suggestions"
+
+        # 4. Problema efectivo (con contexto resuelto si es follow-up)
+        effective_problem = resolved.get("resolved_problem", problem) if resolved.get("is_followup") else problem
+
+        # 5. Manejar modo direct: respuestas simples sin diagnóstico
         if response_mode == "direct":
-            direct_answer = AIEngine._generate_direct_answer(problem, user_location)
+            direct_answer = AIEngine._generate_direct_answer(effective_problem, user_location)
             return {
                 "response_mode": "direct",
                 "direct_answer": direct_answer,
@@ -992,20 +1289,20 @@ Soluciones anteriores:
                 "fallback": None,
                 "natural_message": None
             }
-        
-        # 3. Manejar modo food: preguntas de comida
+
+        # 6. Manejar modo food: preguntas de comida
         if response_mode == "food":
-            return await AIEngine._handle_food_mode(problem, user_location, db)
-        
-        # 4. Manejar modo suggestions: sugerencias genéricas (ropa, comida, productos, servicios)
+            return await AIEngine._handle_food_mode(effective_problem, user_location, db)
+
+        # 7. Manejar modo suggestions con resolución de contexto dinámica
         if response_mode == "suggestions":
-            return await AIEngine._handle_suggestions_mode(problem, conversation_context, user_location, db)
-        
-        # 4. Manejar modo follow_up: continuar conversación anterior
+            return await AIEngine._handle_suggestions_mode(effective_problem, conversation_context, user_location, db, resolved_intent=resolved)
+
+        # 8. Manejar modo follow_up: continuar conversación anterior
         if response_mode == "follow_up" and conversation_context:
-            return await AIEngine._handle_follow_up_mode(problem, conversation_context, db)
-        
-        # 5. Para modo journey y providers, continuar con flujo normal
+            return await AIEngine._handle_follow_up_mode(effective_problem, conversation_context, db)
+
+        # 9. Para modo journey, continuar con flujo normal
         # Detectar si es follow-up y extraer número de opción
         is_follow_up, option_number = AIEngine._detect_follow_up(problem)
         
@@ -1045,7 +1342,7 @@ Soluciones anteriores:
         prompt = f"""
         Eres Pandeum, un asistente experto en resolver problemas de los usuarios. NO eres un motor de búsqueda de proveedores genérico.
 
-        Problema del usuario: {problem}
+        Problema del usuario: {effective_problem}
         Ubicación: {user_location or "No especificada"}
         Presupuesto máximo sugerido: {budget if budget else "No especificado"}
         {memory_text}
