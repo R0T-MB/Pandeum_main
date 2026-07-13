@@ -1,6 +1,7 @@
 'use client'
 
-import { X, Star, MapPin, Clock, Zap, Navigation } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { X, Star, MapPin, Clock, Zap, Navigation, Tag } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
 
 interface ProvidersDrawerProps {
@@ -21,6 +22,22 @@ const getInitials = (name: string) => {
     .slice(0, 2)
 }
 
+type SortMode = 'rating' | 'distance' | 'price'
+
+const parseMinPrice = (cost: string): number | null => {
+  const match = cost.match(/\$?(\d+([.,]\d+)?)/)
+  if (match) {
+    return parseFloat(match[1].replace(',', '.'))
+  }
+  return null
+}
+
+const sortModes: { key: SortMode; label: string; }[] = [
+  { key: 'rating', label: 'Mejor calificados' },
+  { key: 'distance', label: 'Más cercanos' },
+  { key: 'price', label: 'Más económicos' },
+]
+
 export function ProvidersDrawer({
   isOpen,
   onClose,
@@ -29,6 +46,44 @@ export function ProvidersDrawer({
   onDistanceClick,
   onViewMap,
 }: ProvidersDrawerProps) {
+  const [activeSort, setActiveSort] = useState<SortMode>('rating')
+
+  const sortedProviders = useMemo(() => {
+    const list = [...providers]
+    switch (activeSort) {
+      case 'rating':
+        return list.sort((a, b) => {
+          const ratingA = typeof a.rating === 'number' ? a.rating : 0
+          const ratingB = typeof b.rating === 'number' ? b.rating : 0
+          const trustA = typeof a.trust_score === 'number' ? a.trust_score : 0
+          const trustB = typeof b.trust_score === 'number' ? b.trust_score : 0
+          if (ratingB !== ratingA) return ratingB - ratingA
+          if (trustB !== trustA) return trustB - trustA
+          if (a.available_now && !b.available_now) return -1
+          if (!a.available_now && b.available_now) return 1
+          return 0
+        })
+      case 'distance':
+        return list.sort((a, b) => {
+          if (a.distance_km == null && b.distance_km == null) return 0
+          if (a.distance_km == null) return 1
+          if (b.distance_km == null) return -1
+          return a.distance_km - b.distance_km
+        })
+      case 'price':
+        return list.sort((a, b) => {
+          const priceA = a.estimated_cost ? parseMinPrice(a.estimated_cost) : null
+          const priceB = b.estimated_cost ? parseMinPrice(b.estimated_cost) : null
+          if (priceA == null && priceB == null) return 0
+          if (priceA == null) return 1
+          if (priceB == null) return -1
+          return priceA - priceB
+        })
+      default:
+        return list
+    }
+  }, [providers, activeSort])
+
   return (
     <>
       {isOpen && (
@@ -55,10 +110,43 @@ export function ProvidersDrawer({
           </button>
         </div>
 
-        <div className="overflow-y-auto h-[calc(100%-130px)] scrollbar-thin">
-          {providers.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-[#1E2D4A]">
+          {sortModes.map(({ key, label }) => {
+            const isActive = activeSort === key
+            const Icon = key === 'rating' ? Star : key === 'distance' ? MapPin : Tag
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveSort(key)}
+                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-2xl text-[11px] font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 border border-[#6D5EF8]/50 text-white'
+                    : 'bg-[#151E2F] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white hover:border-[#1E2D4A]/80'
+                }`}
+              >
+                <Icon
+                  size={13}
+                  strokeWidth={1.75}
+                  className={
+                    isActive
+                      ? key === 'rating'
+                        ? 'text-yellow-400'
+                        : key === 'distance'
+                        ? 'text-[#A78BFA]'
+                        : 'text-[#FBBF24]'
+                      : 'text-current'
+                  }
+                />
+                {label}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="overflow-y-auto h-[calc(100%-185px)] scrollbar-thin">
+          {sortedProviders.length > 0 ? (
             <div className="p-4 space-y-3">
-              {providers.map((provider, idx) => (
+              {sortedProviders.map((provider, idx) => (
                 <div
                   key={provider.provider_id || idx}
                   className="bg-[#151E2F] rounded-2xl border border-[#1E2D4A] p-4 space-y-3 transition-all duration-200 hover:bg-[#1A2440]"
@@ -72,7 +160,7 @@ export function ProvidersDrawer({
                         {provider.business_name}
                       </p>
                       {provider.estimated_cost && (
-                        <span className="text-[10px] text-[#9CA3AF]">{provider.estimated_cost}</span>
+                        <span className={`text-[10px] ${activeSort === 'price' ? 'text-[#FBBF24] font-medium' : 'text-[#9CA3AF]'}`}>{provider.estimated_cost}</span>
                       )}
                     </div>
                     {provider.available_now && (
@@ -85,8 +173,8 @@ export function ProvidersDrawer({
 
                   <div className="flex items-center gap-3 text-xs text-[#9CA3AF]">
                     {typeof provider.rating === 'number' && provider.rating > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Star size={12} className="text-yellow-500 fill-yellow-500" strokeWidth={1.5} />
+                      <span className={`flex items-center gap-1 ${activeSort === 'rating' ? 'text-yellow-400' : ''}`}>
+                        <Star size={12} className={activeSort === 'rating' ? 'text-yellow-400 fill-yellow-400' : 'text-yellow-500 fill-yellow-500'} strokeWidth={1.5} />
                         {provider.rating.toFixed(1)}
                       </span>
                     )}
@@ -99,7 +187,11 @@ export function ProvidersDrawer({
                     {typeof provider.distance_km === 'number' && (
                       <button
                         onClick={() => onDistanceClick(provider)}
-                        className="flex items-center gap-1 text-white hover:text-[#6D5EF8] transition-colors duration-200"
+                        className={`flex items-center gap-1 transition-colors duration-200 ${
+                          activeSort === 'distance'
+                            ? 'text-[#A78BFA] hover:text-[#C4B5FD]'
+                            : 'text-white hover:text-[#6D5EF8]'
+                        }`}
                       >
                         <MapPin size={12} strokeWidth={1.5} />
                         {provider.distance_km.toFixed(1)} km
@@ -115,13 +207,16 @@ export function ProvidersDrawer({
                 <MapPin size={22} className="text-[#1E2D4A]" strokeWidth={1.5} />
               </div>
               <p className="text-sm text-[#9CA3AF] leading-relaxed">
-                Aun no encontramos lugares disponibles para esta categoria.
+                Aún no hay proveedores registrados para esta necesidad.
+              </p>
+              <p className="text-xs text-[#6B7280] mt-2 leading-relaxed">
+                Puedes intentar con una búsqueda más general o revisar más tarde.
               </p>
             </div>
           )}
         </div>
 
-        {providers.length > 0 && (
+        {sortedProviders.length > 0 && (
           <div className="px-4 py-4 border-t border-[#1E2D4A]">
             <button
               onClick={onViewMap}
