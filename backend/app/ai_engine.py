@@ -122,9 +122,21 @@ class AIEngine:
             r'\bdónde (lo|la) (arreglo|compro|consigo)\b',
             r'\bdonde (lo|la) (arreglo|compro|consigo)\b',
             r'\b(arreglarl[oa]|repararl[oa]|comprarl[oa])\b',
+            r'\blugares?\b',
+            r'\b(para eso|para esto)\b',
+            r'\b(recomendar|recomiendas|recomiéndame|recomiendame) un lugar\b',
+            r'\bdónde (puedo ir|voy)\b',
+            r'\bdonde (puedo ir|voy)\b',
+            r'\ba dónde\b',
+            r'\ba donde\b',
+            r'\bpuedo ir\b',
+            r'\bquiero ver opciones\b',
+            r'\bmuéstrame opciones\b',
+            r'\bmuestrame opciones\b',
         ]
         words = problem_lower.split()
-        if len(words) > 15:
+        is_lugar_related = any(p in problem_lower for p in ['lugar', 'lugares', 'para eso', 'para esto'])
+        if len(words) > 15 and not is_lugar_related:
             return False
         return any(re.search(p, problem_lower) for p in continuation_patterns)
 
@@ -215,6 +227,22 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
 - recommendation_label: frase amigable en texto libre para UI. Ej: "Veterinarios disponibles", "Técnicos de instrumentos disponibles", "Jardineros disponibles", "Tiendas de decoración disponibles". Pon null si no aplica.
 - needs_providers: true si busca lugares, profesionales, servicios, tiendas o reparación.
 - confidence: 0.0-1.0. Sé honesto si no estás seguro.
+
+### Reglas MUY IMPORTANTES sobre "lugar":
+- La palabra "lugar" NO significa restaurante por defecto.
+- "lugar para eso", "lugar para esto", "dónde voy", "dónde lo llevo" deben interpretarse SIEMPRE según el contexto anterior.
+- Usa el contexto del historial para determinar QUÉ tipo de lugar/proveedor/servicio corresponde:
+  * Si el contexto anterior es salud/dolor/malestar → centro médico, fisioterapeuta, clínica.
+  * Si el contexto anterior es comida → restaurante.
+  * Si el contexto anterior es reparación de objetos → taller, técnico, servicio de reparación.
+  * Si el contexto anterior es compra de producto → tienda.
+  * Si el contexto anterior es mascotas → veterinario.
+  * Si el contexto anterior es jardinería → jardinero, vivero.
+  * Para CUALQUIER otra necesidad (decoración, educación, transporte, música, belleza, deportes, etc.), genera el tipo de proveedor que corresponda usando el contexto y el dominio detectado.
+- domain y provider_category deben ser texto libre. NO uses categorías fijas/cerradas.
+- recommendation_label debe ser una frase amigable derivada del provider_category (ej: de "veterinario" → "Veterinarios disponibles").
+- No arrastres contexto si el usuario cambió claramente de tema.
+- Si el contexto anterior no es comida, NUNCA respondas con restaurantes por defecto.
 """
         try:
             model = genai.GenerativeModel('gemini-2.5-flash')
@@ -287,7 +315,8 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
         """Fallback local mínimo cuando la IA no está disponible."""
         problem_lower = problem.lower()
         words = problem_lower.split()
-        last_response = conversation_context[0].get("ai_response", {})
+        last_response = conversation_context[0].get("ai_response", {}) if conversation_context else {}
+        last_problem = conversation_context[0].get("problem_text", "") if conversation_context else ""
         last_intent = last_response.get("intent_category")
         last_mode = last_response.get("response_mode")
 
@@ -297,17 +326,58 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
         is_ambiguous = is_continuation or (is_short and has_pronouns)
 
         if is_ambiguous:
+            # Build previous context text from last response
+            prev_provider_category = last_response.get("provider_category")
+            prev_recommendation_label = last_response.get("recommendation_label")
+            prev_suggestions_label = last_response.get("suggestions_label")
+            prev_intent_category = last_intent
+            prev_domain = last_response.get("domain")
+
+            # Determine if the user is asking for a place/provider/options
+            asks_for_place = any(p in problem_lower for p in [
+                'lugar', 'lugares', 'para eso', 'para esto',
+                'dónde voy', 'donde voy', 'dónde puedo', 'donde puedo',
+                'a dónde', 'a donde', 'puedo ir', 'recomiend',
+                'muéstrame', 'muestrame', 'quiero ver', 'ver opciones'
+            ]) or is_continuation
+
+            if asks_for_place and last_problem:
+                # Reuse existing provider_category/recommendation_label if available
+                provider_category = prev_provider_category
+                recommendation_label = prev_recommendation_label
+                if not recommendation_label and prev_suggestions_label:
+                    recommendation_label = prev_suggestions_label
+                if not recommendation_label:
+                    recommendation_label = "Opciones disponibles para esta necesidad"
+
+                intent_category = prev_intent_category if prev_intent_category and prev_intent_category != "general" else None
+
+                return {
+                    "is_followup": True,
+                    "resolved_problem": f"Necesito un lugar o proveedor relacionado con: {last_problem}",
+                    "response_mode": "suggestions",
+                    "need_type": "find_place",
+                    "intent_category": intent_category,
+                    "domain": prev_domain or prev_intent_category,
+                    "target_item": None,
+                    "provider_category": provider_category,
+                    "recommendation_label": recommendation_label,
+                    "needs_providers": True,
+                    "confidence": 0.65
+                }
+
+            # Generic ambiguous continuation without explicit place request
             return {
                 "is_followup": True,
                 "resolved_problem": problem,
                 "response_mode": last_mode if last_mode in ["suggestions", "food"] else None,
                 "need_type": "more_suggestions" if last_mode == "suggestions" else "clarification",
                 "intent_category": last_intent if last_intent and last_intent != "general" else None,
-                "domain": None,
+                "domain": last_response.get("domain"),
                 "target_item": None,
                 "provider_category": None,
                 "recommendation_label": None,
-                "needs_providers": bool(last_intent in ["service", "product", "food"]) if last_intent else False,
+                "needs_providers": False,
                 "confidence": 0.4
             }
 
@@ -585,6 +655,26 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
         if is_follow_up and conversation_context:
             return "follow_up"
         
+        # Modo suggestions: frases ambiguas de lugar/opciones con contexto (NO asumir food)
+        lugar_ambiguous_phrases = [
+            'lugar', 'lugares', 'para eso', 'para esto',
+            'recomendar un lugar', 'recomiendas un lugar',
+            'recomiéndame un lugar', 'recomiendame un lugar',
+            'dónde puedo ir', 'donde puedo ir',
+            'a dónde voy', 'a donde voy',
+            'dónde lo llevo', 'donde lo llevo',
+            'dónde la llevo', 'donde la llevo',
+            'dónde lo arreglo', 'donde lo arreglo',
+            'dónde lo compro', 'donde lo compro',
+            'muéstrame lugares', 'muestrame lugares',
+            'quiero ver lugares', 'quiero ver opciones',
+            'muéstrame opciones', 'muestrame opciones'
+        ]
+        if conversation_context and any(p in problem_lower for p in lugar_ambiguous_phrases):
+            # Solo devolver suggestions si NO es claramente comida
+            if not AIEngine._is_food_related(problem_lower):
+                return "suggestions"
+
         # Detectar categoría de intención
         intent_category = AIEngine._detect_intent_category(problem, conversation_context)
         
@@ -793,7 +883,9 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
         
         domain = resolved_intent.get("domain") if resolved_intent else None
         target_item = resolved_intent.get("target_item") if resolved_intent else None
+        resolved_problem = resolved_intent.get("resolved_problem") if resolved_intent else None
         domain_context = f"\nDominio detectado: \"{domain}\"\nObjeto específico: \"{target_item}\"\n" if domain else ""
+        resolved_context = f"\nNecesidad resuelta: \"{resolved_problem}\"\n" if resolved_problem and resolved_problem != problem else ""
         needs_note = "\n- El usuario necesita un proveedor o lugar. DEBES generar recommendation_label y provider_category obligatoriamente." if (resolved_intent and resolved_intent.get("needs_providers")) else ""
 
         prompt = f"""
@@ -801,7 +893,7 @@ El usuario necesita sugerencias. Responde SOLO con un JSON válido (sin markdown
 
 Solicitud del usuario: "{problem}"
 
-Categoría general: "{intent_category}"{domain_context}
+Categoría general: "{intent_category}"{domain_context}{resolved_context}
 Contexto de conversación anterior: {conversation_context[0] if conversation_context else "Ninguno"}
 
 El JSON debe tener esta estructura exacta:
@@ -972,7 +1064,7 @@ Reglas:
                     "buy_product": "tienda de",
                     "repair_service": "técnico de",
                     "hire_professional": "profesional de",
-                    "find_place": "tienda de",
+                    "find_place": "proveedor de",
                     "urgent_help": "servicio urgente de",
                     "more_suggestions": "proveedor de",
                     "clarification": "proveedor de",
@@ -982,8 +1074,11 @@ Reglas:
                 prefix = dc.get(need_type, "proveedor de")
                 if target_item:
                     ai_response["provider_category"] = f"{prefix} {target_item}"
-                elif domain:
+                elif domain and domain not in ("general", "none", ""):
                     ai_response["provider_category"] = f"{prefix} {domain}"
+                    # Para "find_place" con domain, usar el domain directamente como categoría
+                    if need_type == "find_place" and domain:
+                        ai_response["provider_category"] = domain
                 else:
                     ai_response["provider_category"] = "servicio"
             if not ai_response.get("recommendation_label"):
@@ -1520,7 +1615,17 @@ Soluciones anteriores:
                 "tutor": "Education",
                 "matemáticas": "Education",
                 "plomería": "Home Services",
-                "fuga": "Home Services"
+                "fuga": "Home Services",
+                "dolor": "Health & Wellness",
+                "espalda": "Health & Wellness",
+                "fisioterapia": "Health & Wellness",
+                "médico": "Health & Wellness",
+                "medico": "Health & Wellness",
+                "clínica": "Health & Wellness",
+                "clinica": "Health & Wellness",
+                "salud": "Health & Wellness",
+                "contractura": "Health & Wellness",
+                "muscular": "Health & Wellness"
             }
             detected_cat = None
             for keyword, cat in category_map.items():
@@ -1565,6 +1670,13 @@ Soluciones anteriores:
         # 6. Generar mensaje natural contextual
         natural_message = AIEngine._generate_natural_message(problem, has_providers, is_health_related)
 
+        journey_rec_label = None
+        if has_providers:
+            if is_health_related:
+                journey_rec_label = "Centros de atención disponibles"
+            elif response_mode == "providers":
+                journey_rec_label = "Especialistas disponibles"
+
         return {
             "confidence_score": ai_result.get("confidence_score", 0.5),
             "diagnosis": ai_result["diagnosis"],
@@ -1576,7 +1688,7 @@ Soluciones anteriores:
             "urgency": urgency,
             "natural_message": natural_message,
             "response_mode": response_mode,
-            "recommendation_label": "Especialistas disponibles" if response_mode == "providers" else None
+            "recommendation_label": journey_rec_label
         }
 
     @staticmethod
