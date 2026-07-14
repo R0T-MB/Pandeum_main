@@ -1652,6 +1652,10 @@ Soluciones anteriores:
                     })
 
         has_providers = len(recommended_providers) > 0
+        # Para salud, forzar has_providers=true aunque no haya proveedores en BD
+        # para que el frontend muestre "Ver lugares"
+        if is_health_related and not has_providers:
+            has_providers = True
         fallback = ai_result.get("fallback")
         if not has_providers and not fallback:
             fallback = {
@@ -1671,11 +1675,12 @@ Soluciones anteriores:
         natural_message = AIEngine._generate_natural_message(problem, has_providers, is_health_related)
 
         journey_rec_label = None
-        if has_providers:
-            if is_health_related:
-                journey_rec_label = "Centros de atención disponibles"
-            elif response_mode == "providers":
-                journey_rec_label = "Especialistas disponibles"
+        journey_provider_category = None
+        if is_health_related:
+            journey_rec_label = "Centros de atención disponibles"
+            journey_provider_category = "centro médico"
+        elif has_providers and response_mode == "providers":
+            journey_rec_label = "Especialistas disponibles"
 
         return {
             "confidence_score": ai_result.get("confidence_score", 0.5),
@@ -1688,7 +1693,8 @@ Soluciones anteriores:
             "urgency": urgency,
             "natural_message": natural_message,
             "response_mode": response_mode,
-            "recommendation_label": journey_rec_label
+            "recommendation_label": journey_rec_label,
+            "provider_category": journey_provider_category
         }
 
     @staticmethod

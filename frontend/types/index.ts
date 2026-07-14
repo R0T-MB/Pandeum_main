@@ -39,6 +39,7 @@ export interface AISolveResponse {
   response_mode?: string; // direct, journey, providers, food, follow_up, suggestions
   direct_answer?: string; // respuesta directa para modo direct
   recommendation_label?: string; // etiqueta para recomendaciones
+  provider_category?: string; // categoría de proveedor (ej: "centro médico", "restaurante")
   suggestions_label?: string; // etiqueta para sugerencias de comida
   suggestions?: string[]; // lista de sugerencias de platos
   intent_category?: string; // food, clothing, service, product, health, tech, general
