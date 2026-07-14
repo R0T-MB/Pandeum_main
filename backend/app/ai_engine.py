@@ -133,6 +133,22 @@ class AIEngine:
             r'\bquiero ver opciones\b',
             r'\bmuéstrame opciones\b',
             r'\bmuestrame opciones\b',
+            r'\bya es muy tarde\b',
+            r'\bhasta mañana\b',
+            r'\bpor ahora\b',
+            r'\bmientras tanto\b',
+            r'\b(qué|que) puedo hacer por ahora\b',
+            r'\b(qué|que) hago mientras\b',
+            r'\bno puedo ir ahora\b',
+            r'\bir[eé] mañana\b',
+            r'\bmientras consigo ayuda\b',
+            r'\bmientras abren\b',
+            r'\bmientras llega\b',
+            r'\bantes de ir\b',
+            r'\b(qué|que) puedo hacer mientras\b',
+            r'\b(qué|que) hago por ahora\b',
+            r'\bpor el momento\b',
+            r'\bde momento\b',
         ]
         words = problem_lower.split()
         is_lugar_related = any(p in problem_lower for p in ['lugar', 'lugares', 'para eso', 'para esto'])
@@ -243,6 +259,20 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
 - recommendation_label debe ser una frase amigable derivada del provider_category (ej: de "veterinario" → "Veterinarios disponibles").
 - No arrastres contexto si el usuario cambió claramente de tema.
 - Si el contexto anterior no es comida, NUNCA respondas con restaurantes por defecto.
+
+### Reglas sobre continuidad temporal/provisional:
+- Si el mensaje actual habla de tiempo, espera o acciones provisionales ("por ahora", "hasta mañana", "ya es tarde", "mientras tanto", "por el momento", "de momento", "qué hago mientras", "no puedo ir ahora"), y el historial tiene un problema activo, el mensaje DEBE resolverse como continuación del problema anterior.
+- NO interpretes frases temporales/provisionales como productividad, organización personal, rutina nocturna o planificación del día siguiente si el contexto anterior era un problema concreto del usuario.
+- resolved_problem DEBE unir el contexto anterior con la pregunta actual. Ejemplo:
+  Historial: "me duele mi ojo"
+  Actual: "ya es muy tarde, qué puedo hacer por ahora hasta mañana?"
+  Resolved: "Me duele el ojo y necesito saber qué hacer por ahora hasta poder recibir atención mañana."
+- response_mode debe ser "journey" si el problema anterior necesitaba diagnóstico, o "follow_up" si era una conversación abierta. NUNCA "direct" para estos casos.
+- need_type debe ser "self_guidance" (orientación temporal, no solución definitiva).
+- intent_category debe heredarse del contexto anterior.
+- needs_providers: false (el usuario ya sabe que necesita ayuda profesional, solo busca qué hacer mientras).
+- domain y target_item deben heredarse del contexto anterior.
+- Esta regla aplica para CUALQUIER contexto: dolor de ojo, dolor de espalda, mascota enferma, laptop dañada, trámite pendiente, problema de cocina, arreglo de ropa, reparación de instrumento, etc.
 """
         try:
             model = genai.GenerativeModel('gemini-2.5-flash')
@@ -325,13 +355,26 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
         has_pronouns = any(p in problem_lower for p in [' lo ', ' la ', ' eso', ' esto', 'llevarl', 'arreglarl', 'repararl', 'comprarl'])
         is_ambiguous = is_continuation or (is_short and has_pronouns)
 
+        temporal_phrases = [
+            'por ahora', 'hasta mañana', 'ya es tarde', 'ya es muy tarde',
+            'mientras tanto', 'por el momento', 'de momento',
+            'no puedo ir ahora', 'iré mañana', 'ire mañana',
+            'mientras consigo', 'mientras abren', 'mientras llega',
+            'antes de ir', 'qué puedo hacer por ahora', 'que puedo hacer por ahora',
+            'qué hago mientras', 'que hago mientras',
+            'qué puedo hacer mientras', 'que puedo hacer mientras',
+            'qué hago por ahora', 'que hago por ahora',
+        ]
+        is_temporal = any(p in problem_lower for p in temporal_phrases)
+
+        # Build previous context text from last response
+        prev_provider_category = last_response.get("provider_category")
+        prev_recommendation_label = last_response.get("recommendation_label")
+        prev_suggestions_label = last_response.get("suggestions_label")
+        prev_intent_category = last_intent
+        prev_domain = last_response.get("domain")
+
         if is_ambiguous:
-            # Build previous context text from last response
-            prev_provider_category = last_response.get("provider_category")
-            prev_recommendation_label = last_response.get("recommendation_label")
-            prev_suggestions_label = last_response.get("suggestions_label")
-            prev_intent_category = last_intent
-            prev_domain = last_response.get("domain")
 
             # Determine if the user is asking for a place/provider/options
             asks_for_place = any(p in problem_lower for p in [
@@ -340,6 +383,22 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
                 'a dónde', 'a donde', 'puedo ir', 'recomiend',
                 'muéstrame', 'muestrame', 'quiero ver', 'ver opciones'
             ]) or is_continuation
+
+            # Temporal/provisional continuation: user needs guidance for the interim
+            if is_temporal and last_problem:
+                return {
+                    "is_followup": True,
+                    "resolved_problem": f"{last_problem} - y necesito saber qué hacer por ahora hasta poder recibir atención o resolverlo.",
+                    "response_mode": "journey",
+                    "need_type": "self_guidance",
+                    "intent_category": prev_intent_category if prev_intent_category and prev_intent_category != "general" else None,
+                    "domain": prev_domain or prev_intent_category,
+                    "target_item": last_response.get("target_item"),
+                    "provider_category": prev_provider_category,
+                    "recommendation_label": prev_recommendation_label,
+                    "needs_providers": False,
+                    "confidence": 0.65
+                }
 
             if asks_for_place and last_problem:
                 # Reuse existing provider_category/recommendation_label if available
@@ -379,6 +438,22 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
                 "recommendation_label": None,
                 "needs_providers": False,
                 "confidence": 0.4
+            }
+
+        # Temporal/provisional check even for long messages (>15 words)
+        if is_temporal and last_problem:
+            return {
+                "is_followup": True,
+                "resolved_problem": f"{last_problem} - y necesito saber qué hacer por ahora hasta poder recibir atención o resolverlo.",
+                "response_mode": "journey",
+                "need_type": "self_guidance",
+                "intent_category": last_intent if last_intent and last_intent != "general" else None,
+                "domain": last_response.get("domain"),
+                "target_item": last_response.get("target_item"),
+                "provider_category": prev_provider_category,
+                "recommendation_label": prev_recommendation_label,
+                "needs_providers": False,
+                "confidence": 0.65
             }
 
         return {
