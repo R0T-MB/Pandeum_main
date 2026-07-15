@@ -42,12 +42,14 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
 
   if (!isOpen || !provider) return null
 
-  const providerLat = 0
-  const providerLng = 0
-  const hasProviderCoords = false
+  const providerLat = provider.location_lat != null ? provider.location_lat : null
+  const providerLng = provider.location_lng != null ? provider.location_lng : null
+  const hasProviderCoords = providerLat != null && providerLng != null
   const hasUserCoords = userLat !== null && userLng !== null
 
-  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(provider.business_name)}`
+  const googleMapsUrl = hasProviderCoords
+    ? `https://www.google.com/maps/dir/?api=1&destination=${providerLat},${providerLng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(provider.business_name)}`
 
   return (
     <>
@@ -71,7 +73,7 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
             <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-10">
               <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
                 <div className="w-4 h-4 border-2 border-[#1E2D4A] border-t-[#6D5EF8] rounded-full animate-spin" />
-                Obteniendo ubicacion...
+                Obteniendo ubicación...
               </div>
             </div>
           )}
@@ -80,7 +82,7 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
             <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-10">
               <div className="text-center px-6">
                 <Navigation size={32} className="text-[#1E2D4A] mx-auto mb-3" strokeWidth={1.5} />
-                <p className="text-sm text-[#9CA3AF] mb-1">No se pudo obtener tu ubicacion</p>
+                <p className="text-sm text-[#9CA3AF] mb-1">No se pudo obtener tu ubicación</p>
                 <p className="text-xs text-[#1E2D4A] mb-4">{geoError}</p>
                 <button
                   onClick={requestLocation}
@@ -105,7 +107,7 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
               />
               {hasUserCoords && (
                 <Marker position={[userLat!, userLng!]}>
-                  <Popup>Tu ubicacion</Popup>
+                  <Popup>Tu ubicación</Popup>
                 </Marker>
               )}
               {hasProviderCoords && (
@@ -129,7 +131,7 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
           {!hasProviderCoords && !geoLoading && !geoError && (
             <div className="absolute bottom-4 left-4 right-4 bg-[#151E2F] rounded-2xl px-4 py-3 text-center z-10 border border-[#1E2D4A]">
               <p className="text-xs text-[#9CA3AF]">
-                Este proveedor aun no tiene coordenadas registradas.
+                Este proveedor aún no tiene una ubicación registrada.
               </p>
             </div>
           )}
@@ -138,7 +140,7 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
         <div className="px-6 py-4 border-t border-[#1E2D4A] flex items-center justify-between">
           <div className="text-xs text-[#9CA3AF]">
             {hasUserCoords && hasProviderCoords && (
-              <span>Ruta estimada desde tu ubicacion</span>
+              <span>Ruta estimada desde tu ubicación</span>
             )}
           </div>
           <a

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { X, Star, MapPin, Clock, Zap, Navigation, Tag } from 'lucide-react'
+import { X, Star, MapPin, Clock, Zap, Navigation, Tag, Phone, Map } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
+import { useGeolocation } from '@/hooks/useGeolocation'
 
 interface ProvidersDrawerProps {
   isOpen: boolean
@@ -32,6 +33,17 @@ const parseMinPrice = (cost: string): number | null => {
   return null
 }
 
+const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 const sortModes: { key: SortMode; label: string; }[] = [
   { key: 'rating', label: 'Mejor calificados' },
   { key: 'distance', label: 'Más cercanos' },
@@ -46,7 +58,15 @@ export function ProvidersDrawer({
   onDistanceClick,
   onViewMap,
 }: ProvidersDrawerProps) {
+  const { latitude: userLat, longitude: userLng } = useGeolocation()
   const [activeSort, setActiveSort] = useState<SortMode>('rating')
+
+  const getProviderDistance = (p: ProviderRecommendation): number | null => {
+    if (userLat != null && userLng != null && p.location_lat != null && p.location_lng != null) {
+      return haversineDistance(userLat, userLng, p.location_lat, p.location_lng)
+    }
+    return p.distance_km ?? null
+  }
 
   const sortedProviders = useMemo(() => {
     const list = [...providers]
@@ -65,10 +85,12 @@ export function ProvidersDrawer({
         })
       case 'distance':
         return list.sort((a, b) => {
-          if (a.distance_km == null && b.distance_km == null) return 0
-          if (a.distance_km == null) return 1
-          if (b.distance_km == null) return -1
-          return a.distance_km - b.distance_km
+          const distA = getProviderDistance(a)
+          const distB = getProviderDistance(b)
+          if (distA == null && distB == null) return 0
+          if (distA == null) return 1
+          if (distB == null) return -1
+          return distA - distB
         })
       case 'price':
         return list.sort((a, b) => {
@@ -82,7 +104,7 @@ export function ProvidersDrawer({
       default:
         return list
     }
-  }, [providers, activeSort])
+  }, [providers, activeSort, userLat, userLng])
 
   return (
     <>
@@ -171,6 +193,13 @@ export function ProvidersDrawer({
                     )}
                   </div>
 
+                  {(provider.address || provider.service_area) && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
+                      <MapPin size={11} strokeWidth={1.5} className="flex-shrink-0" />
+                      <span className="truncate">{provider.address || provider.service_area}</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3 text-xs text-[#9CA3AF]">
                     {typeof provider.rating === 'number' && provider.rating > 0 && (
                       <span className={`flex items-center gap-1 ${activeSort === 'rating' ? 'text-yellow-400' : ''}`}>
@@ -184,19 +213,49 @@ export function ProvidersDrawer({
                         {provider.response_time_hours}h
                       </span>
                     )}
-                    {typeof provider.distance_km === 'number' && (
-                      <button
-                        onClick={() => onDistanceClick(provider)}
-                        className={`flex items-center gap-1 transition-colors duration-200 ${
-                          activeSort === 'distance'
-                            ? 'text-[#A78BFA] hover:text-[#C4B5FD]'
-                            : 'text-white hover:text-[#6D5EF8]'
-                        }`}
-                      >
-                        <MapPin size={12} strokeWidth={1.5} />
-                        {provider.distance_km.toFixed(1)} km
-                      </button>
+                    {provider.phone && (
+                      <a href={`tel:${provider.phone}`} className="flex items-center gap-1 text-white hover:text-[#6D5EF8] transition-colors duration-200">
+                        <Phone size={12} strokeWidth={1.5} />
+                      </a>
                     )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    {(() => {
+                      const dist = getProviderDistance(provider)
+                      const hasCoords = provider.location_lat != null && provider.location_lng != null
+                      return (
+                        <>
+                          {dist != null ? (
+                            <button
+                              onClick={() => onDistanceClick(provider)}
+                              className={`flex items-center gap-1 text-[11px] font-medium transition-colors duration-200 ${
+                                activeSort === 'distance'
+                                  ? 'text-[#A78BFA] hover:text-[#C4B5FD]'
+                                  : 'text-white hover:text-[#6D5EF8]'
+                              }`}
+                            >
+                              <MapPin size={12} strokeWidth={1.5} />
+                              {dist.toFixed(1)} km
+                            </button>
+                          ) : hasCoords ? (
+                            <span className="flex items-center gap-1 text-[11px] text-[#9CA3AF]">
+                              <MapPin size={12} strokeWidth={1.5} />
+                              Sin ubicación
+                            </span>
+                          ) : null}
+                          {hasCoords && (
+                            <button
+                              onClick={() => onDistanceClick(provider)}
+                              className="flex items-center gap-1 text-[11px] text-[#6D5EF8] hover:text-[#A78BFA] font-medium transition-colors duration-200 ml-auto"
+                            >
+                              <Map size={12} strokeWidth={1.75} />
+                              Ver ruta
+                            </button>
+                          )}
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
               ))}

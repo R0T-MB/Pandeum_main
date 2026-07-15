@@ -32,6 +32,8 @@ export default function ProviderDashboardPage() {
     service_area: '',
     phone: '',
     whatsapp: '',
+    location_lat: '',
+    location_lng: '',
     price_min: '',
     price_max: '',
     response_time_hours: '',
@@ -86,6 +88,8 @@ export default function ProviderDashboardPage() {
         price_min: p.price_min !== null ? String(p.price_min) : '',
         price_max: p.price_max !== null ? String(p.price_max) : '',
         response_time_hours: p.response_time_hours !== null ? String(p.response_time_hours) : '',
+        location_lat: p.location_lat !== null ? String(p.location_lat) : '',
+        location_lng: p.location_lng !== null ? String(p.location_lng) : '',
         available_now: p.available_now || false,
         search_tags: (p.search_tags || []).join(', '),
         service_keywords: (p.service_keywords || []).join(', '),
@@ -118,6 +122,8 @@ export default function ProviderDashboardPage() {
         price_min: form.price_min ? Number(form.price_min) : null,
         price_max: form.price_max ? Number(form.price_max) : null,
         response_time_hours: form.response_time_hours ? Number(form.response_time_hours) : null,
+        location_lat: form.location_lat ? Number(form.location_lat) : null,
+        location_lng: form.location_lng ? Number(form.location_lng) : null,
         available_now: form.available_now,
         search_tags: form.search_tags.split(',').map(t => t.trim()).filter(Boolean),
         service_keywords: form.service_keywords.split(',').map(t => t.trim()).filter(Boolean),
@@ -330,7 +336,16 @@ export default function ProviderDashboardPage() {
                   <label className={labelClass}>Zona de atención</label>
                   <input type="text" value={form.service_area} onChange={e => handleFormChange('service_area', e.target.value)} className={inputClass} placeholder="Ej: Quito, Guayaquil, Cuenca" />
                 </div>
+                <div>
+                  <label className={labelClass}>Latitud</label>
+                  <input type="number" step="any" value={form.location_lat} onChange={e => handleFormChange('location_lat', e.target.value)} className={inputClass} placeholder="-0.180653" />
+                </div>
+                <div>
+                  <label className={labelClass}>Longitud</label>
+                  <input type="number" step="any" value={form.location_lng} onChange={e => handleFormChange('location_lng', e.target.value)} className={inputClass} placeholder="-78.467834" />
+                </div>
               </div>
+              <p className="text-[10px] text-[#9CA3AF] mt-2">Estas coordenadas permiten calcular la distancia y mostrar la ruta en el mapa.</p>
             </div>
 
             <div className="mt-6 pt-5 border-t border-[#1E2D4A]">

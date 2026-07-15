@@ -19,7 +19,7 @@ export function useGeolocation() {
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setState(prev => ({ ...prev, error: 'Geolocalizacion no soportada' }))
+      setState(prev => ({ ...prev, error: 'Geolocalización no soportada' }))
       return
     }
 

@@ -74,6 +74,12 @@ export interface ProviderRecommendation {
   estimated_cost: string;
   available_now: boolean;
   response_time_hours?: number;
+  location_lat?: number | null;
+  location_lng?: number | null;
+  address?: string | null;
+  service_area?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
 }
 
 export interface Fallback {

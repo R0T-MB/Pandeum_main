@@ -604,6 +604,13 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
 
         reason_bullets = [reason] if reason else ["Coincide con la necesidad indicada"]
 
+        location_lat = None
+        location_lng = None
+        if provider.location_lat is not None:
+            location_lat = float(provider.location_lat)
+        if provider.location_lng is not None:
+            location_lng = float(provider.location_lng)
+
         return {
             "provider_id": provider.id,
             "business_name": provider.business_name,
@@ -613,7 +620,13 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
             "reason_bullets": reason_bullets,
             "estimated_cost": estimated_cost,
             "available_now": provider.available_now,
-            "response_time_hours": provider.response_time_hours
+            "response_time_hours": provider.response_time_hours,
+            "location_lat": location_lat,
+            "location_lng": location_lng,
+            "address": provider.address,
+            "service_area": provider.service_area,
+            "phone": provider.phone,
+            "whatsapp": provider.whatsapp,
         }
 
     @staticmethod

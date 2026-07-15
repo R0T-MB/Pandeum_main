@@ -132,6 +132,12 @@ class ProviderRecommendation(BaseModel):
     estimated_cost: Optional[str] = None
     available_now: bool
     response_time_hours: Optional[float] = None
+    location_lat: Optional[float] = None
+    location_lng: Optional[float] = None
+    address: Optional[str] = None
+    service_area: Optional[str] = None
+    phone: Optional[str] = None
+    whatsapp: Optional[str] = None
 
 class CompositeStep(BaseModel):
     role: str
