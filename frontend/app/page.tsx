@@ -190,12 +190,6 @@ export default function HomePage() {
         providers={drawerProviders}
         recommendationLabel={drawerLabel}
         onDistanceClick={handleDistanceClick}
-        onViewMap={() => {
-          if (drawerProviders.length > 0) {
-            setSelectedProvider(drawerProviders[0])
-            setMapOpen(true)
-          }
-        }}
       />
 
       {/* Route Map Modal */}

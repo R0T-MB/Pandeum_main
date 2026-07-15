@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Navigation, ExternalLink } from 'lucide-react'
+import { X, Navigation, ExternalLink, Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { ProviderRecommendation } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -18,9 +18,21 @@ interface RouteMapModalProps {
   provider: ProviderRecommendation | null
 }
 
+interface OSRMRoute {
+  distance: number
+  duration: number
+  geometry: {
+    coordinates: [number, number][]
+  }
+}
+
 export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps) {
   const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
   const [L, setL] = useState<typeof import('leaflet') | null>(null)
+  const [routeCoords, setRouteCoords] = useState<[number, number][] | null>(null)
+  const [routeDistance, setRouteDistance] = useState<number | null>(null)
+  const [routeDuration, setRouteDuration] = useState<number | null>(null)
+  const [routeLoading, setRouteLoading] = useState(false)
 
   useEffect(() => {
     import('leaflet').then((leaflet) => {
@@ -40,6 +52,43 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
     }
   }, [isOpen])
 
+  useEffect(() => {
+    if (!isOpen || !provider) return
+    const pLat = provider.location_lat
+    const pLng = provider.location_lng
+    if (userLat != null && userLng != null && pLat != null && pLng != null) {
+      setRouteLoading(true)
+      const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${pLng},${pLat}?overview=full&geometries=geojson`
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data.code === 'Ok' && data.routes?.length > 0) {
+            const route: OSRMRoute = data.routes[0]
+            const coords: [number, number][] = route.geometry.coordinates.map(
+              (c: [number, number]) => [c[1], c[0]]
+            )
+            setRouteCoords(coords)
+            setRouteDistance(route.distance)
+            setRouteDuration(route.duration)
+          } else {
+            setRouteCoords([[userLat, userLng], [pLat, pLng]])
+            setRouteDistance(null)
+            setRouteDuration(null)
+          }
+        })
+        .catch(() => {
+          setRouteCoords([[userLat, userLng], [pLat, pLng]])
+          setRouteDistance(null)
+          setRouteDuration(null)
+        })
+        .finally(() => setRouteLoading(false))
+    } else {
+      setRouteCoords(null)
+      setRouteDistance(null)
+      setRouteDuration(null)
+    }
+  }, [isOpen, provider, userLat, userLng])
+
   if (!isOpen || !provider) return null
 
   const providerLat = provider.location_lat != null ? provider.location_lat : null
@@ -50,6 +99,22 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
   const googleMapsUrl = hasProviderCoords
     ? `https://www.google.com/maps/dir/?api=1&destination=${providerLat},${providerLng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(provider.business_name)}`
+
+  const formatDistance = (meters: number): string => {
+    if (meters >= 1000) {
+      return `${(meters / 1000).toFixed(1)} km`
+    }
+    return `${Math.round(meters)} m`
+  }
+
+  const formatDuration = (seconds: number): string => {
+    if (seconds >= 3600) {
+      const h = Math.floor(seconds / 3600)
+      const m = Math.round((seconds % 3600) / 60)
+      return `${h}h ${m}min`
+    }
+    return `${Math.round(seconds / 60)} min`
+  }
 
   return (
     <>
@@ -69,16 +134,16 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
         </div>
 
         <div className="flex-1 relative min-h-[300px]">
-          {geoLoading && (
+          {(geoLoading || routeLoading) && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-10">
               <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-                <div className="w-4 h-4 border-2 border-[#1E2D4A] border-t-[#6D5EF8] rounded-full animate-spin" />
-                Obteniendo ubicación...
+                <Loader2 size={16} className="animate-spin text-[#6D5EF8]" />
+                {routeLoading ? 'Calculando ruta...' : 'Obteniendo ubicación...'}
               </div>
             </div>
           )}
 
-          {geoError && !geoLoading && (
+          {geoError && !geoLoading && !routeLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-10">
               <div className="text-center px-6">
                 <Navigation size={32} className="text-[#1E2D4A] mx-auto mb-3" strokeWidth={1.5} />
@@ -111,24 +176,21 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
                 </Marker>
               )}
               {hasProviderCoords && (
-                <>
-                  <Marker position={[providerLat, providerLng]}>
-                    <Popup>{provider.business_name}</Popup>
-                  </Marker>
-                  {hasUserCoords && (
-                    <Polyline
-                      positions={[[userLat!, userLng!], [providerLat, providerLng]]}
-                      color="#6D5EF8"
-                      weight={2}
-                      dashArray="6 4"
-                    />
-                  )}
-                </>
+                <Marker position={[providerLat, providerLng]}>
+                  <Popup>{provider.business_name}</Popup>
+                </Marker>
+              )}
+              {routeCoords && routeCoords.length >= 2 && (
+                <Polyline
+                  positions={routeCoords}
+                  color="#6D5EF8"
+                  weight={3}
+                />
               )}
             </MapContainer>
           )}
 
-          {!hasProviderCoords && !geoLoading && !geoError && (
+          {!hasProviderCoords && !geoLoading && !geoError && !routeLoading && (
             <div className="absolute bottom-4 left-4 right-4 bg-[#151E2F] rounded-2xl px-4 py-3 text-center z-10 border border-[#1E2D4A]">
               <p className="text-xs text-[#9CA3AF]">
                 Este proveedor aún no tiene una ubicación registrada.
@@ -139,8 +201,21 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
 
         <div className="px-6 py-4 border-t border-[#1E2D4A] flex items-center justify-between">
           <div className="text-xs text-[#9CA3AF]">
-            {hasUserCoords && hasProviderCoords && (
-              <span>Ruta estimada desde tu ubicación</span>
+            {hasUserCoords && hasProviderCoords ? (
+              routeDistance != null && routeDuration != null ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-white font-medium">{formatDistance(routeDistance)}</span>
+                  <span className="text-[#6D5EF8] font-medium">{formatDuration(routeDuration)}</span>
+                </div>
+              ) : routeCoords != null ? (
+                <span className="text-[#FBBF24]">No se pudo calcular la ruta por calles. Mostrando ruta aproximada.</span>
+              ) : routeLoading ? (
+                <span>Calculando ruta...</span>
+              ) : (
+                <span>Ruta estimada desde tu ubicación</span>
+              )
+            ) : (
+              <span>&nbsp;</span>
             )}
           </div>
           <a

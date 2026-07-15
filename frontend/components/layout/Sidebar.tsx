@@ -8,6 +8,7 @@ import {
   History,
   User,
   Briefcase,
+  MapPin,
   LogOut,
   Sparkles,
   ArrowRight,
@@ -25,6 +26,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
   const navItems = [
     { href: '/', label: 'Chat', icon: MessageSquare },
+    { href: '/map', label: 'Mapa', icon: MapPin },
     { href: '/favorites', label: 'Favoritos', icon: Heart },
     { href: '/history', label: 'Historial', icon: History },
     { href: '/dashboard', label: 'Mi Perfil', icon: User },

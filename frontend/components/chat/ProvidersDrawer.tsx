@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { X, Star, MapPin, Clock, Zap, Navigation, Tag, Phone, Map } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { X, Star, MapPin, Clock, Zap, Tag, Phone, Map, Loader2 } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
 
@@ -11,7 +11,6 @@ interface ProvidersDrawerProps {
   providers: ProviderRecommendation[]
   recommendationLabel?: string
   onDistanceClick: (provider: ProviderRecommendation) => void
-  onViewMap?: () => void
 }
 
 const getInitials = (name: string) => {
@@ -56,10 +55,17 @@ export function ProvidersDrawer({
   providers,
   recommendationLabel,
   onDistanceClick,
-  onViewMap,
 }: ProvidersDrawerProps) {
-  const { latitude: userLat, longitude: userLng } = useGeolocation()
+  const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
   const [activeSort, setActiveSort] = useState<SortMode>('rating')
+
+  useEffect(() => {
+    if (isOpen && providers.some(p => p.location_lat != null && p.location_lng != null)) {
+      if (userLat === null && userLng === null && !geoLoading && !geoError) {
+        requestLocation()
+      }
+    }
+  }, [isOpen, providers, userLat, userLng, geoLoading, geoError, requestLocation])
 
   const getProviderDistance = (p: ProviderRecommendation): number | null => {
     if (userLat != null && userLng != null && p.location_lat != null && p.location_lng != null) {
@@ -224,9 +230,11 @@ export function ProvidersDrawer({
                     {(() => {
                       const dist = getProviderDistance(provider)
                       const hasCoords = provider.location_lat != null && provider.location_lng != null
-                      return (
-                        <>
-                          {dist != null ? (
+                      const permissionDenied = geoError?.toLowerCase().includes('denied') || geoError?.toLowerCase().includes('denegado') || geoError?.toLowerCase().includes('permission')
+                      const locationMissing = userLat === null && userLng === null
+                      if (dist != null) {
+                        return (
+                          <>
                             <button
                               onClick={() => onDistanceClick(provider)}
                               className={`flex items-center gap-1 text-[11px] font-medium transition-colors duration-200 ${
@@ -238,13 +246,6 @@ export function ProvidersDrawer({
                               <MapPin size={12} strokeWidth={1.5} />
                               {dist.toFixed(1)} km
                             </button>
-                          ) : hasCoords ? (
-                            <span className="flex items-center gap-1 text-[11px] text-[#9CA3AF]">
-                              <MapPin size={12} strokeWidth={1.5} />
-                              Sin ubicación
-                            </span>
-                          ) : null}
-                          {hasCoords && (
                             <button
                               onClick={() => onDistanceClick(provider)}
                               className="flex items-center gap-1 text-[11px] text-[#6D5EF8] hover:text-[#A78BFA] font-medium transition-colors duration-200 ml-auto"
@@ -252,9 +253,34 @@ export function ProvidersDrawer({
                               <Map size={12} strokeWidth={1.75} />
                               Ver ruta
                             </button>
-                          )}
-                        </>
-                      )
+                          </>
+                        )
+                      }
+                      if (hasCoords && permissionDenied) {
+                        return (
+                          <span className="flex items-center gap-1 text-[11px] text-[#FBBF24]">
+                            <MapPin size={12} strokeWidth={1.5} />
+                            Activa ubicación para calcular distancia
+                          </span>
+                        )
+                      }
+                      if (hasCoords && geoLoading) {
+                        return (
+                          <span className="flex items-center gap-1 text-[11px] text-[#9CA3AF]">
+                            <Loader2 size={12} className="animate-spin" strokeWidth={1.5} />
+                            Obteniendo ubicación...
+                          </span>
+                        )
+                      }
+                      if (hasCoords && locationMissing) {
+                        return (
+                          <span className="flex items-center gap-1 text-[11px] text-[#9CA3AF]">
+                            <MapPin size={12} strokeWidth={1.5} />
+                            Activa ubicación
+                          </span>
+                        )
+                      }
+                      return null
                     })()}
                   </div>
                 </div>
@@ -275,17 +301,6 @@ export function ProvidersDrawer({
           )}
         </div>
 
-        {sortedProviders.length > 0 && (
-          <div className="px-4 py-4 border-t border-[#1E2D4A]">
-            <button
-              onClick={onViewMap}
-              className="flex items-center justify-center gap-2 w-full text-sm font-medium text-white bg-gradient-to-br from-[#6D5EF8] to-[#5B4FE0] hover:from-[#5B4FE0] hover:to-[#4A3FD0] rounded-2xl px-4 py-3 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Navigation size={16} strokeWidth={1.75} />
-              Ver en el mapa
-            </button>
-          </div>
-        )}
       </div>
     </>
   )
