@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
-import { Provider, ProviderRecommendation } from '@/types'
-import { RouteMapModal } from '@/components/map/RouteMapModal'
+import { Provider } from '@/types'
 import Sidebar from '@/components/layout/Sidebar'
-import { MapPin, Navigation, Menu, Loader2, Crosshair } from 'lucide-react'
+import { MapPin, Navigation, Menu, Loader2, Crosshair, X, Car, Footprints, Bike } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import toast from 'react-hot-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -14,14 +13,26 @@ const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContai
 const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
 const Marker = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false })
 const Popup = dynamic(() => import('react-leaflet').then(m => m.Popup), { ssr: false })
+const Polyline = dynamic(() => import('react-leaflet').then(m => m.Polyline), { ssr: false })
+
+type TravelMode = 'driving' | 'foot' | 'bike'
+
+interface OSRMRoute {
+  distance: number
+  duration: number
+  geometry: {
+    coordinates: [number, number][]
+  }
+}
+
+const MODE_LABELS: Record<TravelMode, { label: string; icon: typeof Car; osrmProfile: string }> = {
+  driving: { label: 'Auto', icon: Car, osrmProfile: 'driving' },
+  foot: { label: 'Caminando', icon: Footprints, osrmProfile: 'foot' },
+  bike: { label: 'Bicicleta/Moto', icon: Bike, osrmProfile: 'bike' },
+}
 
 const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
 const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -35,14 +46,34 @@ const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c
 }
 
+const formatDistance = (meters: number): string => {
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`
+  return `${Math.round(meters)} m`
+}
+
+const formatDuration = (seconds: number): string => {
+  if (seconds >= 3600) {
+    const h = Math.floor(seconds / 3600)
+    const m = Math.round((seconds % 3600) / 60)
+    return `${h}h ${m}min`
+  }
+  return `${Math.round(seconds / 60)} min`
+}
+
 export default function MapPage() {
   const [L, setL] = useState<typeof import('leaflet') | null>(null)
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [selectedProvider, setSelectedProvider] = useState<ProviderRecommendation | null>(null)
-  const [mapOpen, setMapOpen] = useState(false)
   const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
+
+  const [selectedRouteProvider, setSelectedRouteProvider] = useState<Provider | null>(null)
+  const [routeCoords, setRouteCoords] = useState<[number, number][] | null>(null)
+  const [routeDistance, setRouteDistance] = useState<number | null>(null)
+  const [routeDuration, setRouteDuration] = useState<number | null>(null)
+  const [routeLoading, setRouteLoading] = useState(false)
+  const [routeError, setRouteError] = useState<string | null>(null)
+  const [travelMode, setTravelMode] = useState<TravelMode>('driving')
 
   useEffect(() => {
     import('leaflet').then((leaflet) => {
@@ -63,6 +94,46 @@ export default function MapPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const fetchRoute = useCallback(async (provider: Provider, mode: TravelMode) => {
+    if (userLat == null || userLng == null || provider.location_lat == null || provider.location_lng == null) return
+    setRouteLoading(true)
+    setRouteError(null)
+    const profile = MODE_LABELS[mode].osrmProfile
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${userLng},${userLat};${provider.location_lng},${provider.location_lat}?overview=full&geometries=geojson`
+    try {
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.code === 'Ok' && data.routes?.length > 0) {
+        const route: OSRMRoute = data.routes[0]
+        const coords: [number, number][] = route.geometry.coordinates.map(
+          (c: [number, number]) => [c[1], c[0]]
+        )
+        setRouteCoords(coords)
+        setRouteDistance(route.distance)
+        setRouteDuration(route.duration)
+      } else {
+        throw new Error('No route found')
+      }
+    } catch {
+      if (mode === 'bike') {
+        setRouteError('No se pudo calcular esta ruta. Intenta con auto o caminando.')
+      } else {
+        setRouteError('No se pudo calcular la ruta por calles.')
+      }
+      setRouteCoords([[userLat, userLng], [provider.location_lat, provider.location_lng]])
+      setRouteDistance(null)
+      setRouteDuration(null)
+    } finally {
+      setRouteLoading(false)
+    }
+  }, [userLat, userLng])
+
+  useEffect(() => {
+    if (selectedRouteProvider) {
+      fetchRoute(selectedRouteProvider, travelMode)
+    }
+  }, [selectedRouteProvider, travelMode, fetchRoute])
+
   const providersWithCoords = providers.filter(
     p => p.location_lat != null && p.location_lng != null
   )
@@ -72,21 +143,29 @@ export default function MapPage() {
   }
 
   const handleSetRoute = (provider: Provider) => {
-    const recommendation: ProviderRecommendation = {
-      provider_id: provider.id,
-      business_name: provider.business_name,
-      trust_score: provider.trust_score,
-      rating: provider.rating,
-      location_lat: provider.location_lat,
-      location_lng: provider.location_lng,
-      reason_bullets: [],
-      estimated_cost: provider.price_min != null && provider.price_max != null
-        ? `$${provider.price_min} - $${provider.price_max}`
-        : undefined,
-      available_now: provider.available_now,
+    if (!hasUserLocation) {
+      if (permissionDenied) {
+        toast.error('Activa tu ubicación en el navegador para calcular la ruta.')
+      } else {
+        requestLocation()
+        toast('Activa tu ubicación para calcular la ruta.')
+      }
+      return
     }
-    setSelectedProvider(recommendation)
-    setMapOpen(true)
+    setSelectedRouteProvider(provider)
+    setTravelMode('driving')
+  }
+
+  const handleClearRoute = () => {
+    setSelectedRouteProvider(null)
+    setRouteCoords(null)
+    setRouteDistance(null)
+    setRouteDuration(null)
+    setRouteError(null)
+  }
+
+  const handleModeChange = (mode: TravelMode) => {
+    setTravelMode(mode)
   }
 
   const createCustomIcon = (provider: Provider, leaflet: typeof import('leaflet')) => {
@@ -225,16 +304,73 @@ export default function MapPage() {
                   </Popup>
                 </Marker>
               ))}
+              {routeCoords && routeCoords.length >= 2 && (
+                <Polyline
+                  positions={routeCoords}
+                  color="#6D5EF8"
+                  weight={routeError ? 3 : 4}
+                  dashArray={routeError ? '6 4' : undefined}
+                />
+              )}
             </MapContainer>
+          )}
+
+          {selectedRouteProvider && (
+            <div className="absolute bottom-6 left-4 right-4 z-30">
+              <div className="bg-[#151E2F] rounded-2xl border border-[#1E2D4A] p-4 shadow-xl">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{selectedRouteProvider.business_name}</p>
+                    {routeDistance != null && routeDuration != null ? (
+                      <p className="text-xs text-[#6D5EF8] mt-0.5">
+                        {MODE_LABELS[travelMode].label} · {formatDistance(routeDistance)} · {formatDuration(routeDuration)}
+                      </p>
+                    ) : routeError ? (
+                      <p className="text-xs text-[#FBBF24] mt-0.5">{routeError}</p>
+                    ) : routeLoading ? (
+                      <p className="text-xs text-[#9CA3AF] mt-0.5">Calculando ruta...</p>
+                    ) : null}
+                  </div>
+                  <button
+                    onClick={handleClearRoute}
+                    className="p-1.5 rounded-xl hover:bg-[#1A2440] transition-colors text-[#9CA3AF] hover:text-white"
+                  >
+                    <X size={14} strokeWidth={1.75} />
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  {(Object.entries(MODE_LABELS) as [TravelMode, typeof MODE_LABELS[TravelMode]][]).map(([mode, config]) => {
+                    const Icon = config.icon
+                    const isActive = travelMode === mode
+                    return (
+                      <button
+                        key={mode}
+                        onClick={() => handleModeChange(mode)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium transition-all duration-200 ${
+                          isActive
+                            ? 'bg-[#6D5EF8]/20 border border-[#6D5EF8]/50 text-white'
+                            : 'bg-[#111827] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white'
+                        }`}
+                      >
+                        <Icon size={12} strokeWidth={1.75} />
+                        {config.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedRouteProvider && routeLoading && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-[#151E2F] rounded-xl px-4 py-2 border border-[#1E2D4A] flex items-center gap-2 shadow-lg">
+              <Loader2 size={14} className="animate-spin text-[#6D5EF8]" />
+              <span className="text-xs text-[#9CA3AF]">Calculando ruta...</span>
+            </div>
           )}
         </div>
       </div>
-
-      <RouteMapModal
-        isOpen={mapOpen}
-        onClose={() => setMapOpen(false)}
-        provider={selectedProvider}
-      />
     </div>
   )
 }

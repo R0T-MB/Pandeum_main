@@ -214,9 +214,11 @@ export function ProvidersDrawer({
                       </span>
                     )}
                     {typeof provider.response_time_hours === 'number' && (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 text-[11px]">
                         <Clock size={12} strokeWidth={1.5} />
-                        {provider.response_time_hours}h
+                        {provider.response_time_hours < 1
+                          ? 'Responde en menos de 1 h'
+                          : `Responde en ${provider.response_time_hours} h aprox.`}
                       </span>
                     )}
                     {provider.phone && (
@@ -235,17 +237,10 @@ export function ProvidersDrawer({
                       if (dist != null) {
                         return (
                           <>
-                            <button
-                              onClick={() => onDistanceClick(provider)}
-                              className={`flex items-center gap-1 text-[11px] font-medium transition-colors duration-200 ${
-                                activeSort === 'distance'
-                                  ? 'text-[#A78BFA] hover:text-[#C4B5FD]'
-                                  : 'text-white hover:text-[#6D5EF8]'
-                              }`}
-                            >
+                            <span className={`flex items-center gap-1 text-[11px] ${activeSort === 'distance' ? 'text-[#A78BFA] font-medium' : 'text-[#9CA3AF]'}`}>
                               <MapPin size={12} strokeWidth={1.5} />
-                              {dist.toFixed(1)} km
-                            </button>
+                              A {dist.toFixed(1)} km aprox.
+                            </span>
                             <button
                               onClick={() => onDistanceClick(provider)}
                               className="flex items-center gap-1 text-[11px] text-[#6D5EF8] hover:text-[#A78BFA] font-medium transition-colors duration-200 ml-auto"
