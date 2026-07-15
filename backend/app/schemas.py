@@ -52,6 +52,12 @@ class ProviderBase(BaseModel):
     portfolio: Optional[List[str]] = []
     response_time_hours: Optional[float] = None
     available_now: Optional[bool] = False
+    address: Optional[str] = None
+    service_area: Optional[str] = None
+    phone: Optional[str] = None
+    whatsapp: Optional[str] = None
+    search_tags: Optional[List[str]] = Field(default_factory=list)
+    service_keywords: Optional[List[str]] = Field(default_factory=list)
 
 class ProviderCreate(ProviderBase):
     pass
@@ -69,6 +75,36 @@ class ProviderResponse(ProviderBase):
     updated_at: Optional[datetime] = None
     user: Optional[UserResponse] = None
     rating: Optional[float] = 0
+
+    class Config:
+        from_attributes = True
+
+# ========== Service ==========
+class ServiceBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price_estimate: Optional[str] = None
+    price_min: Optional[int] = None
+    price_max: Optional[int] = None
+    tags: Optional[List[str]] = Field(default_factory=list)
+    is_active: Optional[bool] = True
+
+class ServiceCreate(ServiceBase):
+    pass
+
+class ServiceUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price_estimate: Optional[str] = None
+    price_min: Optional[int] = None
+    price_max: Optional[int] = None
+    tags: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+class ServiceResponse(ServiceBase):
+    id: UUID
+    provider_id: UUID
+    created_at: datetime
 
     class Config:
         from_attributes = True

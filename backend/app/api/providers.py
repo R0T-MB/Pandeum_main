@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from ..database import get_db
-from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, ReviewCreate, ReviewResponse, FavoriteResponse
+from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, ReviewCreate, ReviewResponse, FavoriteResponse, ServiceCreate, ServiceUpdate, ServiceResponse
 from ..auth import get_current_user, get_current_admin_user
-from ..models import User, Provider, Review, Favorite
+from ..models import User, Provider, Review, Favorite, Service
 from ..crud import create_provider, get_provider_rating
 
 router = APIRouter(prefix="/providers", tags=["providers"])
@@ -190,3 +190,72 @@ def get_my_favorites(db: Session = Depends(get_db), current_user: User = Depends
                 "created_at": fav.created_at
             })
     return result
+
+# ========== Service Management ==========
+
+@router.get("/me/services", response_model=List[ServiceResponse])
+def list_my_services(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_provider:
+        raise HTTPException(status_code=403, detail="No eres proveedor")
+    services = db.query(Service).filter(
+        Service.provider_id == str(current_user.id),
+        Service.is_active == True
+    ).order_by(Service.created_at.desc()).all()
+    return services
+
+@router.post("/me/services", response_model=ServiceResponse, status_code=201)
+def create_my_service(
+    service_data: ServiceCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_provider:
+        raise HTTPException(status_code=403, detail="No eres proveedor")
+    service = Service(
+        provider_id=str(current_user.id),
+        **service_data.dict()
+    )
+    db.add(service)
+    db.commit()
+    db.refresh(service)
+    return service
+
+@router.put("/me/services/{service_id}", response_model=ServiceResponse)
+def update_my_service(
+    service_id: UUID,
+    service_data: ServiceUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_provider:
+        raise HTTPException(status_code=403, detail="No eres proveedor")
+    service = db.query(Service).filter(Service.id == str(service_id)).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
+    if service.provider_id != str(current_user.id):
+        raise HTTPException(status_code=403, detail="No puedes modificar un servicio que no te pertenece")
+    for key, value in service_data.dict(exclude_unset=True).items():
+        setattr(service, key, value)
+    db.commit()
+    db.refresh(service)
+    return service
+
+@router.delete("/me/services/{service_id}")
+def deactivate_my_service(
+    service_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_provider:
+        raise HTTPException(status_code=403, detail="No eres proveedor")
+    service = db.query(Service).filter(Service.id == str(service_id)).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Servicio no encontrado")
+    if service.provider_id != str(current_user.id):
+        raise HTTPException(status_code=403, detail="No puedes eliminar un servicio que no te pertenece")
+    service.is_active = False
+    db.commit()
+    return {"message": "Servicio desactivado correctamente"}
