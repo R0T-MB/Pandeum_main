@@ -24,7 +24,26 @@ export interface Provider {
   available_now: boolean;
   response_time_hours: number | null;
   cases_resolved_similar: number;
+  address: string | null;
+  service_area: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  search_tags: string[];
+  service_keywords: string[];
   rating: number;
+}
+
+export interface Service {
+  id: string;
+  provider_id: string;
+  name: string;
+  description: string | null;
+  price_estimate: string | null;
+  price_min: number | null;
+  price_max: number | null;
+  tags: string[];
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface AISolveResponse {
