@@ -4,9 +4,10 @@ import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
 import httpx
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, and_, cast, String
 from typing import List, Dict, Any, Optional
 from .config import settings
-from .models import Provider, UserMemory
+from .models import Provider, UserMemory, Service
 from .crud import get_provider_rating
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -523,7 +524,98 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
         if text.startswith("- ") or text.startswith("* "):
             text = text[2:].strip()
         return text
-    
+
+    @staticmethod
+    def _search_matching_providers(db: Session, provider_category: str | None, problem: str = "", limit: int = 5):
+        stop_words = {
+            'el', 'la', 'los', 'las', 'de', 'del', 'en', 'un', 'una', 'que', 'es', 'por',
+            'con', 'para', 'me', 'te', 'se', 'lo', 'y', 'a', 'e', 'o', 'mi', 'tu', 'su',
+            'le', 'no', 'si', 'ya', 'al', 'mas', 'como', 'que', 'cuando', 'donde',
+            'hay', 'esta', 'muy', 'todo', 'tengo', 'tiene', 'son', 'era', 'fue',
+            'ha', 'han', 'he', 'has', 'hemos', 'habia', 'habian', 'entre',
+            'pero', 'sin', 'sobre', 'tambien', 'quien', 'cual', 'ese', 'esa',
+            'eso', 'esos', 'esas', 'este', 'esta', 'esto', 'estos', 'estas',
+            'ni', 'solo', 'cada', 'ser', 'sido', 'siendo', 'vez',
+            'quiero', 'necesito', 'duele', 'dolor', 'puedo', 'puede', 'puedes',
+            'voy', 'vas', 'va', 'van', 'vamos', 'estar', 'estoy', 'estas',
+            'hago', 'hace', 'hacen', 'haces', 'dar', 'doy', 'da', 'dan',
+            'ver', 'vez', 'ir', 'fui', 'iba', 'he', 'has', 'han', 'hemos',
+            'saber', 'se', 'sepa', 'decir', 'dice', 'dijo',
+        }
+
+        terms = set()
+        if provider_category:
+            for word in provider_category.lower().split():
+                word = word.strip('.,;:!?¡¿"\'()[]{}')
+                if word and word not in stop_words:
+                    terms.add(word)
+
+        if problem:
+            for word in problem.lower().split():
+                word = word.strip('.,;:!?¡¿"\'()[]{}')
+                if word and word not in stop_words:
+                    terms.add(word)
+
+        terms = sorted(terms)[:10]
+
+        if not terms:
+            return db.query(Provider).order_by(
+                Provider.trust_score.desc().nullslast()
+            ).limit(limit).all()
+
+        all_filters = []
+        for term in terms:
+            pattern = f"%{term}%"
+            all_filters.append(Provider.category.ilike(pattern))
+            all_filters.append(Provider.subcategory.ilike(pattern))
+            all_filters.append(Provider.description.ilike(pattern))
+            all_filters.append(cast(Provider.search_tags, String).ilike(pattern))
+            all_filters.append(cast(Provider.service_keywords, String).ilike(pattern))
+            all_filters.append(Provider.services.any(
+                and_(Service.is_active == True, Service.name.ilike(pattern))
+            ))
+            all_filters.append(Provider.services.any(
+                and_(Service.is_active == True, Service.description.ilike(pattern))
+            ))
+            all_filters.append(Provider.services.any(
+                and_(Service.is_active == True, cast(Service.tags, String).ilike(pattern))
+            ))
+
+        query = db.query(Provider).filter(or_(*all_filters))
+
+        query = query.order_by(
+            Provider.available_now.desc().nullslast(),
+            Provider.trust_score.desc().nullslast(),
+            Provider.response_time_hours.asc().nullslast()
+        )
+
+        return query.limit(limit).all()
+
+    @staticmethod
+    def _provider_to_recommendation(db: Session, provider: Provider, reason: str | None = None):
+        rating = get_provider_rating(db, provider.id)
+
+        if provider.price_min and provider.price_max:
+            estimated_cost = f"${provider.price_min}-${provider.price_max}"
+        elif provider.price_min:
+            estimated_cost = f"Desde ${provider.price_min}"
+        else:
+            estimated_cost = "Consultar"
+
+        reason_bullets = [reason] if reason else ["Coincide con la necesidad indicada"]
+
+        return {
+            "provider_id": provider.id,
+            "business_name": provider.business_name,
+            "trust_score": provider.trust_score,
+            "rating": rating,
+            "distance_km": None,
+            "reason_bullets": reason_bullets,
+            "estimated_cost": estimated_cost,
+            "available_now": provider.available_now,
+            "response_time_hours": provider.response_time_hours
+        }
+
     @staticmethod
     async def _generate_with_openrouter(prompt: str) -> Optional[str]:
         """Fallback a OpenRouter si está configurado. Retorna texto crudo."""
@@ -895,27 +987,9 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
             # Buscar proveedores si hay provider_category
             providers = []
             if provider_category:
-                db_providers = db.query(Provider).filter(
-                    Provider.category.ilike(f"%{provider_category}%")
-                ).all()
+                db_providers = AIEngine._search_matching_providers(db, provider_category, problem, limit=5)
                 for db_provider in db_providers:
-                    rating = get_provider_rating(db, db_provider.id)
-                    providers.append({
-                        "provider_id": db_provider.id,
-                        "business_name": db_provider.business_name,
-                        "trust_score": db_provider.trust_score,
-                        "rating": rating,
-                        "distance_km": None,
-                        "reason_bullets": [],
-                        "estimated_cost": f"${db_provider.price_min}-${db_provider.price_max}" if db_provider.price_min else "Consultar",
-                        "available_now": db_provider.available_now,
-                        "response_time_hours": db_provider.response_time_hours
-                    })
-                providers = sorted(providers, key=lambda p: (
-                    not p.get("available_now", False),
-                    -p.get("rating", 0),
-                    -p.get("trust_score", 0)
-                ))
+                    providers.append(AIEngine._provider_to_recommendation(db, db_provider))
             
             return {
                 "response_mode": "suggestions",
@@ -1171,32 +1245,9 @@ Reglas:
             provider_search_requested = True
         
         if provider_category:
-            # Buscar proveedores por categoría
-            db_providers = db.query(Provider).filter(
-                Provider.category.ilike(f"%{provider_category}%")
-            ).all()
-            
-            # Convertir a formato de diccionario y ordenar
+            db_providers = AIEngine._search_matching_providers(db, provider_category, problem, limit=5)
             for db_provider in db_providers:
-                rating = get_provider_rating(db, db_provider.id)
-                providers.append({
-                    "provider_id": db_provider.id,
-                    "business_name": db_provider.business_name,
-                    "trust_score": db_provider.trust_score,
-                    "rating": rating,
-                    "distance_km": None,
-                    "reason_bullets": [],
-                    "estimated_cost": f"${db_provider.price_min}-${db_provider.price_max}" if db_provider.price_min else "Consultar",
-                    "available_now": db_provider.available_now,
-                    "response_time_hours": db_provider.response_time_hours
-                })
-            
-            # Ordenar por available_now, rating, trust_score
-            providers = sorted(providers, key=lambda p: (
-                not p.get("available_now", False),
-                -p.get("rating", 0),
-                -p.get("trust_score", 0)
-            ))
+                providers.append(AIEngine._provider_to_recommendation(db, db_provider))
         
         return {
             "response_mode": "suggestions",
@@ -1708,23 +1759,9 @@ Soluciones anteriores:
                     detected_cat = cat
                     break
             if detected_cat:
-                db_providers = db.query(Provider).filter(
-                    Provider.category == detected_cat,
-                    Provider.verification_status == "verified"
-                ).order_by(Provider.trust_score.desc()).limit(3).all()
+                db_providers = AIEngine._search_matching_providers(db, detected_cat, problem, limit=3)
                 for p in db_providers:
-                    rating = get_provider_rating(db, p.id)
-                    recommended_providers.append({
-                        "provider_id": p.id,
-                        "business_name": p.business_name,
-                        "trust_score": p.trust_score,
-                        "rating": rating,
-                        "distance_km": None,
-                        "reason_bullets": [f"Especialista en {detected_cat}", f"Trust Score {p.trust_score}"],
-                        "estimated_cost": f"${p.price_min}-${p.price_max}" if p.price_min else "Consultar",
-                        "available_now": p.available_now,
-                        "response_time_hours": p.response_time_hours
-                    })
+                    recommended_providers.append(AIEngine._provider_to_recommendation(db, p, f"Especialista en {detected_cat}"))
 
         has_providers = len(recommended_providers) > 0
         # Para salud, forzar has_providers=true aunque no haya proveedores en BD
