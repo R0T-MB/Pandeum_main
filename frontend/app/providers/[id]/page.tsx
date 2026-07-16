@@ -368,13 +368,17 @@ export default function PublicProviderProfile() {
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {galleryImages.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setGalleryModal({ images: galleryImages, index: i })}
-                    className="relative aspect-square rounded-xl overflow-hidden border border-[#1E2D4A] bg-[#151E2F] group hover:border-[#6D5EF8]/50 transition-all duration-200"
-                  >
-                    <img src={img.url} alt={img.title || `Galería ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  </button>
+                  <div key={i} className="rounded-xl overflow-hidden border border-[#1E2D4A] bg-[#151E2F] group hover:border-[#6D5EF8]/50 transition-all duration-200">
+                    <button
+                      onClick={() => setGalleryModal({ images: galleryImages, index: i })}
+                      className="w-full aspect-square overflow-hidden"
+                    >
+                      <img src={img.url} alt={img.title || `Galería ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    </button>
+                    {img.title && (
+                      <p className="px-2.5 py-1.5 text-[11px] text-[#9CA3AF] truncate border-t border-[#1E2D4A]">{img.title}</p>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -453,10 +457,14 @@ export default function PublicProviderProfile() {
               alt={galleryModal.images[galleryModal.index].title || `Imagen ${galleryModal.index + 1}`}
               className="w-full h-full object-contain rounded-2xl"
             />
-            <p className="text-center text-sm text-[#9CA3AF] mt-3">
-              {galleryModal.index + 1} / {galleryModal.images.length}
-              {galleryModal.images[galleryModal.index].title && ` — ${galleryModal.images[galleryModal.index].title}`}
-            </p>
+            <div className="text-center mt-3 space-y-1">
+              {galleryModal.images[galleryModal.index].title && (
+                <p className="text-sm font-medium text-white">{galleryModal.images[galleryModal.index].title}</p>
+              )}
+              <p className="text-sm text-[#9CA3AF]">
+                {galleryModal.index + 1} / {galleryModal.images.length}
+              </p>
+            </div>
           </div>
         </div>
       )}

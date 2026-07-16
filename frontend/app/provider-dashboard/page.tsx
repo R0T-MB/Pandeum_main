@@ -405,8 +405,12 @@ export default function ProviderDashboardPage() {
   }
 
   const updateGalleryTitle = (index: number, title: string) => {
-    const updated = form.gallery_images.map((img, i) => i === index ? { ...img, title } : img)
-    handleFormChange('gallery_images', updated)
+    setForm(prev => ({
+      ...prev,
+      gallery_images: prev.gallery_images.map((img, i) =>
+        i === index ? { ...img, title } : img
+      )
+    }))
   }
 
   const saveProfile = async () => {
@@ -1094,7 +1098,7 @@ export default function ProviderDashboardPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {form.gallery_images.map((img, i) => (
                         <div key={i} className="relative group rounded-xl overflow-hidden border border-[#1E2D4A] bg-[#151E2F]">
-                          <div className="aspect-[4/3] overflow-hidden">
+                          <div className="relative aspect-[4/3] overflow-hidden">
                             <img src={img.url} alt={img.title || `Galería ${i + 1}`} className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
                               <button onClick={() => setGalleryMain(i)} className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${img.is_main ? 'bg-[#6D5EF8] text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}>
