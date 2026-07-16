@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin } from 'lucide-react'
+import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Provider, Service } from '@/types'
@@ -168,6 +168,7 @@ export default function ProviderDashboardPage() {
   const [pickingLocation, setPickingLocation] = useState(false)
   const [customTagInput, setCustomTagInput] = useState('')
   const [customKeywordInput, setCustomKeywordInput] = useState('')
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -232,6 +233,53 @@ export default function ProviderDashboardPage() {
 
   const handleFormChange = (key: string, value: string | boolean) => {
     setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error('Solo se permiten imágenes PNG, JPG o WEBP.')
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('La imagen no debe superar los 2MB.')
+      return
+    }
+
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+
+    if (!cloudName || !uploadPreset) {
+      toast.error('No se configuró el servicio de subida de imágenes.')
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('upload_preset', uploadPreset)
+      formData.append('folder', 'pandeum/providers')
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (data.secure_url) {
+        handleFormChange('avatar_url', data.secure_url)
+        toast.success('Imagen subida correctamente')
+      } else {
+        toast.error('Error al subir la imagen')
+      }
+    } catch {
+      toast.error('Error de conexión al subir la imagen')
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const saveProfile = async () => {
@@ -507,8 +555,52 @@ export default function ProviderDashboardPage() {
 
               <div className="md:col-span-2">
                 <label className={labelClass}>Logo o imagen del negocio</label>
-                <input type="text" value={form.avatar_url} onChange={e => handleFormChange('avatar_url', e.target.value)} className={inputClass} placeholder="https://..." />
-                <p className="text-[10px] text-[#9CA3AF] mt-1">Próximamente podrás subir una imagen directamente.</p>
+                <div className="border-2 border-dashed border-[#1E2D4A] rounded-2xl p-5 transition-all duration-200 hover:border-[#6D5EF8]/30">
+                  {uploadingImage ? (
+                    <div className="flex flex-col items-center gap-3 py-4">
+                      <Loader2 size={28} className="text-[#6D5EF8] animate-spin" />
+                      <p className="text-sm text-[#9CA3AF]">Subiendo imagen...</p>
+                    </div>
+                  ) : form.avatar_url ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-28 h-28 rounded-xl overflow-hidden border border-[#1E2D4A] bg-[#151E2F]">
+                        <img src={form.avatar_url} alt="Logo" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#6D5EF8]/10 border border-[#6D5EF8]/30 text-[#6D5EF8] text-xs font-medium hover:bg-[#6D5EF8]/20 transition-all duration-200">
+                          <Upload size={14} strokeWidth={1.75} />
+                          Cambiar imagen
+                          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleImageUpload} />
+                        </label>
+                        <button
+                          onClick={() => handleFormChange('avatar_url', '')}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-all duration-200"
+                        >
+                          <Trash2 size={14} strokeWidth={1.75} />
+                          Quitar imagen
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-16 h-16 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center">
+                        <Image size={24} className="text-[#9CA3AF]" strokeWidth={1.5} />
+                      </div>
+                      <div className="text-center">
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#6D5EF8]/10 border border-[#6D5EF8]/30 text-[#6D5EF8] text-sm font-medium hover:bg-[#6D5EF8]/20 transition-all duration-200">
+                          <Upload size={16} strokeWidth={1.75} />
+                          Subir logo o imagen
+                          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleImageUpload} />
+                        </label>
+                      </div>
+                      <p className="text-[11px] text-[#9CA3AF]">PNG, JPG o WEBP. Máximo 2MB.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3">
+                  <label className="text-[11px] text-[#9CA3AF] mb-1 block">O ingresa una URL de imagen manualmente:</label>
+                  <input type="text" value={form.avatar_url} onChange={e => handleFormChange('avatar_url', e.target.value)} className={inputClass} placeholder="https://..." />
+                </div>
               </div>
 
               <div className="md:col-span-2">
