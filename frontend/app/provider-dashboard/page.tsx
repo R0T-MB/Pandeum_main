@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle } from 'lucide-react'
+import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Provider, Service } from '@/types'
@@ -32,6 +32,12 @@ export default function ProviderDashboardPage() {
     service_area: '',
     phone: '',
     whatsapp: '',
+    contact_email: '',
+    website_url: '',
+    facebook_url: '',
+    instagram_url: '',
+    tiktok_url: '',
+    linkedin_url: '',
     location_lat: '',
     location_lng: '',
     price_min: '',
@@ -85,6 +91,12 @@ export default function ProviderDashboardPage() {
         service_area: p.service_area || '',
         phone: p.phone || '',
         whatsapp: p.whatsapp || '',
+        contact_email: p.contact_email || '',
+        website_url: p.website_url || '',
+        facebook_url: p.facebook_url || '',
+        instagram_url: p.instagram_url || '',
+        tiktok_url: p.tiktok_url || '',
+        linkedin_url: p.linkedin_url || '',
         price_min: p.price_min !== null ? String(p.price_min) : '',
         price_max: p.price_max !== null ? String(p.price_max) : '',
         response_time_hours: p.response_time_hours !== null ? String(p.response_time_hours) : '',
@@ -119,6 +131,12 @@ export default function ProviderDashboardPage() {
         service_area: form.service_area || null,
         phone: form.phone || null,
         whatsapp: form.whatsapp || null,
+        contact_email: form.contact_email || null,
+        website_url: form.website_url || null,
+        facebook_url: form.facebook_url || null,
+        instagram_url: form.instagram_url || null,
+        tiktok_url: form.tiktok_url || null,
+        linkedin_url: form.linkedin_url || null,
         price_min: form.price_min ? Number(form.price_min) : null,
         price_max: form.price_max ? Number(form.price_max) : null,
         response_time_hours: form.response_time_hours ? Number(form.response_time_hours) : null,
@@ -346,6 +364,39 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
               <p className="text-[10px] text-[#9CA3AF] mt-2">Estas coordenadas permiten calcular la distancia y mostrar la ruta en el mapa.</p>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-[#1E2D4A]">
+              <div className="flex items-center gap-2 mb-4">
+                <MessageCircle size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                <h3 className="text-sm font-semibold text-white">Contacto y Redes</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Correo electrónico</label>
+                  <input type="email" value={form.contact_email} onChange={e => handleFormChange('contact_email', e.target.value)} className={inputClass} placeholder="contacto@negocio.com" />
+                </div>
+                <div>
+                  <label className={labelClass}>Sitio web</label>
+                  <input type="url" value={form.website_url} onChange={e => handleFormChange('website_url', e.target.value)} className={inputClass} placeholder="https://negocio.com" />
+                </div>
+                <div>
+                  <label className={labelClass}>Facebook</label>
+                  <input type="url" value={form.facebook_url} onChange={e => handleFormChange('facebook_url', e.target.value)} className={inputClass} placeholder="https://facebook.com/..." />
+                </div>
+                <div>
+                  <label className={labelClass}>Instagram</label>
+                  <input type="url" value={form.instagram_url} onChange={e => handleFormChange('instagram_url', e.target.value)} className={inputClass} placeholder="https://instagram.com/..." />
+                </div>
+                <div>
+                  <label className={labelClass}>TikTok</label>
+                  <input type="url" value={form.tiktok_url} onChange={e => handleFormChange('tiktok_url', e.target.value)} className={inputClass} placeholder="https://tiktok.com/..." />
+                </div>
+                <div>
+                  <label className={labelClass}>LinkedIn</label>
+                  <input type="url" value={form.linkedin_url} onChange={e => handleFormChange('linkedin_url', e.target.value)} className={inputClass} placeholder="https://linkedin.com/..." />
+                </div>
+              </div>
             </div>
 
             <div className="mt-6 pt-5 border-t border-[#1E2D4A]">

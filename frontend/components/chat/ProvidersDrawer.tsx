@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { X, Star, MapPin, Clock, Zap, Tag, Phone, Map, Loader2 } from 'lucide-react'
+import { X, Star, MapPin, Clock, Zap, Tag, Phone, Map, Loader2, Mail, Globe, MessageCircle, ExternalLink } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
 
@@ -58,6 +58,7 @@ export function ProvidersDrawer({
 }: ProvidersDrawerProps) {
   const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
   const [activeSort, setActiveSort] = useState<SortMode>('rating')
+  const [openContactFor, setOpenContactFor] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen && providers.some(p => p.location_lat != null && p.location_lng != null)) {
@@ -277,6 +278,108 @@ export function ProvidersDrawer({
                       }
                       return null
                     })()}
+                  </div>
+
+                  {/* Contactar */}
+                  <div className="relative pt-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setOpenContactFor(openContactFor === provider.provider_id ? null : provider.provider_id) }}
+                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-2xl text-[11px] font-medium bg-[#111827] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white hover:border-[#6D5EF8]/50 transition-all duration-200"
+                    >
+                      <MessageCircle size={13} strokeWidth={1.75} />
+                      Contactar
+                    </button>
+
+                    {openContactFor === provider.provider_id && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setOpenContactFor(null)} />
+                        <div className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-[#151E2F] border border-[#1E2D4A] rounded-2xl p-2 space-y-1 shadow-xl">
+                          {(() => {
+                            const items: { icon: React.ReactNode; label: string; href: string }[] = []
+
+                            if (provider.whatsapp) {
+                              const wa = provider.whatsapp.replace(/[^0-9]/g, '')
+                              items.push({
+                                icon: <MessageCircle size={14} className="text-green-400" strokeWidth={1.75} />,
+                                label: 'WhatsApp',
+                                href: `https://wa.me/${wa}`
+                              })
+                            }
+                            if (provider.phone) {
+                              items.push({
+                                icon: <Phone size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />,
+                                label: 'Llamar',
+                                href: `tel:${provider.phone}`
+                              })
+                            }
+                            if (provider.contact_email) {
+                              items.push({
+                                icon: <Mail size={14} className="text-yellow-400" strokeWidth={1.75} />,
+                                label: 'Correo',
+                                href: `mailto:${provider.contact_email}`
+                              })
+                            }
+                            if (provider.website_url) {
+                              items.push({
+                                icon: <Globe size={14} className="text-blue-400" strokeWidth={1.75} />,
+                                label: 'Sitio web',
+                                href: provider.website_url
+                              })
+                            }
+                            if (provider.facebook_url) {
+                              items.push({
+                                icon: <ExternalLink size={14} className="text-blue-500" strokeWidth={1.75} />,
+                                label: 'Facebook',
+                                href: provider.facebook_url
+                              })
+                            }
+                            if (provider.instagram_url) {
+                              items.push({
+                                icon: <ExternalLink size={14} className="text-pink-400" strokeWidth={1.75} />,
+                                label: 'Instagram',
+                                href: provider.instagram_url
+                              })
+                            }
+                            if (provider.tiktok_url) {
+                              items.push({
+                                icon: <ExternalLink size={14} className="text-white" strokeWidth={1.75} />,
+                                label: 'TikTok',
+                                href: provider.tiktok_url
+                              })
+                            }
+                            if (provider.linkedin_url) {
+                              items.push({
+                                icon: <ExternalLink size={14} className="text-blue-400" strokeWidth={1.75} />,
+                                label: 'LinkedIn',
+                                href: provider.linkedin_url
+                              })
+                            }
+
+                            if (items.length === 0) {
+                              return (
+                                <div className="px-3 py-3 text-[11px] text-[#9CA3AF] text-center">
+                                  Este proveedor aún no tiene métodos de contacto disponibles.
+                                </div>
+                              )
+                            }
+
+                            return items.map((item, i) => (
+                              <a
+                                key={i}
+                                href={item.href}
+                                target={item.href.startsWith('http') ? '_blank' : undefined}
+                                rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                                onClick={() => setOpenContactFor(null)}
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[12px] text-white hover:bg-[#1E2D4A] transition-all duration-200"
+                              >
+                                {item.icon}
+                                {item.label}
+                              </a>
+                            ))
+                          })()}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

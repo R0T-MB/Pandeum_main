@@ -28,6 +28,12 @@ export interface Provider {
   service_area: string | null;
   phone: string | null;
   whatsapp: string | null;
+  contact_email: string | null;
+  website_url: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  tiktok_url: string | null;
+  linkedin_url: string | null;
   search_tags: string[];
   service_keywords: string[];
   rating: number;
@@ -80,6 +86,12 @@ export interface ProviderRecommendation {
   service_area?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
+  contact_email?: string | null;
+  website_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  tiktok_url?: string | null;
+  linkedin_url?: string | null;
 }
 
 export interface Fallback {

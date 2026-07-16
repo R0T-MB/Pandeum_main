@@ -56,6 +56,12 @@ class ProviderBase(BaseModel):
     service_area: Optional[str] = None
     phone: Optional[str] = None
     whatsapp: Optional[str] = None
+    contact_email: Optional[str] = None
+    website_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+    tiktok_url: Optional[str] = None
+    linkedin_url: Optional[str] = None
     search_tags: Optional[List[str]] = Field(default_factory=list)
     service_keywords: Optional[List[str]] = Field(default_factory=list)
 
@@ -138,6 +144,12 @@ class ProviderRecommendation(BaseModel):
     service_area: Optional[str] = None
     phone: Optional[str] = None
     whatsapp: Optional[str] = None
+    contact_email: Optional[str] = None
+    website_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+    tiktok_url: Optional[str] = None
+    linkedin_url: Optional[str] = None
 
 class CompositeStep(BaseModel):
     role: str

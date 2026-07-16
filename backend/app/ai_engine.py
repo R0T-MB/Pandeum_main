@@ -627,6 +627,12 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
             "service_area": provider.service_area,
             "phone": provider.phone,
             "whatsapp": provider.whatsapp,
+            "contact_email": provider.contact_email,
+            "website_url": provider.website_url,
+            "facebook_url": provider.facebook_url,
+            "instagram_url": provider.instagram_url,
+            "tiktok_url": provider.tiktok_url,
+            "linkedin_url": provider.linkedin_url,
         }
 
     @staticmethod
@@ -1732,7 +1738,19 @@ Soluciones anteriores:
                             "reason_bullets": p.get("reason_bullets", []),
                             "estimated_cost": f"${db_provider.price_min}-${db_provider.price_max}" if db_provider.price_min else "Consultar",
                             "available_now": db_provider.available_now,
-                            "response_time_hours": db_provider.response_time_hours
+                            "response_time_hours": db_provider.response_time_hours,
+                            "location_lat": float(db_provider.location_lat) if db_provider.location_lat is not None else None,
+                            "location_lng": float(db_provider.location_lng) if db_provider.location_lng is not None else None,
+                            "address": db_provider.address,
+                            "service_area": db_provider.service_area,
+                            "phone": db_provider.phone,
+                            "whatsapp": db_provider.whatsapp,
+                            "contact_email": db_provider.contact_email,
+                            "website_url": db_provider.website_url,
+                            "facebook_url": db_provider.facebook_url,
+                            "instagram_url": db_provider.instagram_url,
+                            "tiktok_url": db_provider.tiktok_url,
+                            "linkedin_url": db_provider.linkedin_url,
                         })
         # Si no se encontraron proveedores por nombre, intentar por categoría y subcategoría
         if not recommended_providers:
