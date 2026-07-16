@@ -133,6 +133,8 @@ export default function ProviderDashboardPage() {
     subcategory: '',
     description: '',
     avatar_url: '',
+    cover_image_url: '',
+    gallery_images: [] as { url: string; title: string; is_main: boolean }[],
     address: '',
     service_area: '',
     phone: '',
@@ -170,6 +172,8 @@ export default function ProviderDashboardPage() {
   const [customTagInput, setCustomTagInput] = useState('')
   const [customKeywordInput, setCustomKeywordInput] = useState('')
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [uploadingGallery, setUploadingGallery] = useState(false)
   const [activeSection, setActiveSection] = useState<string>('overview')
 
   const NAV_SECTIONS: { key: string; label: string; icon: React.ElementType }[] = [
@@ -213,6 +217,8 @@ export default function ProviderDashboardPage() {
         subcategory: p.subcategory || '',
         description: p.description || '',
         avatar_url: p.avatar_url || '',
+        cover_image_url: p.cover_image_url || '',
+        gallery_images: Array.isArray(p.gallery_images) ? p.gallery_images.map(g => ({ url: g.url || '', title: g.title || '', is_main: !!g.is_main })) : [],
         address: p.address || '',
         service_area: p.service_area || '',
         phone: p.phone || '',
@@ -244,7 +250,7 @@ export default function ProviderDashboardPage() {
     }
   }
 
-  const handleFormChange = (key: string, value: string | boolean) => {
+  const handleFormChange = (key: string, value: string | boolean | unknown[]) => {
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
@@ -295,6 +301,114 @@ export default function ProviderDashboardPage() {
     }
   }
 
+  const uploadImageToCloudinary = async (file: File, folder: string): Promise<string | null> => {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+
+    if (!cloudName || !uploadPreset) {
+      toast.error('No se configuró el servicio de subida de imágenes.')
+      return null
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('upload_preset', uploadPreset)
+    formData.append('folder', folder)
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+    const data = await res.json()
+    return data.secure_url || null
+  }
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error('Solo se permiten imágenes PNG, JPG o WEBP.')
+      return
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('La imagen de portada no debe superar los 4MB.')
+      return
+    }
+
+    setUploadingCover(true)
+    try {
+      const url = await uploadImageToCloudinary(file, 'pandeum/providers/covers')
+      if (url) {
+        handleFormChange('cover_image_url', url)
+        toast.success('Portada subida correctamente')
+      } else {
+        toast.error('Error al subir la portada')
+      }
+    } catch {
+      toast.error('Error de conexión al subir la portada')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const totalAfterAdd = form.gallery_images.length + files.length
+    if (totalAfterAdd > 10) {
+      toast.error('Máximo 10 imágenes en la galería.')
+      return
+    }
+
+    setUploadingGallery(true)
+    try {
+      const uploaded: { url: string; title: string; is_main: boolean }[] = []
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+          toast.error(`"${file.name}" no es PNG, JPG o WEBP.`)
+          continue
+        }
+        if (file.size > 3 * 1024 * 1024) {
+          toast.error(`"${file.name}" supera los 3MB.`)
+          continue
+        }
+        const url = await uploadImageToCloudinary(file, 'pandeum/providers/gallery')
+        if (url) {
+          uploaded.push({ url, title: '', is_main: form.gallery_images.length === 0 && uploaded.length === 0 })
+        }
+      }
+      if (uploaded.length > 0) {
+        handleFormChange('gallery_images', [...form.gallery_images, ...uploaded])
+        toast.success(`${uploaded.length} imagen(es) subida(s) correctamente`)
+      }
+    } catch {
+      toast.error('Error de conexión al subir imágenes')
+    } finally {
+      setUploadingGallery(false)
+    }
+  }
+
+  const removeGalleryImage = (index: number) => {
+    const updated = form.gallery_images.filter((_, i) => i !== index)
+    if (updated.length > 0 && form.gallery_images[index]?.is_main) {
+      updated[0].is_main = true
+    }
+    handleFormChange('gallery_images', updated)
+  }
+
+  const setGalleryMain = (index: number) => {
+    const updated = form.gallery_images.map((img, i) => ({ ...img, is_main: i === index }))
+    handleFormChange('gallery_images', updated)
+  }
+
+  const updateGalleryTitle = (index: number, title: string) => {
+    const updated = form.gallery_images.map((img, i) => i === index ? { ...img, title } : img)
+    handleFormChange('gallery_images', updated)
+  }
+
   const saveProfile = async () => {
     setSaving(true)
     try {
@@ -308,6 +422,8 @@ export default function ProviderDashboardPage() {
         subcategory: form.subcategory || null,
         description: form.description || null,
         avatar_url: form.avatar_url || null,
+        cover_image_url: form.cover_image_url || null,
+        gallery_images: form.gallery_images,
         address: form.address || null,
         service_area: form.service_area || null,
         phone: form.phone || null,
@@ -722,6 +838,52 @@ export default function ProviderDashboardPage() {
                     </div>
                   </div>
                   <div className="md:col-span-2">
+                    <label className={labelClass}>Imagen de portada</label>
+                    <div className="border-2 border-dashed border-[#1E2D4A] rounded-2xl p-5 transition-all duration-200 hover:border-[#6D5EF8]/30">
+                      {uploadingCover ? (
+                        <div className="flex flex-col items-center gap-3 py-4">
+                          <Loader2 size={28} className="text-[#6D5EF8] animate-spin" />
+                          <p className="text-sm text-[#9CA3AF]">Subiendo portada...</p>
+                        </div>
+                      ) : form.cover_image_url ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-full h-40 rounded-xl overflow-hidden border border-[#1E2D4A] bg-[#151E2F]">
+                            <img src={form.cover_image_url} alt="Portada" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#6D5EF8]/10 border border-[#6D5EF8]/30 text-[#6D5EF8] text-xs font-medium hover:bg-[#6D5EF8]/20 transition-all duration-200">
+                              <Upload size={14} strokeWidth={1.75} />
+                              Cambiar portada
+                              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleCoverUpload} />
+                            </label>
+                            <button onClick={() => handleFormChange('cover_image_url', '')} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-all duration-200">
+                              <Trash2 size={14} strokeWidth={1.75} />
+                              Quitar portada
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-16 h-16 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center">
+                            <Image size={24} className="text-[#9CA3AF]" strokeWidth={1.5} />
+                          </div>
+                          <div className="text-center">
+                            <label className="cursor-pointer inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#6D5EF8]/10 border border-[#6D5EF8]/30 text-[#6D5EF8] text-sm font-medium hover:bg-[#6D5EF8]/20 transition-all duration-200">
+                              <Upload size={16} strokeWidth={1.75} />
+                              Subir portada
+                              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={handleCoverUpload} />
+                            </label>
+                          </div>
+                          <p className="text-[11px] text-[#9CA3AF]">PNG, JPG o WEBP. Máximo 4MB.</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <label className="text-[11px] text-[#9CA3AF] mb-1 block">O ingresa una URL de portada manualmente:</label>
+                      <input type="text" value={form.cover_image_url} onChange={e => handleFormChange('cover_image_url', e.target.value)} className={inputClass} placeholder="https://..." />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
                     <label className={labelClass}>Descripción</label>
                     <textarea value={form.description} onChange={e => handleFormChange('description', e.target.value)} className={`${inputClass} min-h-[80px] resize-y`} placeholder="Describe los servicios que ofreces..." />
                   </div>
@@ -927,21 +1089,72 @@ export default function ProviderDashboardPage() {
                     <p className="text-xs text-[#9CA3AF]">Imágenes de tus trabajos, productos o servicios</p>
                   </div>
                 </div>
-                <div className="text-center py-10">
-                  <div className="w-16 h-16 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-4">
-                    <Image size={28} className="text-[#1E2D4A]" strokeWidth={1.5} />
-                  </div>
-                  <p className="text-sm text-[#9CA3AF] max-w-md mx-auto leading-relaxed">
-                    Aquí podrás subir imágenes de tus trabajos, productos o servicios.
-                  </p>
-                  <div className="flex justify-center gap-2 mt-5">
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <div key={i} className="w-12 h-12 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center">
-                        <Image size={16} className="text-[#1E2D4A]" strokeWidth={1.5} />
+                <div className="space-y-4">
+                  {form.gallery_images.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {form.gallery_images.map((img, i) => (
+                        <div key={i} className="relative group rounded-xl overflow-hidden border border-[#1E2D4A] bg-[#151E2F]">
+                          <div className="aspect-[4/3] overflow-hidden">
+                            <img src={img.url} alt={img.title || `Galería ${i + 1}`} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                              <button onClick={() => setGalleryMain(i)} className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${img.is_main ? 'bg-[#6D5EF8] text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                                {img.is_main ? 'Principal' : 'Marcar principal'}
+                              </button>
+                              <button onClick={() => removeGalleryImage(i)} className="px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 text-[10px] font-medium hover:bg-red-500/30 transition-all">
+                                <Trash2 size={12} strokeWidth={1.75} className="inline mr-1" />
+                                Eliminar
+                              </button>
+                            </div>
+                            {img.is_main && (
+                              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-[#6D5EF8]/80 text-white text-[9px] font-semibold">
+                                Principal
+                              </span>
+                            )}
+                          </div>
+                          <div className="p-2 border-t border-[#1E2D4A]">
+                            <input
+                              type="text"
+                              value={img.title || ''}
+                              onChange={e => updateGalleryTitle(i, e.target.value)}
+                              placeholder="Título opcional"
+                              className="w-full bg-transparent text-[11px] text-[#9CA3AF] placeholder-[#4B5563] outline-none focus:text-white transition-colors"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10">
+                      <div className="w-16 h-16 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-4">
+                        <Image size={28} className="text-[#1E2D4A]" strokeWidth={1.5} />
                       </div>
-                    ))}
+                      <p className="text-sm text-[#9CA3AF] max-w-md mx-auto leading-relaxed">
+                        Aún no has subido imágenes. Agrega fotos de tus trabajos, productos o servicios.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="border-2 border-dashed border-[#1E2D4A] rounded-2xl p-5 transition-all duration-200 hover:border-[#6D5EF8]/30">
+                    {uploadingGallery ? (
+                      <div className="flex flex-col items-center gap-3 py-4">
+                        <Loader2 size={28} className="text-[#6D5EF8] animate-spin" />
+                        <p className="text-sm text-[#9CA3AF]">Subiendo imágenes...</p>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center gap-3 cursor-pointer">
+                        <div className="w-12 h-12 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center">
+                          <Upload size={20} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-[#9CA3AF]">
+                            {form.gallery_images.length > 0 ? 'Agregar más imágenes' : 'Subir imágenes'}
+                          </p>
+                          <p className="text-[11px] text-[#6B7280] mt-1">PNG, JPG o WEBP. Máximo 3MB c/u. Hasta 10 imágenes.</p>
+                        </div>
+                        <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" multiple onChange={handleGalleryUpload} />
+                      </label>
+                    )}
                   </div>
-                  <p className="text-xs text-[#6B7280] mt-5">Máximo 10 imágenes en el plan actual.</p>
                 </div>
               </div>
             )}

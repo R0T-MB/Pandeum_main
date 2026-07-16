@@ -62,6 +62,8 @@ class ProviderBase(BaseModel):
     instagram_url: Optional[str] = None
     tiktok_url: Optional[str] = None
     linkedin_url: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    gallery_images: Optional[List[Dict]] = Field(default_factory=list)
     search_tags: Optional[List[str]] = Field(default_factory=list)
     service_keywords: Optional[List[str]] = Field(default_factory=list)
 

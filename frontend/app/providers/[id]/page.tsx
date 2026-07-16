@@ -7,7 +7,7 @@ import type { ProviderPublic } from '@/types'
 import {
   Star, MapPin, Clock, Zap, Tag, Phone, Mail, Globe, MessageCircle,
   ExternalLink, Briefcase, DollarSign, Loader2, ArrowLeft,
-  Map, Instagram, Facebook
+  Map, Instagram, Facebook, X, ChevronLeft, ChevronRight, Image
 } from 'lucide-react'
 
 const DAYS_LABELS: Record<string, string> = {
@@ -26,6 +26,8 @@ export default function PublicProviderProfile() {
   const [provider, setProvider] = useState<ProviderPublic | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+
+  const [galleryModal, setGalleryModal] = useState<{ images: { url: string; title?: string }[]; index: number } | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -81,6 +83,8 @@ export default function PublicProviderProfile() {
     : []
 
   const activeServices = provider.services?.filter(s => s.is_active) ?? []
+
+  const galleryImages = [...(provider.gallery_images || [])].sort((a, b) => (a.is_main ? -1 : 0) - (b.is_main ? -1 : 0))
 
   const priceRange = provider.price_min != null && provider.price_max != null
     ? `$${provider.price_min} - $${provider.price_max}`
@@ -149,7 +153,14 @@ export default function PublicProviderProfile() {
   return (
     <div className="min-h-screen bg-[#0B1020]">
       <div
-        className="relative h-48 sm:h-56 bg-gradient-to-br from-[#1E2D4A] via-[#111827] to-[#0B1020] border-b border-[#1E2D4A]"
+        className="relative h-48 sm:h-56 border-b border-[#1E2D4A]"
+        style={provider.cover_image_url ? {
+          backgroundImage: `linear-gradient(to bottom, rgba(11,16,32,0.7), rgba(11,16,32,0.9)), url(${provider.cover_image_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : {
+          background: 'linear-gradient(to bottom right, #1E2D4A, #111827, #0B1020)',
+        }}
       >
         <button
           onClick={() => router.back()}
@@ -348,6 +359,27 @@ export default function PublicProviderProfile() {
             </div>
           )}
 
+          {/* Galería */}
+          {galleryImages.length > 0 && (
+            <div className={cardClass}>
+              <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                <Image size={16} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                Galería
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {galleryImages.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setGalleryModal({ images: galleryImages, index: i })}
+                    className="relative aspect-square rounded-xl overflow-hidden border border-[#1E2D4A] bg-[#151E2F] group hover:border-[#6D5EF8]/50 transition-all duration-200"
+                  >
+                    <img src={img.url} alt={img.title || `Galería ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contacto */}
           <div className={cardClass}>
             <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
@@ -390,6 +422,44 @@ export default function PublicProviderProfile() {
           </div>
         </div>
       </div>
+
+      {/* Galería Modal */}
+      {galleryModal && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" onClick={() => setGalleryModal(null)}>
+          <button onClick={() => setGalleryModal(null)} className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all">
+            <X size={24} strokeWidth={1.75} />
+          </button>
+
+          {galleryModal.images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setGalleryModal(prev => prev ? { ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length } : null) }}
+                className="absolute left-4 z-10 p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all"
+              >
+                <ChevronLeft size={28} strokeWidth={1.75} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setGalleryModal(prev => prev ? { ...prev, index: (prev.index + 1) % prev.images.length } : null) }}
+                className="absolute right-4 z-10 p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all"
+              >
+                <ChevronRight size={28} strokeWidth={1.75} />
+              </button>
+            </>
+          )}
+
+          <div className="max-w-4xl max-h-[80vh] mx-4" onClick={e => e.stopPropagation()}>
+            <img
+              src={galleryModal.images[galleryModal.index].url}
+              alt={galleryModal.images[galleryModal.index].title || `Imagen ${galleryModal.index + 1}`}
+              className="w-full h-full object-contain rounded-2xl"
+            />
+            <p className="text-center text-sm text-[#9CA3AF] mt-3">
+              {galleryModal.index + 1} / {galleryModal.images.length}
+              {galleryModal.images[galleryModal.index].title && ` — ${galleryModal.images[galleryModal.index].title}`}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

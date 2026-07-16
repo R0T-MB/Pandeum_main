@@ -60,6 +60,8 @@ class Provider(Base):
     instagram_url = Column(String, nullable=True)
     tiktok_url = Column(String, nullable=True)
     linkedin_url = Column(String, nullable=True)
+    cover_image_url = Column(String, nullable=True)
+    gallery_images = Column(JSON, default=list)
     search_tags = Column(JSON, default=list)
     service_keywords = Column(JSON, default=list)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

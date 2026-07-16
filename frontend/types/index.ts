@@ -35,6 +35,12 @@ export interface Provider {
   instagram_url: string | null;
   tiktok_url: string | null;
   linkedin_url: string | null;
+  cover_image_url: string | null;
+  gallery_images: Array<{
+    url: string;
+    title?: string;
+    is_main?: boolean;
+  }>;
   search_tags: string[];
   service_keywords: string[];
   rating: number;
