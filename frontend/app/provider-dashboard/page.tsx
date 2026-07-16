@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image } from 'lucide-react'
+import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Provider, Service } from '@/types'
@@ -868,7 +869,16 @@ export default function ProviderDashboardPage() {
               </div>
             </div>
 
-            <div className="mt-6 pt-5 border-t border-[#1E2D4A]">
+            <div className="mt-6 pt-5 border-t border-[#1E2D4A] space-y-3">
+              {provider?.id && (
+                <Link
+                  href={`/providers/${provider.id}`}
+                  className="w-full flex items-center justify-center gap-2 bg-[#151E2F] hover:bg-[#1A2440] border border-[#1E2D4A] text-white rounded-2xl px-5 py-3 text-sm font-medium transition-all duration-200"
+                >
+                  <ExternalLink size={16} strokeWidth={1.75} />
+                  Previsualizar perfil
+                </Link>
+              )}
               <button
                 onClick={saveProfile}
                 disabled={saving}

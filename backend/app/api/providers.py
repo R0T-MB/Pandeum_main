@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from ..database import get_db
-from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, ReviewCreate, ReviewResponse, FavoriteResponse, ServiceCreate, ServiceUpdate, ServiceResponse
+from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, ProviderPublicResponse, ReviewCreate, ReviewResponse, FavoriteResponse, ServiceCreate, ServiceUpdate, ServiceResponse
 from ..auth import get_current_user, get_current_admin_user
 from ..models import User, Provider, Review, Favorite, Service
 from ..crud import create_provider, get_provider_rating
@@ -53,17 +53,22 @@ def list_providers(
 
     return result
 
-@router.get("/{provider_id}", response_model=ProviderResponse)
+@router.get("/{provider_id}", response_model=ProviderPublicResponse)
 def get_provider(provider_id: UUID, db: Session = Depends(get_db)):
     provider = db.query(Provider).filter(Provider.id == str(provider_id)).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
     rating = get_provider_rating(db, provider.id)
+    services = db.query(Service).filter(
+        Service.provider_id == str(provider_id),
+        Service.is_active == True
+    ).order_by(Service.created_at.desc()).all()
 
     data = {
         **provider.__dict__,
         "user": provider.user,
-        "rating": rating
+        "rating": rating,
+        "services": services
     }
 
     return data

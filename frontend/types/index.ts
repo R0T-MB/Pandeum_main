@@ -40,6 +40,10 @@ export interface Provider {
   rating: number;
 }
 
+export interface ProviderPublic extends Provider {
+  services: Service[];
+}
+
 export interface Service {
   id: string;
   provider_id: string;

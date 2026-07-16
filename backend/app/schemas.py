@@ -115,6 +115,9 @@ class ServiceResponse(ServiceBase):
     class Config:
         from_attributes = True
 
+class ProviderPublicResponse(ProviderResponse):
+    services: List[ServiceResponse] = Field(default_factory=list)
+
 # ========== AI ==========
 class ProblemRequest(BaseModel):
     problem: str

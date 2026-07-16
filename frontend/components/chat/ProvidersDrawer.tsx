@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { X, Star, MapPin, Clock, Zap, Tag, Phone, Map, Loader2, Mail, Globe, MessageCircle, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
+import { X, Star, MapPin, Clock, Zap, Tag, Phone, Map, Loader2, Mail, Globe, MessageCircle, ExternalLink, User } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
 
@@ -279,6 +280,14 @@ export function ProvidersDrawer({
                       return null
                     })()}
                   </div>
+
+                  <Link
+                    href={`/providers/${provider.provider_id}`}
+                    className="flex items-center justify-center gap-1.5 w-full py-2 rounded-2xl text-[11px] font-medium bg-[#111827] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white hover:border-[#6D5EF8]/50 transition-all duration-200"
+                  >
+                    <User size={13} strokeWidth={1.75} />
+                    Ver perfil
+                  </Link>
 
                   {/* Contactar */}
                   <div className="relative pt-1">
