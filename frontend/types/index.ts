@@ -23,6 +23,7 @@ export interface Provider {
   location_lng: number | null;
   available_now: boolean;
   response_time_hours: number | null;
+  availability_json: Record<string, unknown>;
   cases_resolved_similar: number;
   address: string | null;
   service_area: string | null;

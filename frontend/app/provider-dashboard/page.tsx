@@ -1,13 +1,117 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle } from 'lucide-react'
+import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Provider, Service } from '@/types'
+
+const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false })
+const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
+const Marker = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false })
+const Popup = dynamic(() => import('react-leaflet').then(m => m.Popup), { ssr: false })
+const MapClickHandler = dynamic(() => import('react-leaflet').then(m => {
+  const { useMapEvents } = m
+  return function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
+    useMapEvents({
+      click(e) {
+        onClick(e.latlng.lat, e.latlng.lng)
+      }
+    })
+    return null
+  }
+}), { ssr: false })
+
+const CATEGORIES: Record<string, string[]> = {
+  'Tecnología': ['Internet y redes', 'Reparación de laptops', 'Celulares', 'Software', 'Cámaras de seguridad'],
+  'Salud y bienestar': ['Fisioterapia', 'Medicina general', 'Psicología', 'Odontología', 'Nutrición'],
+  'Veterinaria': ['Consulta veterinaria', 'Peluquería canina', 'Emergencias mascotas'],
+  'Hogar': ['Plomería', 'Electricidad', 'Jardinería', 'Limpieza', 'Pintura'],
+  'Gastronomía': ['Restaurante', 'Comida rápida', 'Panadería', 'Catering'],
+  'Belleza': ['Peluquería', 'Barbería', 'Uñas', 'Maquillaje'],
+  'Educación': ['Tutorías', 'Idiomas', 'Música', 'Tecnología'],
+  'Ropa y arreglos': ['Costura', 'Arreglo de ropa', 'Zapatería'],
+  'Trámites y asesoría': ['Contabilidad', 'Legal', 'Seguros', 'Inmobiliaria'],
+}
+
+const SUGGESTED_TAGS: Record<string, string[]> = {
+  'Internet y redes': ['internet', 'wifi', 'router', 'conectividad', 'instalación', 'reparación', 'red'],
+  'Reparación de laptops': ['laptop', 'computadora', 'hardware', 'software', 'mantenimiento', 'diagnóstico', 'repuestos'],
+  'Celulares': ['celular', 'smartphone', 'pantalla', 'batería', 'reparación', 'accesorios'],
+  'Software': ['programas', 'instalación', 'licencias', 'antivirus', 'office', 'sistema operativo'],
+  'Cámaras de seguridad': ['cámaras', 'vigilancia', 'instalación', 'circuito cerrado', 'alarmas'],
+  'Fisioterapia': ['fisioterapia', 'rehabilitación', 'dolor muscular', 'espalda', 'lesiones', 'masajes'],
+  'Medicina general': ['medicina', 'consulta', 'diagnóstico', 'salud', 'exámenes'],
+  'Psicología': ['psicología', 'terapia', 'ansiedad', 'estrés', 'salud mental'],
+  'Odontología': ['odontología', 'dientes', 'limpieza', 'ortodoncia', 'caries'],
+  'Nutrición': ['nutrición', 'dieta', 'alimentación', 'saludable', 'bajar de peso'],
+  'Consulta veterinaria': ['veterinaria', 'mascotas', 'perros', 'gatos', 'consulta', 'vacunas'],
+  'Peluquería canina': ['peluquería', 'mascotas', 'baño', 'corte', 'perros'],
+  'Emergencias mascotas': ['emergencia', 'mascotas', 'urgencia', 'veterinaria', '24 horas'],
+  'Plomería': ['plomería', 'tuberías', 'fugas', 'baño', 'cocina', 'reparación'],
+  'Electricidad': ['electricidad', 'instalación', 'luces', 'cortocircuito', 'reparación', 'mantenimiento'],
+  'Jardinería': ['jardinería', 'jardín', 'poda', 'plantas', 'césped', 'mantenimiento'],
+  'Limpieza': ['limpieza', 'hogar', 'oficina', 'desinfección', 'profunda'],
+  'Pintura': ['pintura', 'paredes', 'interiores', 'exteriores', 'brocha'],
+  'Restaurante': ['restaurante', 'comida', 'almuerzo', 'cena', 'menú'],
+  'Comida rápida': ['comida rápida', 'hamburguesas', 'pizza', 'entregas', 'domicilio'],
+  'Panadería': ['panadería', 'pan', 'pasteles', 'repostería', 'encargos'],
+  'Catering': ['catering', 'eventos', 'buffet', 'recepciones', 'empresarial'],
+  'Peluquería': ['peluquería', 'corte', 'tintura', 'peinado', 'tratamiento'],
+  'Barbería': ['barbería', 'corte', 'barba', 'perfilado', 'estilo'],
+  'Uñas': ['uñas', 'manicure', 'pedicure', 'acrílicas', 'gel'],
+  'Maquillaje': ['maquillaje', 'eventos', 'social', 'profesional', 'novias'],
+  'Tutorías': ['tutoría', 'clases', 'matemáticas', 'física', 'química', 'apoyo'],
+  'Idiomas': ['idiomas', 'inglés', 'clases', 'conversación', 'gramática'],
+  'Música': ['música', 'instrumentos', 'clases', 'guitarra', 'piano'],
+  'Tecnología': ['tecnología', 'programación', 'web', 'diseño', 'informática'],
+  'Costura': ['costura', 'arreglos', 'ropa', 'bastillas', 'creaciones'],
+  'Arreglo de ropa': ['arreglos', 'ropa', 'bastillas', 'cierres', 'remiendos'],
+  'Zapatería': ['zapatos', 'reparación', 'suelas', 'tapas', 'lustre'],
+  'Contabilidad': ['contabilidad', 'impuestos', 'declaraciones', 'facturación', 'nómina'],
+  'Legal': ['legal', 'abogado', 'consultoría', 'contratos', 'trámites'],
+  'Seguros': ['seguros', 'autos', 'vida', 'hogar', 'salud'],
+  'Inmobiliaria': ['inmobiliaria', 'propiedades', 'venta', 'alquiler', 'asesoría'],
+}
+
+const DAYS = [
+  { key: 'monday', label: 'Lunes' },
+  { key: 'tuesday', label: 'Martes' },
+  { key: 'wednesday', label: 'Miércoles' },
+  { key: 'thursday', label: 'Jueves' },
+  { key: 'friday', label: 'Viernes' },
+  { key: 'saturday', label: 'Sábado' },
+  { key: 'sunday', label: 'Domingo' },
+] as const
+
+type DayAvailability = { open: boolean; from: string; to: string }
+type Availability = Record<string, DayAvailability>
+
+const defaultAvailability: Availability = {
+  monday: { open: true, from: '08:00', to: '18:00' },
+  tuesday: { open: true, from: '08:00', to: '18:00' },
+  wednesday: { open: true, from: '08:00', to: '18:00' },
+  thursday: { open: true, from: '08:00', to: '18:00' },
+  friday: { open: true, from: '08:00', to: '18:00' },
+  saturday: { open: false, from: '09:00', to: '14:00' },
+  sunday: { open: false, from: '09:00', to: '14:00' },
+}
+
+const parseAvailability = (json: Record<string, unknown> | undefined | null): Availability => {
+  if (!json || typeof json !== 'object') return { ...defaultAvailability }
+  const result: Availability = {}
+  for (const day of DAYS) {
+    const d = json[day.key] as Record<string, unknown> | undefined
+    result[day.key] = d && typeof d === 'object'
+      ? { open: Boolean(d.open), from: String(d.from || '09:00'), to: String(d.to || '18:00') }
+      : { ...defaultAvailability[day.key] }
+  }
+  return result
+}
 
 export default function ProviderDashboardPage() {
   const { user, loading: authLoading } = useAuth()
@@ -44,9 +148,11 @@ export default function ProviderDashboardPage() {
     price_max: '',
     response_time_hours: '',
     available_now: false,
-    search_tags: '',
-    service_keywords: '',
+    search_tags: [] as string[],
+    service_keywords: [] as string[],
   })
+
+  const [availability, setAvailability] = useState<Availability>({ ...defaultAvailability })
 
   const [newService, setNewService] = useState({
     name: '',
@@ -56,6 +162,12 @@ export default function ProviderDashboardPage() {
     price_max: '',
     tags: '',
   })
+
+  const [showMapModal, setShowMapModal] = useState(false)
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-0.180653, -78.467834])
+  const [pickingLocation, setPickingLocation] = useState(false)
+  const [customTagInput, setCustomTagInput] = useState('')
+  const [customKeywordInput, setCustomKeywordInput] = useState('')
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -103,9 +215,13 @@ export default function ProviderDashboardPage() {
         location_lat: p.location_lat !== null ? String(p.location_lat) : '',
         location_lng: p.location_lng !== null ? String(p.location_lng) : '',
         available_now: p.available_now || false,
-        search_tags: (p.search_tags || []).join(', '),
-        service_keywords: (p.service_keywords || []).join(', '),
+        search_tags: p.search_tags || [],
+        service_keywords: p.service_keywords || [],
       })
+      setAvailability(parseAvailability(p.availability_json))
+      if (p.location_lat != null && p.location_lng != null) {
+        setMapCenter([Number(p.location_lat), Number(p.location_lng)])
+      }
       setServices(servicesRes.data as Service[])
     } catch {
       setProviderLoadError(true)
@@ -121,6 +237,10 @@ export default function ProviderDashboardPage() {
   const saveProfile = async () => {
     setSaving(true)
     try {
+      const availabilityJson: Record<string, unknown> = {}
+      for (const day of DAYS) {
+        availabilityJson[day.key] = { ...availability[day.key] }
+      }
       const payload: Record<string, unknown> = {
         business_name: form.business_name,
         category: form.category,
@@ -143,8 +263,9 @@ export default function ProviderDashboardPage() {
         location_lat: form.location_lat ? Number(form.location_lat) : null,
         location_lng: form.location_lng ? Number(form.location_lng) : null,
         available_now: form.available_now,
-        search_tags: form.search_tags.split(',').map(t => t.trim()).filter(Boolean),
-        service_keywords: form.service_keywords.split(',').map(t => t.trim()).filter(Boolean),
+        search_tags: form.search_tags,
+        service_keywords: form.service_keywords,
+        availability_json: availabilityJson,
       }
       await api.put('/providers/me', payload)
       toast.success('Perfil guardado correctamente')
@@ -190,6 +311,50 @@ export default function ProviderDashboardPage() {
     } catch {
       toast.error('Error al desactivar el servicio')
     }
+  }
+
+  const reactivateService = async (serviceId: string) => {
+    try {
+      await api.put(`/providers/me/services/${serviceId}`, { is_active: true })
+      toast.success('Servicio reactivado')
+      setServices(prev => prev.map(s => s.id === serviceId ? { ...s, is_active: true } : s))
+    } catch {
+      toast.error('Error al reactivar el servicio')
+    }
+  }
+
+  const toggleTag = (tag: string) => {
+    setForm(prev => ({
+      ...prev,
+      search_tags: prev.search_tags.includes(tag)
+        ? prev.search_tags.filter(t => t !== tag)
+        : [...prev.search_tags, tag],
+    }))
+  }
+
+  const addCustomTag = () => {
+    const tag = customTagInput.trim().toLowerCase()
+    if (tag && !form.search_tags.includes(tag)) {
+      setForm(prev => ({ ...prev, search_tags: [...prev.search_tags, tag] }))
+    }
+    setCustomTagInput('')
+  }
+
+  const toggleKeyword = (kw: string) => {
+    setForm(prev => ({
+      ...prev,
+      service_keywords: prev.service_keywords.includes(kw)
+        ? prev.service_keywords.filter(k => k !== kw)
+        : [...prev.service_keywords, kw],
+    }))
+  }
+
+  const addCustomKeyword = () => {
+    const kw = customKeywordInput.trim().toLowerCase()
+    if (kw && !form.service_keywords.includes(kw)) {
+      setForm(prev => ({ ...prev, service_keywords: [...prev.service_keywords, kw] }))
+    }
+    setCustomKeywordInput('')
   }
 
   if (authLoading || loading) {
@@ -313,17 +478,37 @@ export default function ProviderDashboardPage() {
 
               <div>
                 <label className={labelClass}>Categoría</label>
-                <input type="text" value={form.category} onChange={e => handleFormChange('category', e.target.value)} className={inputClass} placeholder="Ej: Salud y bienestar, Tecnología, Veterinaria, Restaurantes" />
+                <select
+                  value={form.category}
+                  onChange={e => { handleFormChange('category', e.target.value); handleFormChange('subcategory', '') }}
+                  className={inputClass}
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {Object.keys(CATEGORIES).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label className={labelClass}>Subcategoría</label>
-                <input type="text" value={form.subcategory} onChange={e => handleFormChange('subcategory', e.target.value)} className={inputClass} placeholder="Ej: Reparación de laptops" />
+                <select
+                  value={form.subcategory}
+                  onChange={e => handleFormChange('subcategory', e.target.value)}
+                  className={inputClass}
+                  disabled={!form.category}
+                >
+                  <option value="">Selecciona una subcategoría</option>
+                  {form.category && CATEGORIES[form.category]?.map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="md:col-span-2">
                 <label className={labelClass}>Logo o imagen del negocio</label>
                 <input type="text" value={form.avatar_url} onChange={e => handleFormChange('avatar_url', e.target.value)} className={inputClass} placeholder="https://..." />
+                <p className="text-[10px] text-[#9CA3AF] mt-1">Próximamente podrás subir una imagen directamente.</p>
               </div>
 
               <div className="md:col-span-2">
@@ -364,6 +549,13 @@ export default function ProviderDashboardPage() {
                 </div>
               </div>
               <p className="text-[10px] text-[#9CA3AF] mt-2">Estas coordenadas permiten calcular la distancia y mostrar la ruta en el mapa.</p>
+              <button
+                onClick={() => setShowMapModal(true)}
+                className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 rounded-2xl text-[12px] font-medium bg-[#151E2F] border border-[#1E2D4A] text-white hover:border-[#6D5EF8]/50 transition-all duration-200"
+              >
+                <MapPin size={14} strokeWidth={1.75} />
+                Seleccionar ubicación en mapa
+              </button>
             </div>
 
             <div className="mt-6 pt-5 border-t border-[#1E2D4A]">
@@ -401,6 +593,48 @@ export default function ProviderDashboardPage() {
 
             <div className="mt-6 pt-5 border-t border-[#1E2D4A]">
               <div className="flex items-center gap-2 mb-4">
+                <Clock size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                <h3 className="text-sm font-semibold text-white">Horario de Atención</h3>
+              </div>
+              <div className="space-y-2">
+                {DAYS.map(day => {
+                  const d = availability[day.key]
+                  return (
+                    <div key={day.key} className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-2.5 border border-[#1E2D4A]">
+                      <button
+                        onClick={() => setAvailability(prev => ({ ...prev, [day.key]: { ...prev[day.key], open: !prev[day.key].open } }))}
+                        className={`relative w-9 h-5 rounded-full transition-colors duration-200 flex-shrink-0 ${d?.open ? 'bg-[#6D5EF8]' : 'bg-[#1E2D4A]'}`}
+                      >
+                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 ${d?.open ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </button>
+                      <span className={`text-sm w-16 flex-shrink-0 ${d?.open ? 'text-white' : 'text-[#9CA3AF]'}`}>{day.label}</span>
+                      {d?.open ? (
+                        <>
+                          <input
+                            type="time"
+                            value={d?.from || '09:00'}
+                            onChange={e => setAvailability(prev => ({ ...prev, [day.key]: { ...prev[day.key], from: e.target.value } }))}
+                            className="w-24 bg-[#111827] border border-[#1E2D4A] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#6D5EF8]/50 transition-all"
+                          />
+                          <span className="text-[#9CA3AF] text-xs">a</span>
+                          <input
+                            type="time"
+                            value={d?.to || '18:00'}
+                            onChange={e => setAvailability(prev => ({ ...prev, [day.key]: { ...prev[day.key], to: e.target.value } }))}
+                            className="w-24 bg-[#111827] border border-[#1E2D4A] rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-[#6D5EF8]/50 transition-all"
+                          />
+                        </>
+                      ) : (
+                        <span className="text-xs text-[#9CA3AF]">Cerrado</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-[#1E2D4A]">
+              <div className="flex items-center gap-2 mb-4">
                 <DollarSign size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
                 <h3 className="text-sm font-semibold text-white">Precios y Disponibilidad</h3>
               </div>
@@ -433,19 +667,112 @@ export default function ProviderDashboardPage() {
             <div className="mt-6 pt-5 border-t border-[#1E2D4A]">
               <div className="flex items-center gap-2 mb-4">
                 <Tag size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
-                <h3 className="text-sm font-semibold text-white">Etiquetas y Palabras Clave</h3>
+                <h3 className="text-sm font-semibold text-white">Etiquetas de búsqueda</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Etiquetas de búsqueda</label>
-                  <input type="text" value={form.search_tags} onChange={e => handleFormChange('search_tags', e.target.value)} className={inputClass} placeholder="fisioterapia, dolor de espalda, rehabilitación" />
-                  <p className="text-[10px] text-[#9CA3AF] mt-1">Separa con comas. Ej: reparación, laptops, tecnología</p>
+              {form.subcategory && SUGGESTED_TAGS[form.subcategory] && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-[#9CA3AF] mb-2">Sugeridas para {form.subcategory}:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUGGESTED_TAGS[form.subcategory].map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-medium border transition-all duration-200 ${
+                          form.search_tags.includes(tag)
+                            ? 'bg-[#6D5EF8]/20 border-[#6D5EF8]/50 text-white'
+                            : 'bg-[#151E2F] border-[#1E2D4A] text-[#9CA3AF] hover:border-[#6D5EF8]/30 hover:text-white'
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <label className={labelClass}>Palabras clave de servicios</label>
-                  <input type="text" value={form.service_keywords} onChange={e => handleFormChange('service_keywords', e.target.value)} className={inputClass} placeholder="diagnóstico, mantenimiento, instalación" />
-                  <p className="text-[10px] text-[#9CA3AF] mt-1">Separa con comas. Ej: instalación, reparación, consultoría</p>
+              )}
+              {form.search_tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {form.search_tags.map(tag => (
+                    <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-medium bg-[#6D5EF8]/20 border border-[#6D5EF8]/50 text-white">
+                      {tag}
+                      <button onClick={() => toggleTag(tag)} className="hover:text-red-400 transition-colors">
+                        <X size={12} strokeWidth={2} />
+                      </button>
+                    </span>
+                  ))}
                 </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customTagInput}
+                  onChange={e => setCustomTagInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag() } }}
+                  className={`${inputClass} flex-1`}
+                  placeholder="Agregar etiqueta personalizada..."
+                />
+                <button
+                  onClick={addCustomTag}
+                  disabled={!customTagInput.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-[#6D5EF8] hover:bg-[#5B4FE0] disabled:bg-[#1E2D4A] disabled:cursor-not-allowed text-white text-sm font-medium transition-all duration-200"
+                >
+                  <Plus size={16} strokeWidth={1.75} />
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-[#1E2D4A]">
+              <div className="flex items-center gap-2 mb-4">
+                <Tag size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                <h3 className="text-sm font-semibold text-white">Palabras Clave de Servicios</h3>
+              </div>
+              {form.subcategory && SUGGESTED_TAGS[form.subcategory] && (
+                <div className="mb-3">
+                  <p className="text-[11px] text-[#9CA3AF] mb-2">Sugeridas para {form.subcategory}:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUGGESTED_TAGS[form.subcategory].map(kw => (
+                      <button
+                        key={kw}
+                        onClick={() => toggleKeyword(kw)}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-medium border transition-all duration-200 ${
+                          form.service_keywords.includes(kw)
+                            ? 'bg-[#6D5EF8]/20 border-[#6D5EF8]/50 text-white'
+                            : 'bg-[#151E2F] border-[#1E2D4A] text-[#9CA3AF] hover:border-[#6D5EF8]/30 hover:text-white'
+                        }`}
+                      >
+                        {kw}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {form.service_keywords.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {form.service_keywords.map(kw => (
+                    <span key={kw} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-medium bg-[#6D5EF8]/20 border border-[#6D5EF8]/50 text-white">
+                      {kw}
+                      <button onClick={() => toggleKeyword(kw)} className="hover:text-red-400 transition-colors">
+                        <X size={12} strokeWidth={2} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customKeywordInput}
+                  onChange={e => setCustomKeywordInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomKeyword() } }}
+                  className={`${inputClass} flex-1`}
+                  placeholder="Agregar palabra clave personalizada..."
+                />
+                <button
+                  onClick={addCustomKeyword}
+                  disabled={!customKeywordInput.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-[#6D5EF8] hover:bg-[#5B4FE0] disabled:bg-[#1E2D4A] disabled:cursor-not-allowed text-white text-sm font-medium transition-all duration-200"
+                >
+                  <Plus size={16} strokeWidth={1.75} />
+                </button>
               </div>
             </div>
 
@@ -561,7 +888,7 @@ export default function ProviderDashboardPage() {
                     </summary>
                     <div className="space-y-2 mt-2">
                       {services.filter(s => !s.is_active).map(service => (
-                        <div key={service.id} className="bg-[#151E2F]/50 border border-[#1E2D4A]/50 rounded-2xl p-4 opacity-60">
+                        <div key={service.id} className="bg-[#151E2F]/50 border border-[#1E2D4A]/50 rounded-2xl p-4">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm font-semibold text-white">{service.name}</h4>
@@ -569,7 +896,15 @@ export default function ProviderDashboardPage() {
                                 <p className="text-xs text-[#9CA3AF] mt-1">{service.description}</p>
                               )}
                             </div>
-                            <span className="text-[10px] text-[#9CA3AF]">Inactivo</span>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <span className="text-[10px] text-[#9CA3AF]">Inactivo</span>
+                              <button
+                                onClick={() => reactivateService(service.id)}
+                                className="text-[10px] text-emerald-400 hover:text-emerald-300 bg-[#111827] hover:bg-[#1A2440] px-3 py-1.5 rounded-xl transition-all duration-200"
+                              >
+                                Reactivar
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -581,6 +916,55 @@ export default function ProviderDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Map Modal */}
+      {showMapModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowMapModal(false)} />
+          <div className="relative w-full max-w-2xl bg-[#111827] border border-[#1E2D4A] rounded-3xl overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E2D4A]">
+              <h3 className="text-sm font-semibold text-white">Seleccionar ubicación</h3>
+              <button onClick={() => setShowMapModal(false)} className="p-1.5 rounded-xl hover:bg-[#151E2F] text-[#9CA3AF] hover:text-white transition-all">
+                <X size={16} strokeWidth={1.75} />
+              </button>
+            </div>
+            <div className="h-[350px] w-full">
+              <MapContainer center={mapCenter} zoom={14} className="h-full w-full">
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapClickHandler onClick={(lat: number, lng: number) => {
+                  setMapCenter([parseFloat(lat.toFixed(6)), parseFloat(lng.toFixed(6))])
+                  setPickingLocation(true)
+                }} />
+                {pickingLocation && (
+                  <Marker position={mapCenter}>
+                    <Popup>Ubicación seleccionada</Popup>
+                  </Marker>
+                )}
+              </MapContainer>
+            </div>
+            <div className="px-5 py-4 border-t border-[#1E2D4A] flex items-center justify-between">
+              <div className="text-xs text-[#9CA3AF]">
+                {pickingLocation ? (
+                  <span>Lat: {mapCenter[0]}, Lng: {mapCenter[1]}</span>
+                ) : (
+                  <span>Haz clic en el mapa para seleccionar tu ubicación</span>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  handleFormChange('location_lat', String(mapCenter[0]))
+                  handleFormChange('location_lng', String(mapCenter[1]))
+                  setShowMapModal(false)
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-[#6D5EF8] hover:bg-[#5B4FE0] text-white text-xs font-medium transition-all duration-200"
+              >
+                <MapPin size={13} strokeWidth={1.75} />
+                Usar esta ubicación
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

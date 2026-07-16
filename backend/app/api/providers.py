@@ -201,8 +201,7 @@ def list_my_services(
     if not current_user.is_provider:
         raise HTTPException(status_code=403, detail="No eres proveedor")
     services = db.query(Service).filter(
-        Service.provider_id == str(current_user.id),
-        Service.is_active == True
+        Service.provider_id == str(current_user.id)
     ).order_by(Service.created_at.desc()).all()
     return services
 
