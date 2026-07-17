@@ -110,7 +110,7 @@ def create_or_update_review(
     provider = db.query(Provider).filter(Provider.id == str(provider_id)).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
-    if str(current_user.id) == str(provider.user_id):
+    if str(current_user.id) == str(provider.id):
         raise HTTPException(status_code=400, detail="No puedes reseñar tu propio perfil")
 
     existing = db.query(Review).filter(

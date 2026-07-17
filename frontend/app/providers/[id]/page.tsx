@@ -89,8 +89,9 @@ export default function PublicProviderProfile() {
       setReviewComment('')
       loadReviews()
       loadProvider()
-    } catch {
-      toast.error('Error al enviar la reseña')
+    } catch (error: any) {
+      const message = error?.response?.data?.detail || 'Error al enviar la reseña'
+      toast.error(message)
     } finally {
       setSubmittingReview(false)
     }
@@ -265,6 +266,10 @@ export default function PublicProviderProfile() {
               onClick={() => {
                 if (!user) {
                   toast.error('Debes iniciar sesión para calificar a este proveedor.')
+                  return
+                }
+                if (user && provider && String(user.id) === String(provider.id)) {
+                  toast.error('No puedes reseñar tu propio perfil')
                   return
                 }
                 setShowReviewModal(true)
