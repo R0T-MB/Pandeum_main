@@ -44,6 +44,16 @@ export interface Provider {
   search_tags: string[];
   service_keywords: string[];
   rating: number;
+  review_count: number;
+}
+
+export interface Review {
+  id: string;
+  user_id: string;
+  user_name: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
 }
 
 export interface ProviderPublic extends Provider {

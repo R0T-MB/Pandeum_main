@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image, ExternalLink, LayoutDashboard, User, BarChart3, Settings, Eye, TrendingUp, Zap } from 'lucide-react'
+import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image, ExternalLink, LayoutDashboard, User, BarChart3, Settings, Eye, TrendingUp, Zap, Star } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Provider, Service } from '@/types'
@@ -1301,9 +1301,26 @@ export default function ProviderDashboardPage() {
                       <p className="text-xl font-bold text-white mt-1">—</p>
                     </div>
                   ))}
+                  <div className="bg-[#151E2F] rounded-xl px-4 py-4 border border-[#1E2D4A]">
+                    <p className="text-[11px] text-[#9CA3AF]">Calificación promedio</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xl font-bold text-white">{provider?.rating ? provider.rating.toFixed(1) : '—'}</p>
+                      {provider?.rating ? (
+                        <div className="flex items-center gap-0.5">
+                          {[1,2,3,4,5].map(s => (
+                            <Star key={s} size={12} className={s <= Math.round(provider.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-[#1E2D4A]'} strokeWidth={1.5} />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="bg-[#151E2F] rounded-xl px-4 py-4 border border-[#1E2D4A]">
+                    <p className="text-[11px] text-[#9CA3AF]">Total reseñas</p>
+                    <p className="text-xl font-bold text-white mt-1">{provider?.review_count ?? '—'}</p>
+                  </div>
                 </div>
                 <div className="text-center py-4 bg-[#151E2F] rounded-xl border border-[#1E2D4A]">
-                  <p className="text-sm text-[#9CA3AF]">Las estadísticas reales estarán disponibles próximamente.</p>
+                  <p className="text-sm text-[#9CA3AF]">Las reseñas recibidas aparecerán aquí próximamente.</p>
                 </div>
               </div>
             )}

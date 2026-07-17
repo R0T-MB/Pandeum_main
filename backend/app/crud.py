@@ -45,6 +45,9 @@ def get_provider_rating(db: Session, provider_id: UUID) -> float:
     result = db.query(func.avg(Review.rating)).filter(Review.provider_id == provider_id).scalar()
     return float(result) if result else 0.0
 
+def get_provider_review_count(db: Session, provider_id: UUID) -> int:
+    return db.query(func.count(Review.id)).filter(Review.provider_id == provider_id).scalar() or 0
+
 def get_user_memory(db: Session, user_id: str) -> Optional[UserMemory]:
     return db.query(UserMemory).filter(UserMemory.user_id == user_id).first()
 

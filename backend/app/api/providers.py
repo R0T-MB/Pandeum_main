@@ -6,7 +6,7 @@ from ..database import get_db
 from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, ProviderPublicResponse, ReviewCreate, ReviewResponse, FavoriteResponse, ServiceCreate, ServiceUpdate, ServiceResponse
 from ..auth import get_current_user, get_current_admin_user
 from ..models import User, Provider, Review, Favorite, Service
-from ..crud import create_provider, get_provider_rating
+from ..crud import create_provider, get_provider_rating, get_provider_review_count
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -38,15 +38,16 @@ def list_providers(
     if verified_only:
         query = query.filter(Provider.verification_status == "verified")
     providers = query.order_by(Provider.trust_score.desc()).limit(limit).all()
-    # Enriquecer con rating
     result = []
     for p in providers:
         rating = get_provider_rating(db, p.id)
+        review_count = get_provider_review_count(db, p.id)
 
         item = {
             **p.__dict__,
             "user": p.user,
-            "rating": rating
+            "rating": rating,
+            "review_count": review_count
         }
 
         result.append(item)
@@ -59,6 +60,7 @@ def get_provider(provider_id: UUID, db: Session = Depends(get_db)):
     if not provider:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
     rating = get_provider_rating(db, provider.id)
+    review_count = get_provider_review_count(db, provider.id)
     services = db.query(Service).filter(
         Service.provider_id == str(provider_id),
         Service.is_active == True
@@ -68,6 +70,7 @@ def get_provider(provider_id: UUID, db: Session = Depends(get_db)):
         **provider.__dict__,
         "user": provider.user,
         "rating": rating,
+        "review_count": review_count,
         "services": services
     }
 
@@ -89,51 +92,64 @@ def update_my_provider(
     db.commit()
     db.refresh(provider)
     rating = get_provider_rating(db, provider.id)
+    review_count = get_provider_review_count(db, provider.id)
     return {
         **provider.__dict__,
         "user": provider.user,
-        "rating": rating
+        "rating": rating,
+        "review_count": review_count
 }
 
 @router.post("/{provider_id}/reviews", response_model=ReviewResponse)
-def create_review(
+def create_or_update_review(
     provider_id: UUID,
     review_data: ReviewCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Verificar que el usuario no sea el mismo proveedor
-    if str(current_user.id) == str(provider_id):
-        raise HTTPException(status_code=400, detail="No puedes reseñarte a ti mismo")
-    # Verificar que el proveedor existe
     provider = db.query(Provider).filter(Provider.id == str(provider_id)).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
-    # Crear reseña
-    new_review = Review(
-        user_id=current_user.id,
-        provider_id=str(provider_id),
-        rating=review_data.rating,
-        comment=review_data.comment,
-        review_verification_status="pending"  # luego se puede verificar
-    )
-    db.add(new_review)
-    db.commit()
-    db.refresh(new_review)
-    # Devolver con nombre de usuario
+    if str(current_user.id) == str(provider.user_id):
+        raise HTTPException(status_code=400, detail="No puedes reseñar tu propio perfil")
+
+    existing = db.query(Review).filter(
+        Review.user_id == current_user.id,
+        Review.provider_id == str(provider_id)
+    ).first()
+
+    if existing:
+        existing.rating = review_data.rating
+        existing.comment = review_data.comment
+        db.commit()
+        db.refresh(existing)
+        review = existing
+    else:
+        review = Review(
+            user_id=current_user.id,
+            provider_id=str(provider_id),
+            rating=review_data.rating,
+            comment=review_data.comment,
+            review_verification_status="pending"
+        )
+        db.add(review)
+        db.commit()
+        db.refresh(review)
+
     return {
-        "id": new_review.id,
+        "id": review.id,
         "user_id": current_user.id,
         "user_name": current_user.full_name or current_user.email,
-        "rating": new_review.rating,
-        "comment": new_review.comment,
-        "created_at": new_review.created_at,
-        "review_verification_status": new_review.review_verification_status
+        "rating": review.rating,
+        "comment": review.comment,
+        "created_at": review.created_at,
     }
 
 @router.get("/{provider_id}/reviews", response_model=List[ReviewResponse])
 def get_provider_reviews(provider_id: UUID, db: Session = Depends(get_db)):
-    reviews = db.query(Review).filter(Review.provider_id == str(provider_id)).all()
+    reviews = db.query(Review).filter(
+        Review.provider_id == str(provider_id)
+    ).order_by(Review.created_at.desc()).all()
     result = []
     for r in reviews:
         user = db.query(User).filter(User.id == r.user_id).first()
@@ -145,7 +161,6 @@ def get_provider_reviews(provider_id: UUID, db: Session = Depends(get_db)):
             "rating": r.rating,
             "comment": r.comment,
             "created_at": r.created_at,
-            "review_verification_status": r.review_verification_status
         })
     return result
 

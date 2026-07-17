@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import type { ProviderPublic } from '@/types'
+import { useAuth } from '@/components/providers/AuthProvider'
+import type { ProviderPublic, Review } from '@/types'
+import toast from 'react-hot-toast'
 import {
   Star, MapPin, Clock, Zap, Tag, Phone, Mail, Globe, MessageCircle,
   ExternalLink, Briefcase, DollarSign, Loader2, ArrowLeft,
-  Map, Instagram, Facebook, X, ChevronLeft, ChevronRight, Image
+  Map, Instagram, Facebook, X, ChevronLeft, ChevronRight, Image, MessageSquare
 } from 'lucide-react'
 
 const DAYS_LABELS: Record<string, string> = {
@@ -23,13 +25,23 @@ export default function PublicProviderProfile() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
 
+  const { user } = useAuth()
+
   const [provider, setProvider] = useState<ProviderPublic | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+
   const [galleryModal, setGalleryModal] = useState<{ images: { url: string; title?: string }[]; index: number } | null>(null)
 
-  useEffect(() => {
+  const loadProvider = () => {
     if (!id) return
     setLoading(true)
     setError(false)
@@ -37,7 +49,52 @@ export default function PublicProviderProfile() {
       .then(res => setProvider(res.data as ProviderPublic))
       .catch(() => setError(true))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadProvider()
   }, [id])
+
+  const loadReviews = () => {
+    if (!id) return
+    setReviewsLoading(true)
+    api.get(`/providers/${id}/reviews`)
+      .then(res => setReviews(res.data as Review[]))
+      .catch(() => {})
+      .finally(() => setReviewsLoading(false))
+  }
+
+  useEffect(() => {
+    loadReviews()
+  }, [id])
+
+  const handleSubmitReview = async () => {
+    if (!user) {
+      toast.error('Debes iniciar sesión para calificar a este proveedor.')
+      return
+    }
+    if (reviewRating < 1 || reviewRating > 5) {
+      toast.error('Selecciona una calificación entre 1 y 5 estrellas.')
+      return
+    }
+    setSubmittingReview(true)
+    try {
+      await api.post(`/providers/${id}/reviews`, {
+        rating: reviewRating,
+        comment: reviewComment || null,
+      })
+      toast.success('Reseña enviada correctamente')
+      setShowReviewModal(false)
+      setReviewRating(0)
+      setReviewComment('')
+      loadReviews()
+      loadProvider()
+    } catch {
+      toast.error('Error al enviar la reseña')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
 
   const openGoogleMaps = () => {
     if (!provider?.location_lat || !provider?.location_lng) return
@@ -204,6 +261,19 @@ export default function PublicProviderProfile() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (!user) {
+                  toast.error('Debes iniciar sesión para calificar a este proveedor.')
+                  return
+                }
+                setShowReviewModal(true)
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-all duration-200"
+            >
+              <Star size={13} strokeWidth={2} />
+              Calificar
+            </button>
             {provider.available_now && (
               <span className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
                 <Zap size={13} strokeWidth={2} />
@@ -384,6 +454,77 @@ export default function PublicProviderProfile() {
             </div>
           )}
 
+          {/* Reseñas */}
+          <div className={cardClass}>
+            <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+              <MessageSquare size={16} className="text-[#6D5EF8]" strokeWidth={1.75} />
+              Reseñas y calificaciones
+            </h2>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-1">
+                {[1,2,3,4,5].map(s => (
+                  <Star
+                    key={s}
+                    size={18}
+                    className={s <= Math.round(provider.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-[#1E2D4A]'}
+                    strokeWidth={1.5}
+                  />
+                ))}
+              </div>
+              <span className="text-lg font-bold text-white">
+                {provider.rating > 0 ? provider.rating.toFixed(1) : '—'}
+              </span>
+              <span className="text-sm text-[#9CA3AF]">
+                ({provider.review_count || reviews.length} reseña{(provider.review_count || reviews.length) !== 1 ? 's' : ''})
+              </span>
+            </div>
+
+            {reviewsLoading ? (
+              <div className="flex justify-center py-6">
+                <Loader2 size={20} className="text-[#6D5EF8] animate-spin" />
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-6">
+                <div className="w-10 h-10 rounded-xl bg-[#151E2F] flex items-center justify-center mx-auto mb-2">
+                  <MessageSquare size={18} className="text-[#1E2D4A]" strokeWidth={1.75} />
+                </div>
+                <p className="text-sm text-[#9CA3AF]">Este proveedor aún no tiene reseñas.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reviews.map(r => (
+                  <div key={r.id} className="bg-[#151E2F] border border-[#1E2D4A] rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-[#6D5EF8]/20 flex items-center justify-center text-[10px] font-bold text-[#6D5EF8]">
+                          {(r.user_name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium text-white">{r.user_name || 'Usuario'}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[1,2,3,4,5].map(s => (
+                          <Star
+                            key={s}
+                            size={12}
+                            className={s <= r.rating ? 'fill-yellow-400 text-yellow-400' : 'text-[#1E2D4A]'}
+                            strokeWidth={1.5}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    {r.comment && (
+                      <p className="text-sm text-[#D1D5DB] leading-relaxed">{r.comment}</p>
+                    )}
+                    <p className="text-[11px] text-[#9CA3AF] mt-2">
+                      {new Date(r.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Contacto */}
           <div className={cardClass}>
             <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
@@ -426,6 +567,59 @@ export default function PublicProviderProfile() {
           </div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setShowReviewModal(false)}>
+          <div className="relative w-full max-w-md bg-[#111827] border border-[#1E2D4A] rounded-3xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowReviewModal(false)} className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-[#151E2F] text-[#9CA3AF] hover:text-white transition-all">
+              <X size={18} strokeWidth={1.75} />
+            </button>
+            <h3 className="text-lg font-bold text-white mb-2">Calificar a {provider?.business_name}</h3>
+            <p className="text-sm text-[#9CA3AF] mb-5">Comparte tu experiencia con este proveedor.</p>
+
+            <div className="flex items-center justify-center gap-2 mb-5">
+              {[1,2,3,4,5].map(s => (
+                <button
+                  key={s}
+                  onClick={() => setReviewRating(s)}
+                  className="p-1 transition-all duration-150 hover:scale-110"
+                >
+                  <Star
+                    size={32}
+                    className={s <= reviewRating ? 'fill-yellow-400 text-yellow-400' : 'text-[#1E2D4A] hover:text-yellow-400/50'}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={reviewComment}
+              onChange={e => setReviewComment(e.target.value)}
+              className="w-full bg-[#0B1020] border border-[#1E2D4A] rounded-xl px-4 py-3 text-sm text-white placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#6D5EF8]/50 transition-all duration-200 min-h-[80px] resize-y"
+              placeholder="Escribe un comentario (opcional)..."
+            />
+
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[#151E2F] border border-[#1E2D4A] text-[#9CA3AF] hover:text-white hover:border-[#6D5EF8]/50 transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmitReview}
+                disabled={submittingReview || reviewRating === 0}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium bg-[#6D5EF8] hover:bg-[#5B4FE0] disabled:bg-[#1E2D4A] disabled:cursor-not-allowed text-white transition-all duration-200"
+              >
+                {submittingReview ? <Loader2 size={16} className="animate-spin" /> : <Star size={16} strokeWidth={1.75} />}
+                {submittingReview ? 'Enviando...' : 'Enviar reseña'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Galería Modal */}
       {galleryModal && (

@@ -83,6 +83,7 @@ class ProviderResponse(ProviderBase):
     updated_at: Optional[datetime] = None
     user: Optional[UserResponse] = None
     rating: Optional[float] = 0
+    review_count: Optional[int] = 0
 
     class Config:
         from_attributes = True
@@ -186,7 +187,6 @@ class AISolveResponse(BaseModel):
 
 # ========== Reviews ==========
 class ReviewCreate(BaseModel):
-    provider_id: UUID
     rating: int = Field(ge=1, le=5)
     comment: Optional[str] = None
 
@@ -197,7 +197,6 @@ class ReviewResponse(BaseModel):
     rating: int
     comment: Optional[str]
     created_at: datetime
-    review_verification_status: str
 
     class Config:
         from_attributes = True
