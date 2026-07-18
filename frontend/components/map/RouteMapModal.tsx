@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Navigation, ExternalLink, Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { api } from '@/lib/api'
 import { ProviderRecommendation } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
 
@@ -42,6 +43,17 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
   const [routeDistance, setRouteDistance] = useState<number | null>(null)
   const [routeDuration, setRouteDuration] = useState<number | null>(null)
   const [routeLoading, setRouteLoading] = useState(false)
+  const [fullProvider, setFullProvider] = useState<any | null>(null)
+
+  useEffect(() => {
+    if (!isOpen || !provider) {
+      setFullProvider(null)
+      return
+    }
+    api.get(`/providers/${provider.provider_id}`)
+      .then(res => setFullProvider(res.data))
+      .catch(() => setFullProvider(null))
+  }, [isOpen, provider])
 
   useEffect(() => {
     import('leaflet').then((leaflet) => {
@@ -100,14 +112,15 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
 
   if (!isOpen || !provider) return null
 
-  const providerLat = provider.location_lat != null ? provider.location_lat : null
-  const providerLng = provider.location_lng != null ? provider.location_lng : null
+  const routeProvider = fullProvider || provider
+  const providerLat = (fullProvider?.location_lat ?? provider.location_lat) != null ? (fullProvider?.location_lat ?? provider.location_lat) : null
+  const providerLng = (fullProvider?.location_lng ?? provider.location_lng) != null ? (fullProvider?.location_lng ?? provider.location_lng) : null
   const hasProviderCoords = providerLat != null && providerLng != null
   const hasUserCoords = userLat !== null && userLng !== null
 
   const googleMapsUrl = hasProviderCoords
     ? `https://www.google.com/maps/dir/?api=1&destination=${providerLat},${providerLng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(provider.business_name)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(routeProvider.business_name)}`
 
   const formatDistance = (meters: number): string => {
     if (meters >= 1000) {
@@ -132,14 +145,14 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
       <div className="fixed inset-4 z-50 m-auto max-w-2xl max-h-[80vh] bg-[#111827] rounded-3xl border border-[#1E2D4A] flex flex-col overflow-hidden shadow-xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E2D4A]">
           <div className="min-w-0 flex-1 mr-4 flex items-center gap-2">
-            {provider.avatar_url ? (
-              <img src={provider.avatar_url} alt="" className="w-7 h-7 rounded-lg object-cover border border-[#1E2D4A] flex-shrink-0" />
+            {routeProvider.avatar_url ? (
+              <img src={routeProvider.avatar_url} alt="" className="w-7 h-7 rounded-lg object-cover border border-[#1E2D4A] flex-shrink-0" />
             ) : (
               <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center text-[10px] font-bold text-[#6D5EF8] flex-shrink-0">
-                {getInitials(provider.business_name)}
+                {getInitials(routeProvider.business_name)}
               </div>
             )}
-            <h3 className="text-sm font-semibold text-white truncate">{provider.business_name}</h3>
+            <h3 className="text-sm font-semibold text-white truncate">{routeProvider.business_name}</h3>
           </div>
           <button
             onClick={onClose}
@@ -195,16 +208,16 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
                 <Marker
                   position={[providerLat, providerLng]}
                   icon={L.divIcon({
-                    html: provider.avatar_url
-                      ? `<img src="${provider.avatar_url}" style="width:40px;height:40px;border-radius:50%;border:2px solid #6D5EF8;object-fit:cover;" />`
-                      : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6D5EF8,#5B4FE0);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:bold;border:2px solid #6D5EF8;">${getInitials(provider.business_name)}</div>`,
+                    html: routeProvider.avatar_url
+                      ? `<img src="${routeProvider.avatar_url}" style="width:40px;height:40px;border-radius:50%;border:2px solid #6D5EF8;object-fit:cover;" />`
+                      : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6D5EF8,#5B4FE0);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:bold;border:2px solid #6D5EF8;">${getInitials(routeProvider.business_name)}</div>`,
                     className: 'custom-marker-icon',
                     iconSize: [40, 40],
                     iconAnchor: [20, 20],
                     popupAnchor: [0, -20],
                   })}
                 >
-                  <Popup>{provider.business_name}</Popup>
+                  <Popup>{routeProvider.business_name}</Popup>
                 </Marker>
               )}
               {routeCoords && routeCoords.length >= 2 && (
