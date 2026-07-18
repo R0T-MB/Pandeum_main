@@ -26,6 +26,15 @@ interface OSRMRoute {
   }
 }
 
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0].toUpperCase())
+    .join('')
+}
+
 export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps) {
   const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
   const [L, setL] = useState<typeof import('leaflet') | null>(null)
@@ -122,7 +131,14 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
 
       <div className="fixed inset-4 z-50 m-auto max-w-2xl max-h-[80vh] bg-[#111827] rounded-3xl border border-[#1E2D4A] flex flex-col overflow-hidden shadow-xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#1E2D4A]">
-          <div className="min-w-0 flex-1 mr-4">
+          <div className="min-w-0 flex-1 mr-4 flex items-center gap-2">
+            {provider.avatar_url ? (
+              <img src={provider.avatar_url} alt="" className="w-7 h-7 rounded-lg object-cover border border-[#1E2D4A] flex-shrink-0" />
+            ) : (
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center text-[10px] font-bold text-[#6D5EF8] flex-shrink-0">
+                {getInitials(provider.business_name)}
+              </div>
+            )}
             <h3 className="text-sm font-semibold text-white truncate">{provider.business_name}</h3>
           </div>
           <button
@@ -176,7 +192,18 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
                 </Marker>
               )}
               {hasProviderCoords && (
-                <Marker position={[providerLat, providerLng]}>
+                <Marker
+                  position={[providerLat, providerLng]}
+                  icon={L.divIcon({
+                    html: provider.avatar_url
+                      ? `<img src="${provider.avatar_url}" style="width:40px;height:40px;border-radius:50%;border:2px solid #6D5EF8;object-fit:cover;" />`
+                      : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6D5EF8,#5B4FE0);display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:bold;border:2px solid #6D5EF8;">${getInitials(provider.business_name)}</div>`,
+                    className: 'custom-marker-icon',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                    popupAnchor: [0, -20],
+                  })}
+                >
                   <Popup>{provider.business_name}</Popup>
                 </Marker>
               )}

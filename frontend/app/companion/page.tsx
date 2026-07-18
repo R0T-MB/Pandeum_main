@@ -6,9 +6,9 @@ import { Menu, Sparkles, Gift, Star, MapPin, MessageSquare, Lock, UtensilsCrosse
 
 const ACCESSORIES = [
   { name: 'Gorro de chef', icon: UtensilsCrossed, color: 'text-white', description: 'Visita un restaurante registrado' },
-  { name: 'Collar de huellita', icon: Heart, color: 'text-red-400', description: 'Deja 3 rese\u00f1as en negocios' },
-  { name: 'Lentes tecnol\u00f3gicos', icon: Eye, color: 'text-blue-400', description: 'Visita un t\u00e9cnico registrado' },
-  { name: 'Flor relajante', icon: Flower2, color: 'text-pink-400', description: 'Deja una rese\u00f1a en un centro de bienestar' },
+  { name: 'Collar de huellita', icon: Heart, color: 'text-red-400', description: 'Deja 3 reseñas en negocios' },
+  { name: 'Lentes tecnológicos', icon: Eye, color: 'text-blue-400', description: 'Visita un técnico registrado' },
+  { name: 'Flor relajante', icon: Flower2, color: 'text-pink-400', description: 'Deja una reseña en un centro de bienestar' },
 ]
 
 export default function CompanionPage() {
@@ -26,7 +26,7 @@ export default function CompanionPage() {
           >
             <Menu size={18} strokeWidth={1.75} />
           </button>
-          <h1 className="text-base font-semibold text-white">Mi Compa\u00f1ero</h1>
+          <h1 className="text-base font-semibold text-white">Mi Compañero</h1>
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center">
             <Sparkles size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
           </div>
@@ -62,7 +62,7 @@ export default function CompanionPage() {
             <div className="bg-[#111827] border border-[#1E2D4A] rounded-2xl p-5">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                 <Sparkles size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
-                C\u00f3mo desbloquear accesorios
+                Cómo desbloquear accesorios
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-3 border border-[#1E2D4A]">
@@ -71,7 +71,7 @@ export default function CompanionPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">Visita un negocio registrado</p>
-                    <p className="text-[11px] text-[#9CA3AF]">Encu\u00e9ntralos en el mapa de Pandeum</p>
+                    <p className="text-[11px] text-[#9CA3AF]">Encuéntralos en el mapa de Pandeum</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-3 border border-[#1E2D4A]">
@@ -79,7 +79,7 @@ export default function CompanionPage() {
                     <MessageSquare size={14} className="text-yellow-400" strokeWidth={1.75} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">Deja una rese\u00f1a y calificaci\u00f3n</p>
+                    <p className="text-sm font-medium text-white">Deja una reseña y calificación</p>
                     <p className="text-[11px] text-[#9CA3AF]">Comparte tu experiencia</p>
                   </div>
                 </div>
@@ -96,7 +96,7 @@ export default function CompanionPage() {
                 <div className="w-10 h-10 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-2">
                   <Lock size={16} className="text-[#1E2D4A]" strokeWidth={1.75} />
                 </div>
-                <p className="text-sm text-[#9CA3AF]">A\u00fan no tienes accesorios desbloqueados.</p>
+                <p className="text-sm text-[#9CA3AF]">Aún no tienes accesorios desbloqueados.</p>
               </div>
             </div>
 
@@ -104,7 +104,7 @@ export default function CompanionPage() {
             <div className="bg-[#111827] border border-[#1E2D4A] rounded-2xl p-5">
               <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                 <Star size={14} className="text-yellow-400" strokeWidth={1.75} />
-                Pr\u00f3ximas recompensas
+                Próximas recompensas
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {ACCESSORIES.map((acc, i) => {
