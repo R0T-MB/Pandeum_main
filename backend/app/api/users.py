@@ -4,7 +4,7 @@ from ..database import get_db
 from ..schemas import UserResponse, UserLogin, Token, ConversationResponse
 from ..auth import get_current_user
 from ..models import User
-from ..crud import get_user_by_id, get_user_conversations
+from ..crud import get_user_by_id, get_user_conversations, get_conversation_by_id
 from typing import List
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -35,3 +35,14 @@ def get_my_conversations(
     current_user: User = Depends(get_current_user)
 ):
     return get_user_conversations(db, str(current_user.id), limit)
+
+@router.get("/me/conversations/{conversation_id}", response_model=ConversationResponse)
+def get_my_conversation(
+    conversation_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    conv = get_conversation_by_id(db, conversation_id, str(current_user.id))
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversación no encontrada")
+    return conv

@@ -170,6 +170,7 @@ class CompositeSolution(BaseModel):
     steps: List[CompositeStep]
 
 class AISolveResponse(BaseModel):
+    conversation_id: Optional[str] = None
     confidence_score: float
     diagnosis: DiagnosisItem
     instant_solutions: List[str]

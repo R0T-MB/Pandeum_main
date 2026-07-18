@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
+import { Conversation } from '@/types'
 import Sidebar from '@/components/layout/Sidebar'
 import { Menu, History, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -11,7 +12,7 @@ import { useRouter } from 'next/navigation'
 export default function HistoryPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const [conversations, setConversations] = useState<any[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -69,7 +70,7 @@ export default function HistoryPage() {
             </div>
           ) : (
             <div className="space-y-3 max-w-2xl mx-auto">
-              {conversations.map((conversation: any) => (
+              {conversations.map((conversation: Conversation) => (
                 <div
                   key={conversation.id}
                   onClick={() => openConversation(conversation.id)}

@@ -69,7 +69,7 @@ async def solve_problem(
         else:
             category = result.get("response_mode") or "unknown"
         
-        save_conversation(
+        conv = save_conversation(
             db=db,
             user_id=user_id,
             problem_text=request.problem,
@@ -78,6 +78,7 @@ async def solve_problem(
             category=category,
             urgency=result.get("urgency", "medium")
         )
+        result["conversation_id"] = conv.id
     
     # Si no hay proveedores y hay fallback con waitlist, añadir a lista de espera
     if not result.get("has_providers") and fallback.get("waitlist_enabled") and user_id:

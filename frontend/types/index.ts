@@ -74,6 +74,7 @@ export interface Service {
 }
 
 export interface AISolveResponse {
+  conversation_id?: string | null;
   confidence_score: number;
   diagnosis: { possible_causes: string[]; questions?: string[] };
   instant_solutions: string[];

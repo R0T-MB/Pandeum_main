@@ -91,3 +91,9 @@ def save_conversation(db: Session, user_id: str, problem_text: str, ai_response:
 
 def get_user_conversations(db: Session, user_id: str, limit: int = 10):
     return db.query(Conversation).filter(Conversation.user_id == user_id).order_by(Conversation.created_at.desc()).limit(limit).all()
+
+def get_conversation_by_id(db: Session, conversation_id: str, user_id: str):
+    return db.query(Conversation).filter(
+        Conversation.id == conversation_id,
+        Conversation.user_id == user_id
+    ).first()

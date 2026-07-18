@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api, aiApi } from '@/lib/api'
 import { ChatInput } from '@/components/chat/ChatInput'
@@ -11,10 +11,12 @@ import Sidebar from '@/components/layout/Sidebar'
 import { Menu, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { Message, ProviderRecommendation } from '@/types'
+import { useRouter } from 'next/navigation'
+import { Conversation, Message, ProviderRecommendation } from '@/types'
 
 export default function HomePage() {
   const { user } = useAuth()
+  const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -23,38 +25,46 @@ export default function HomePage() {
   const [drawerLabel, setDrawerLabel] = useState<string | undefined>()
   const [selectedProvider, setSelectedProvider] = useState<ProviderRecommendation | null>(null)
   const [mapOpen, setMapOpen] = useState(false)
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (user) {
-      loadHistory()
-    }
-  }, [user])
-
-  const loadHistory = async () => {
+  const loadConversation = useCallback(async (conversationId: string) => {
     try {
-      const response = await api.get('/users/me/conversations')
-      const conversations = response.data
-      const historyMessages: Message[] = []
-      conversations.forEach((conv: any) => {
-        historyMessages.push({
+      const res = await api.get(`/users/me/conversations/${conversationId}`)
+      const conv: Conversation = res.data
+      setMessages([
+        {
           id: conv.id + '-user',
           role: 'user',
           content: conv.problem_text,
           timestamp: new Date(conv.created_at)
-        })
-        historyMessages.push({
+        },
+        {
           id: conv.id + '-assistant',
           role: 'assistant',
           content: conv.ai_response,
           timestamp: new Date(conv.created_at)
-        })
-      })
-      setMessages(historyMessages)
-    } catch (error) {
-      console.error('Error loading history')
+        }
+      ])
+      setCurrentConversationId(conv.id)
+    } catch {
+      toast.error('Error al cargar la conversación')
+      setMessages([])
+      setCurrentConversationId(null)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+    const params = new URLSearchParams(window.location.search)
+    const conversationId = params.get('conversation')
+    if (conversationId) {
+      loadConversation(conversationId)
+    } else {
+      setMessages([])
+      setCurrentConversationId(null)
+    }
+  }, [user, loadConversation])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -76,6 +86,10 @@ export default function HomePage() {
     setIsLoading(true)
     try {
       const aiData = await aiApi.solve(problem)
+      if (aiData.conversation_id) {
+        setCurrentConversationId(aiData.conversation_id)
+        router.replace(`/?conversation=${aiData.conversation_id}`, { scroll: false })
+      }
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
