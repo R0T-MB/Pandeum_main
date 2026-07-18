@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Provider } from '@/types'
 import Sidebar from '@/components/layout/Sidebar'
@@ -61,6 +62,7 @@ const formatDuration = (seconds: number): string => {
 }
 
 export default function MapPage() {
+  const router = useRouter()
   const [L, setL] = useState<typeof import('leaflet') | null>(null)
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
@@ -138,8 +140,8 @@ export default function MapPage() {
     p => p.location_lat != null && p.location_lng != null
   )
 
-  const handleViewProfile = () => {
-    toast('Perfil del proveedor próximamente')
+  const handleViewProfile = (provider: Provider) => {
+    router.push(`/providers/${provider.id}`)
   }
 
   const handleSetRoute = (provider: Provider) => {
@@ -274,7 +276,12 @@ export default function MapPage() {
                 >
                   <Popup>
                     <div className="min-w-[180px]">
-                      <p className="font-semibold text-sm mb-1">{p.business_name}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        {p.avatar_url ? (
+                          <img src={p.avatar_url} alt="" className="w-6 h-6 rounded-lg object-cover border border-[#1E2D4A]" />
+                        ) : null}
+                        <p className="font-semibold text-sm">{p.business_name}</p>
+                      </div>
                       <p className="text-xs text-[#6B7280] mb-1">{p.category}{p.subcategory ? ` · ${p.subcategory}` : ''}</p>
                       {(() => {
                         const d = getDistance(p)
@@ -287,7 +294,7 @@ export default function MapPage() {
                       })()}
                       <div className="flex gap-2 mt-2">
                         <button
-                          onClick={handleViewProfile}
+                          onClick={() => handleViewProfile(p)}
                           className="flex-1 text-xs text-white bg-[#6D5EF8] hover:bg-[#5B4FE0] px-3 py-1.5 rounded-xl transition-colors"
                         >
                           Ver perfil
@@ -316,20 +323,29 @@ export default function MapPage() {
           )}
 
           {selectedRouteProvider && (
-            <div className="absolute bottom-6 left-4 right-4 z-30">
+            <div className="absolute bottom-6 left-4 right-4 z-[60]">
               <div className="bg-[#151E2F] rounded-2xl border border-[#1E2D4A] p-4 shadow-xl">
                 <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{selectedRouteProvider.business_name}</p>
-                    {routeDistance != null && routeDuration != null ? (
-                      <p className="text-xs text-[#6D5EF8] mt-0.5">
-                        {MODE_LABELS[travelMode].label} · {formatDistance(routeDistance)} · {formatDuration(routeDuration)}
-                      </p>
-                    ) : routeError ? (
-                      <p className="text-xs text-[#FBBF24] mt-0.5">{routeError}</p>
-                    ) : routeLoading ? (
-                      <p className="text-xs text-[#9CA3AF] mt-0.5">Calculando ruta...</p>
-                    ) : null}
+                  <div className="flex items-center gap-2">
+                    {selectedRouteProvider.avatar_url ? (
+                      <img src={selectedRouteProvider.avatar_url} alt="" className="w-8 h-8 rounded-xl object-cover border border-[#1E2D4A] flex-shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center text-[10px] font-bold text-[#6D5EF8] flex-shrink-0">
+                        {getInitials(selectedRouteProvider.business_name)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-white">{selectedRouteProvider.business_name}</p>
+                      {routeDistance != null && routeDuration != null ? (
+                        <p className="text-xs text-[#6D5EF8] mt-0.5">
+                          {MODE_LABELS[travelMode].label} · {formatDistance(routeDistance)} · {formatDuration(routeDuration)}
+                        </p>
+                      ) : routeError ? (
+                        <p className="text-xs text-[#FBBF24] mt-0.5">{routeError}</p>
+                      ) : routeLoading ? (
+                        <p className="text-xs text-[#9CA3AF] mt-0.5">Calculando ruta...</p>
+                      ) : null}
+                    </div>
                   </div>
                   <button
                     onClick={handleClearRoute}
@@ -364,7 +380,7 @@ export default function MapPage() {
           )}
 
           {selectedRouteProvider && routeLoading && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-[#151E2F] rounded-xl px-4 py-2 border border-[#1E2D4A] flex items-center gap-2 shadow-lg">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] bg-[#151E2F] rounded-xl px-4 py-2 border border-[#1E2D4A] flex items-center gap-2 shadow-lg">
               <Loader2 size={14} className="animate-spin text-[#6D5EF8]" />
               <span className="text-xs text-[#9CA3AF]">Calculando ruta...</span>
             </div>

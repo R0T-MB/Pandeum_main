@@ -96,6 +96,7 @@ export interface ProviderRecommendation {
   business_name: string;
   trust_score: number;
   rating: number;
+  avatar_url?: string | null;
   distance_km?: number;
   reason_bullets: string[];
   estimated_cost: string;

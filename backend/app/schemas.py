@@ -139,6 +139,7 @@ class ProviderRecommendation(BaseModel):
     business_name: str
     trust_score: float
     rating: float  # promedio de reseñas
+    avatar_url: Optional[str] = None
     distance_km: Optional[float] = None
     reason_bullets: List[str]
     estimated_cost: Optional[str] = None

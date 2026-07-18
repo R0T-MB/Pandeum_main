@@ -29,7 +29,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     { href: '/map', label: 'Mapa', icon: MapPin },
     { href: '/favorites', label: 'Favoritos', icon: Heart },
     { href: '/history', label: 'Historial', icon: History },
-    { href: '/dashboard', label: 'Mi Perfil', icon: User },
+    { href: '/companion', label: 'Mi Compañero', icon: Sparkles },
   ]
 
   if (user?.is_provider) {

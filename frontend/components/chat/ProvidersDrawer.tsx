@@ -182,9 +182,17 @@ export function ProvidersDrawer({
                   className="bg-[#151E2F] rounded-2xl border border-[#1E2D4A] p-4 space-y-3 transition-all duration-200 hover:bg-[#1A2440]"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center text-xs font-bold text-[#6D5EF8] flex-shrink-0">
-                      {getInitials(provider.business_name)}
-                    </div>
+                    {provider.avatar_url ? (
+                      <img
+                        src={provider.avatar_url}
+                        alt={provider.business_name}
+                        className="w-10 h-10 rounded-xl border border-[#1E2D4A] object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center text-xs font-bold text-[#6D5EF8] flex-shrink-0">
+                        {getInitials(provider.business_name)}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm text-white truncate">
                         {provider.business_name}
