@@ -1,15 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from ..database import get_db
-from ..schemas import UserRegister, UserLogin, Token, TokenRefresh, UserResponse, GoogleAuth
+from ..schemas import UserRegister, UserLogin, Token, TokenRefresh, UserResponse, GoogleAuth, ClerkSyncRequest
 from ..models import User
 from ..auth import (
     verify_password, create_access_token, create_refresh_token,
     decode_token, get_password_hash, get_current_user
 )
+from ..crud import get_or_create_user_from_clerk
 from ..config import settings
 import httpx
+import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -50,6 +52,28 @@ def refresh(token_data: TokenRefresh):
     new_access = create_access_token(data={"sub": user_id})
     new_refresh = create_refresh_token(data={"sub": user_id})
     return {"access_token": new_access, "refresh_token": new_refresh, "token_type": "bearer"}
+
+@router.post("/clerk-sync", response_model=UserResponse)
+def clerk_sync(
+    data: ClerkSyncRequest,
+    x_clerk_sync_secret: str | None = Header(None),
+    db: Session = Depends(get_db)
+):
+    expected = os.environ.get("CLERK_SYNC_SECRET")
+    if not expected:
+        raise HTTPException(status_code=503, detail="Clerk sync no configurado")
+    if x_clerk_sync_secret != expected:
+        raise HTTPException(status_code=403, detail="No autorizado")
+    user = get_or_create_user_from_clerk(
+        db,
+        clerk_user_id=data.clerk_user_id,
+        email=data.email,
+        full_name=data.full_name,
+        email_verified=data.email_verified,
+        account_type=data.account_type,
+        business_name=data.business_name
+    )
+    return user
 
 @router.post("/google", response_model=Token)
 async def google_auth(google_data: GoogleAuth, db: Session = Depends(get_db)):

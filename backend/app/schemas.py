@@ -32,10 +32,21 @@ class UserResponse(BaseModel):
     city: Optional[str]
     is_provider: bool
     is_admin: bool
+    clerk_user_id: Optional[str] = None
+    email_verified: Optional[bool] = None
+    account_type: Optional[str] = "client"
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class ClerkSyncRequest(BaseModel):
+    clerk_user_id: str
+    email: EmailStr
+    full_name: Optional[str] = None
+    email_verified: bool = False
+    account_type: str = "client"
+    business_name: Optional[str] = None
 
 # ========== Provider ==========
 class ProviderBase(BaseModel):

@@ -5,6 +5,18 @@ export interface User {
   city: string | null;
   is_provider: boolean;
   is_admin: boolean;
+  clerk_user_id?: string | null;
+  email_verified?: boolean;
+  account_type?: string;
+}
+
+export interface ClerkSyncPayload {
+  clerk_user_id: string;
+  email: string;
+  full_name?: string | null;
+  email_verified?: boolean;
+  account_type?: string;
+  business_name?: string | null;
 }
 
 export interface Provider {

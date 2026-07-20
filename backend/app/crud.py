@@ -97,3 +97,85 @@ def get_conversation_by_id(db: Session, conversation_id: str, user_id: str):
         Conversation.id == conversation_id,
         Conversation.user_id == user_id
     ).first()
+
+def get_user_by_clerk_id(db: Session, clerk_user_id: str) -> Optional[User]:
+    return db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
+
+def get_or_create_user_from_clerk(
+    db: Session,
+    clerk_user_id: str,
+    email: str,
+    full_name: Optional[str] = None,
+    email_verified: bool = False,
+    account_type: str = "client",
+    business_name: Optional[str] = None
+) -> User:
+    user = get_user_by_clerk_id(db, clerk_user_id)
+    if user:
+        changed = False
+        if user.email != email:
+            user.email = email
+            changed = True
+        if full_name and user.full_name != full_name:
+            user.full_name = full_name
+            changed = True
+        if user.email_verified != email_verified:
+            user.email_verified = email_verified
+            changed = True
+        if user.account_type != account_type:
+            user.account_type = account_type
+            user.is_provider = (account_type == "provider")
+            user.is_admin = (account_type == "admin")
+            changed = True
+        if changed:
+            db.commit()
+            db.refresh(user)
+        return user
+
+    user = get_user_by_email(db, email)
+    if user and not user.clerk_user_id:
+        user.clerk_user_id = clerk_user_id
+        user.email_verified = email_verified
+        user.account_type = account_type
+        user.is_provider = (account_type == "provider")
+        user.is_admin = (account_type == "admin")
+        if full_name:
+            user.full_name = full_name
+        db.commit()
+        db.refresh(user)
+
+        if account_type == "provider":
+            _ensure_provider_exists(db, user, business_name)
+        return user
+
+    user = User(
+        clerk_user_id=clerk_user_id,
+        email=email,
+        full_name=full_name,
+        email_verified=email_verified,
+        account_type=account_type,
+        is_provider=(account_type == "provider"),
+        is_admin=(account_type == "admin"),
+        password_hash=None
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    if account_type == "provider":
+        _ensure_provider_exists(db, user, business_name)
+    return user
+
+def _ensure_provider_exists(db: Session, user: User, business_name: Optional[str] = None):
+    existing = db.query(Provider).filter(Provider.id == user.id).first()
+    if existing:
+        return
+    provider = Provider(
+        id=user.id,
+        business_name=business_name or user.full_name or "Negocio sin nombre",
+        category="General",
+        verification_status="pending",
+        available_now=False
+    )
+    db.add(provider)
+    db.commit()

@@ -20,6 +20,9 @@ class User(Base):
     city = Column(String, nullable=True)
     is_provider = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
+    clerk_user_id = Column(String, unique=True, index=True, nullable=True)
+    email_verified = Column(Boolean, default=False, server_default="false")
+    account_type = Column(String, default="client", server_default="client")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
