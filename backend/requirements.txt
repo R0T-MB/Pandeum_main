@@ -11,6 +11,7 @@ google-generativeai==0.8.3
 pydantic==2.10.4
 pydantic-settings==2.6.1
 email-validator==2.2.0
+PyJWT[crypto]==2.10.1
 httpx==0.28.1
 redis==5.2.1  # opcional para rate limiting avanzado, no necesario para MVP
 slowapi==0.1.9 # para rate limiting

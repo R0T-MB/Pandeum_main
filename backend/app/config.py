@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # CORS
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # Clerk
+    CLERK_ISSUER: Optional[str] = None
+    CLERK_JWKS_URL: Optional[str] = None
+
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_PERIOD: int = 60
