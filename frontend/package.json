@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^5.7.6",
+    "@clerk/themes": "^2.4.57",
     "@google/generative-ai": "^0.1.3",
     "@hookform/resolvers": "^3.3.2",
     "@types/leaflet": "^1.9.21",

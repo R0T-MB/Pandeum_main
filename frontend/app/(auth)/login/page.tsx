@@ -1,37 +1,38 @@
-'use client';
-import { useState } from 'react';
-import { useAuth } from '@/components/providers/AuthProvider';
-import Link from 'next/link';
+'use client'
+
+import { SignIn } from '@clerk/nextjs'
+import { dark } from '@clerk/themes'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useAuth();
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await login(email, password);
-      window.location.href = '/';
-    } catch (error) {
-      alert('Error al iniciar sesión');
-    }
-  };
-  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
-      <div className="bg-white dark:bg-[#1E293B] p-8 rounded-xl border border-slate-200 dark:border-slate-700 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center text-slate-900 dark:text-slate-100">Pandeum</h1>
-        <p className="text-center text-slate-500 dark:text-slate-400 mt-2">Inicia sesión para continuar</p>
-        
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F]/20 transition-shadow" required />
-          <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#1E3A5F] focus:ring-1 focus:ring-[#1E3A5F]/20 transition-shadow" required />
-          <button type="submit" className="w-full bg-[#1E3A5F] hover:bg-[#2F5D7C] text-white font-medium py-2.5 rounded-lg transition-colors">Ingresar</button>
-        </form>
-        
-        <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">¿No tienes cuenta? <Link href="/register" className="text-[#1E3A5F] dark:text-[#2F5D7C] font-medium hover:underline">Regístrate</Link></p>
+    <div className="min-h-screen flex items-center justify-center bg-[#0F172A]">
+      <div className="w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-slate-100">Iniciar sesión</h1>
+          <p className="text-slate-400 mt-2">Accede a tu cuenta de Pandeum.</p>
+        </div>
+        <SignIn
+          routing="path"
+          path="/login"
+          signUpUrl="/register"
+          afterSignInUrl="/auth/sync"
+          appearance={{
+            baseTheme: dark,
+            elements: {
+              rootBox: "w-full",
+              card: "bg-[#1E293B] shadow-none border border-slate-700 w-full",
+              formButtonPrimary: "bg-[#1E3A5F] hover:bg-[#2F5D7C] text-white",
+              formFieldInput: "bg-[#0F172A] border-slate-600 text-slate-100",
+              formFieldLabel: "text-slate-300",
+              footerActionLink: "text-[#2F5D7C] hover:text-[#3A7DA0]",
+              socialButtonsBlockButton: "bg-[#0F172A] border-slate-600 text-slate-100 hover:bg-[#1E293B]",
+              socialButtonsBlockButtonText: "text-slate-100",
+              dividerLine: "bg-slate-700",
+              dividerText: "text-slate-400",
+            },
+          }}
+        />
       </div>
     </div>
-  );
+  )
 }
