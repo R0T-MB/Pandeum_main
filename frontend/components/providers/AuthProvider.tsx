@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useClerk } from '@clerk/nextjs'
 import { api, setAuthToken, removeAuthToken } from '@/lib/api'
 import { User } from '@/types'
 
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { signOut: clerkSignOut } = useClerk()
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -87,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     removeCookie('access_token')
     removeAuthToken()
     setUser(null)
-    router.push('/login')
+    clerkSignOut({ redirectUrl: '/login' })
   }
 
   return (
