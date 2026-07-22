@@ -25,7 +25,7 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('access_token')
 
-      if (token) {
+      if (token && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${token}` 
       }
     }
@@ -78,13 +78,9 @@ api.interceptors.response.use(
           document.cookie =
             'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
 
-          window.location.href = '/login'
-
           return Promise.reject(refreshError)
         }
       }
-
-      window.location.href = '/login'
     }
 
     return Promise.reject(error)

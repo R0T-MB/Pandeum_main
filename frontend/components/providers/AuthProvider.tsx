@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useClerk } from '@clerk/nextjs'
+import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/nextjs'
 import { api, setAuthToken, removeAuthToken } from '@/lib/api'
 import { User } from '@/types'
 
@@ -31,18 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const { isLoaded: clerkLoaded, isSignedIn } = useUser()
+  const { getToken } = useClerkAuth()
   const { signOut: clerkSignOut } = useClerk()
-
-  useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      setCookie('access_token', token)
-      setAuthToken(token)
-      fetchUser()
-    } else {
-      setLoading(false)
-    }
-  }, [])
 
   const fetchUser = async () => {
     try {
@@ -50,11 +41,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(response.data)
     } catch (error) {
       console.error('Error fetching user:', error)
-      logout()
+      setUser(null)
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!clerkLoaded) return
+
+    const initAuth = async () => {
+      const oldToken = localStorage.getItem('access_token')
+
+      if (isSignedIn) {
+        const clerkToken = await getToken()
+        if (clerkToken) {
+          setAuthToken(clerkToken)
+        }
+      }
+
+      if (oldToken && !isSignedIn) {
+        setCookie('access_token', oldToken)
+        setAuthToken(oldToken)
+      }
+
+      const hasAuth = !!(
+        isSignedIn ||
+        localStorage.getItem('access_token')
+      )
+
+      if (hasAuth) {
+        await fetchUser()
+      } else {
+        setLoading(false)
+      }
+    }
+
+    initAuth()
+  }, [clerkLoaded, isSignedIn])
 
   const login = async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password })

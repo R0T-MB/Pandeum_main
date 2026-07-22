@@ -97,7 +97,9 @@ export default function HomePage() {
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, assistantMessage])
-    } catch (error) {
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail || error?.message || ''
+      console.error('Chat error:', error?.response?.status, detail)
       toast.error('Error al procesar tu consulta')
     } finally {
       setIsLoading(false)
