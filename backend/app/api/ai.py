@@ -26,8 +26,9 @@ async def solve_problem(
             memory_context = memory.context_data
     
     # Obtener conversaciones recientes para contexto de follow-up
-    conversation_context = None
-    if user_id:
+    # Prioridad: contexto enviado desde frontend > conversaciones guardadas en DB
+    conversation_context = request.conversation_context
+    if not conversation_context and user_id:
         recent_conversations = get_user_conversations(db, user_id, limit=3)
         if recent_conversations:
             conversation_context = [
@@ -39,6 +40,9 @@ async def solve_problem(
             ]
     
     # Llamar al motor IA
+    import sys
+    print(f"[AI] problem={request.problem[:80]} context_from_frontend={bool(request.conversation_context)} context_from_db={bool(not request.conversation_context and user_id)} user_id={user_id}", file=sys.stderr)
+
     result = await AIEngine.solve_problem(
         problem=request.problem,
         user_location=request.user_location,

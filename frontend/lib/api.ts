@@ -110,9 +110,10 @@ api.interceptors.response.use(
 )
 
 export const aiApi = {
-  solve: async (problem: string): Promise<AISolveResponse> => {
+  solve: async (problem: string, conversation_context?: Array<{ problem_text: string; ai_response: unknown }>): Promise<AISolveResponse> => {
     const response = await api.post<AISolveResponse>('/ai/solve', {
       problem,
+      conversation_context,
     })
 
     return response.data

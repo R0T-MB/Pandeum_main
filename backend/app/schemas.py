@@ -137,6 +137,7 @@ class ProblemRequest(BaseModel):
     problem: str
     user_location: Optional[str] = None
     budget: Optional[int] = None
+    conversation_context: Optional[List[Dict[str, Any]]] = None
 
 class DiagnosisItem(BaseModel):
     possible_causes: List[str]

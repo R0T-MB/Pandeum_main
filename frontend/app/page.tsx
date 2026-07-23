@@ -88,7 +88,17 @@ export default function HomePage() {
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
     try {
-      const aiData = await aiApi.solve(problem)
+      const contextMessages = messages.slice(-5).map(m => {
+        if (m.role === 'user' && typeof m.content === 'string') {
+          return { problem_text: m.content, ai_response: {} }
+        }
+        if (m.role === 'assistant' && typeof m.content !== 'string') {
+          return { problem_text: '', ai_response: m.content }
+        }
+        return null
+      }).filter(Boolean) as Array<{ problem_text: string; ai_response: unknown }>
+
+      const aiData = await aiApi.solve(problem, contextMessages)
       if (aiData.conversation_id) {
         setCurrentConversationId(aiData.conversation_id)
         router.replace(`/?conversation=${aiData.conversation_id}`, { scroll: false })
