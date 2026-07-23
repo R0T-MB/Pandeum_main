@@ -28,8 +28,11 @@ export default function HistoryPage() {
     try {
       const response = await api.get('/users/me/conversations')
       setConversations(response.data)
-    } catch (error) {
-      toast.error('Error al cargar historial')
+    } catch (error: any) {
+      const status = error?.response?.status || ''
+      const detail = error?.response?.data?.detail || error?.message || ''
+      console.error('History error:', { status, detail, url: '/users/me/conversations' })
+      toast.error(detail ? `Error: ${detail}` : 'Error al cargar historial')
     } finally {
       setLoading(false)
     }

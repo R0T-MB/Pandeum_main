@@ -21,12 +21,23 @@ export const removeAuthToken = () => {
 }
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('access_token')
+      try {
+        const clerk = (window as any).Clerk
+        if (clerk?.session) {
+          const token = await clerk.session.getToken()
+          if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+            return config
+          }
+        }
+      } catch {}
 
-      if (token && !config.headers.Authorization) {
-        config.headers.Authorization = `Bearer ${token}` 
+      const oldToken = localStorage.getItem('access_token')
+
+      if (oldToken) {
+        config.headers.Authorization = `Bearer ${oldToken}` 
       }
     }
 
@@ -46,6 +57,17 @@ api.interceptors.response.use(
       !originalRequest._retry
     ) {
       originalRequest._retry = true
+
+      try {
+        const clerk = (window as any).Clerk
+        if (clerk?.session) {
+          const token = await clerk.session.getToken()
+          if (token) {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            return api(originalRequest)
+          }
+        }
+      } catch {}
 
       const refreshToken =
         typeof window !== 'undefined'

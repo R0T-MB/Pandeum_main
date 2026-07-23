@@ -47,8 +47,11 @@ export default function HomePage() {
         }
       ])
       setCurrentConversationId(conv.id)
-    } catch {
-      toast.error('Error al cargar la conversación')
+    } catch (error: any) {
+      const status = error?.response?.status || ''
+      const detail = error?.response?.data?.detail || error?.message || ''
+      console.error('Load conversation error:', { status, detail, url: `/users/me/conversations/${conversationId}` })
+      toast.error(detail ? `Error: ${detail}` : 'Error al cargar la conversación')
       setMessages([])
       setCurrentConversationId(null)
     }
@@ -98,9 +101,10 @@ export default function HomePage() {
       }
       setMessages(prev => [...prev, assistantMessage])
     } catch (error: any) {
+      const status = error?.response?.status || ''
       const detail = error?.response?.data?.detail || error?.message || ''
-      console.error('Chat error:', error?.response?.status, detail)
-      toast.error('Error al procesar tu consulta')
+      console.error('Chat error:', { status, detail, url: '/ai/solve' })
+      toast.error(detail ? `Error: ${detail}` : 'Error al procesar tu consulta')
     } finally {
       setIsLoading(false)
     }
