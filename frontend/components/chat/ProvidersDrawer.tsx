@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { X, Star, MapPin, Clock, Zap, Tag, Phone, Map, Loader2, Mail, Globe, MessageCircle, ExternalLink, User } from 'lucide-react'
+import { X, Star, MapPin, Clock, Zap, Tag, Phone, Map, Loader2, Mail, Globe, MessageCircle, ExternalLink, User, Navigation } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
 
@@ -117,15 +117,15 @@ export function ProvidersDrawer({
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
+        <div className="fixed inset-0 z-40 bg-black/70" onClick={onClose} />
       )}
 
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-[420px] transform border-l border-[#1E2D4A] bg-[#111827] transition-transform duration-300 ${
+        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-[440px] transform border-l border-[rgba(255,255,255,0.06)] bg-[#080B14] transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1E2D4A]">
+        <div className="flex items-center justify-between px-5 py-5 border-b border-[rgba(255,255,255,0.06)]">
           <div>
             <h2 className="text-base font-semibold text-white">
               {recommendationLabel || 'Lugares recomendados'}
@@ -134,13 +134,13 @@ export function ProvidersDrawer({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-2xl hover:bg-[#151E2F] transition-all duration-200 text-[#9CA3AF] hover:text-white"
+            className="p-2 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-all duration-200 text-[#9CA3AF] hover:text-white"
           >
             <X size={18} strokeWidth={1.75} />
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-[#1E2D4A]">
+        <div className="flex gap-2 px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
           {sortModes.map(({ key, label }) => {
             const isActive = activeSort === key
             const Icon = key === 'rating' ? Star : key === 'distance' ? MapPin : Tag
@@ -148,10 +148,10 @@ export function ProvidersDrawer({
               <button
                 key={key}
                 onClick={() => setActiveSort(key)}
-                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-2xl text-[11px] font-medium transition-all duration-200 ${
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-medium transition-all duration-200 flex-1 ${
                   isActive
-                    ? 'bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 border border-[#6D5EF8]/50 text-white'
-                    : 'bg-[#151E2F] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white hover:border-[#1E2D4A]/80'
+                    ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-white'
+                    : 'bg-[#111827] border border-[rgba(255,255,255,0.06)] text-[#9CA3AF] hover:bg-[#151E2F] hover:text-white'
                 }`}
               >
                 <Icon
@@ -162,7 +162,7 @@ export function ProvidersDrawer({
                       ? key === 'rating'
                         ? 'text-yellow-400'
                         : key === 'distance'
-                        ? 'text-[#A78BFA]'
+                        ? 'text-[#7C3AED]'
                         : 'text-[#FBBF24]'
                       : 'text-current'
                   }
@@ -179,34 +179,44 @@ export function ProvidersDrawer({
               {sortedProviders.map((provider, idx) => (
                 <div
                   key={provider.provider_id || idx}
-                  className="bg-[#151E2F] rounded-2xl border border-[#1E2D4A] p-4 space-y-3 transition-all duration-200 hover:bg-[#1A2440]"
+                  className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-4 space-y-3 transition-all duration-200 hover:border-[#7C3AED]/20 hover:shadow-lg hover:shadow-[#7C3AED]/5"
                 >
                   <div className="flex items-start gap-3">
                     {provider.avatar_url ? (
                       <img
                         src={provider.avatar_url}
                         alt={provider.business_name}
-                        className="w-10 h-10 rounded-xl border border-[#1E2D4A] object-cover flex-shrink-0"
+                        className="w-12 h-12 rounded-xl border border-[rgba(255,255,255,0.06)] object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center text-xs font-bold text-[#6D5EF8] flex-shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-[#7C3AED]/10 flex items-center justify-center text-sm font-bold text-[#7C3AED] flex-shrink-0">
                         {getInitials(provider.business_name)}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm text-white truncate">
-                        {provider.business_name}
-                      </p>
-                      {provider.estimated_cost && (
-                        <span className={`text-[10px] ${activeSort === 'price' ? 'text-[#FBBF24] font-medium' : 'text-[#9CA3AF]'}`}>{provider.estimated_cost}</span>
-                      )}
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-sm text-white truncate">
+                          {provider.business_name}
+                        </p>
+                        {provider.available_now && (
+                          <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-lg whitespace-nowrap flex-shrink-0">
+                            <Zap size={10} strokeWidth={2} />
+                            Abierto
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {typeof provider.rating === 'number' && provider.rating > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-yellow-400">
+                            <Star size={11} className="text-yellow-400 fill-yellow-400" strokeWidth={1.5} />
+                            {provider.rating.toFixed(1)}
+                          </span>
+                        )}
+                        {provider.estimated_cost && (
+                          <span className="text-[11px] text-[#9CA3AF]">{provider.estimated_cost}</span>
+                        )}
+                      </div>
                     </div>
-                    {provider.available_now && (
-                      <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-lg whitespace-nowrap">
-                        <Zap size={10} strokeWidth={2} />
-                        Abierto
-                      </span>
-                    )}
                   </div>
 
                   {(provider.address || provider.service_area) && (
@@ -216,27 +226,14 @@ export function ProvidersDrawer({
                     </div>
                   )}
 
-                  <div className="flex items-center gap-3 text-xs text-[#9CA3AF]">
-                    {typeof provider.rating === 'number' && provider.rating > 0 && (
-                      <span className={`flex items-center gap-1 ${activeSort === 'rating' ? 'text-yellow-400' : ''}`}>
-                        <Star size={12} className={activeSort === 'rating' ? 'text-yellow-400 fill-yellow-400' : 'text-yellow-500 fill-yellow-500'} strokeWidth={1.5} />
-                        {provider.rating.toFixed(1)}
-                      </span>
-                    )}
-                    {typeof provider.response_time_hours === 'number' && (
-                      <span className="flex items-center gap-1 text-[11px]">
-                        <Clock size={12} strokeWidth={1.5} />
-                        {provider.response_time_hours < 1
-                          ? 'Responde en menos de 1 h'
-                          : `Responde en ${provider.response_time_hours} h aprox.`}
-                      </span>
-                    )}
-                    {provider.phone && (
-                      <a href={`tel:${provider.phone}`} className="flex items-center gap-1 text-white hover:text-[#6D5EF8] transition-colors duration-200">
-                        <Phone size={12} strokeWidth={1.5} />
-                      </a>
-                    )}
-                  </div>
+                  {typeof provider.response_time_hours === 'number' && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#9CA3AF]">
+                      <Clock size={11} strokeWidth={1.5} />
+                      {provider.response_time_hours < 1
+                        ? 'Responde en menos de 1 h'
+                        : `Responde en ${provider.response_time_hours} h aprox.`}
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 pt-1">
                     {(() => {
@@ -246,19 +243,19 @@ export function ProvidersDrawer({
                       const locationMissing = userLat === null && userLng === null
                       if (dist != null) {
                         return (
-                          <>
-                            <span className={`flex items-center gap-1 text-[11px] ${activeSort === 'distance' ? 'text-[#A78BFA] font-medium' : 'text-[#9CA3AF]'}`}>
-                              <MapPin size={12} strokeWidth={1.5} />
+                          <div className="flex items-center justify-between w-full">
+                            <span className="flex items-center gap-1 text-[11px] text-[#9CA3AF]">
+                              <MapPin size={11} strokeWidth={1.5} />
                               A {dist.toFixed(1)} km aprox.
                             </span>
                             <button
                               onClick={() => onDistanceClick(provider)}
-                              className="flex items-center gap-1 text-[11px] text-[#6D5EF8] hover:text-[#A78BFA] font-medium transition-colors duration-200 ml-auto"
+                              className="flex items-center gap-1 text-[11px] text-[#7C3AED] hover:text-[#A78BFA] font-medium transition-colors duration-200"
                             >
-                              <Map size={12} strokeWidth={1.75} />
+                              <Navigation size={11} strokeWidth={1.75} />
                               Ver ruta
                             </button>
-                          </>
+                          </div>
                         )
                       }
                       if (hasCoords && permissionDenied) {
@@ -289,46 +286,53 @@ export function ProvidersDrawer({
                     })()}
                   </div>
 
-                  <Link
-                    href={`/providers/${provider.provider_id}`}
-                    className="flex items-center justify-center gap-1.5 w-full py-2 rounded-2xl text-[11px] font-medium bg-[#111827] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white hover:border-[#6D5EF8]/50 transition-all duration-200"
-                  >
-                    <User size={13} strokeWidth={1.75} />
-                    Ver perfil
-                  </Link>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Link
+                      href={`/providers/${provider.provider_id}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-medium bg-[rgba(124,58,237,0.1)] border border-[#7C3AED]/20 text-[#7C3AED] hover:bg-[rgba(124,58,237,0.15)] transition-all duration-200"
+                    >
+                      <User size={13} strokeWidth={1.75} />
+                      Ver perfil
+                    </Link>
+                    {provider.whatsapp && (
+                      <a
+                        href={`https://wa.me/${provider.whatsapp.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-200 flex-1"
+                      >
+                        <MessageCircle size={13} strokeWidth={1.75} />
+                        WhatsApp
+                      </a>
+                    )}
+                    {provider.phone && (
+                      <a
+                        href={`tel:${provider.phone}`}
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-medium bg-[#111827] border border-[rgba(255,255,255,0.06)] text-[#9CA3AF] hover:text-white hover:bg-[#151E2F] transition-all duration-200 flex-1"
+                      >
+                        <Phone size={13} strokeWidth={1.75} />
+                        Llamar
+                      </a>
+                    )}
+                  </div>
 
-                  {/* Contactar */}
+                  {/* Más contactos */}
                   <div className="relative pt-1">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setOpenContactFor(openContactFor === provider.provider_id ? null : provider.provider_id) }}
-                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-2xl text-[11px] font-medium bg-[#111827] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white hover:border-[#6D5EF8]/50 transition-all duration-200"
+                      onClick={() => setOpenContactFor(openContactFor === provider.provider_id ? null : provider.provider_id)}
+                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-[11px] font-medium bg-[#111827] border border-[rgba(255,255,255,0.06)] text-[#9CA3AF] hover:bg-[#151E2F] hover:text-white transition-all duration-200"
                     >
-                      <MessageCircle size={13} strokeWidth={1.75} />
-                      Contactar
+                      <ExternalLink size={13} strokeWidth={1.75} />
+                      Más formas de contacto
                     </button>
 
                     {openContactFor === provider.provider_id && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setOpenContactFor(null)} />
-                        <div className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-[#151E2F] border border-[#1E2D4A] rounded-2xl p-2 space-y-1 shadow-xl">
+                        <div className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-[#0E1422] border border-[rgba(255,255,255,0.06)] rounded-xl p-2 space-y-1 shadow-2xl backdrop-blur-xl">
                           {(() => {
                             const items: { icon: React.ReactNode; label: string; href: string }[] = []
 
-                            if (provider.whatsapp) {
-                              const wa = provider.whatsapp.replace(/[^0-9]/g, '')
-                              items.push({
-                                icon: <MessageCircle size={14} className="text-green-400" strokeWidth={1.75} />,
-                                label: 'WhatsApp',
-                                href: `https://wa.me/${wa}`
-                              })
-                            }
-                            if (provider.phone) {
-                              items.push({
-                                icon: <Phone size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />,
-                                label: 'Llamar',
-                                href: `tel:${provider.phone}`
-                              })
-                            }
                             if (provider.contact_email) {
                               items.push({
                                 icon: <Mail size={14} className="text-yellow-400" strokeWidth={1.75} />,
@@ -387,7 +391,7 @@ export function ProvidersDrawer({
                                 target={item.href.startsWith('http') ? '_blank' : undefined}
                                 rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                                 onClick={() => setOpenContactFor(null)}
-                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[12px] text-white hover:bg-[#1E2D4A] transition-all duration-200"
+                                className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[12px] text-white hover:bg-[rgba(255,255,255,0.05)] transition-all duration-200"
                               >
                                 {item.icon}
                                 {item.label}
@@ -403,8 +407,8 @@ export function ProvidersDrawer({
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
-              <div className="w-12 h-12 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mb-4">
-                <MapPin size={22} className="text-[#1E2D4A]" strokeWidth={1.5} />
+              <div className="w-14 h-14 rounded-2xl bg-[#111827] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mb-4">
+                <MapPin size={24} className="text-[rgba(255,255,255,0.1)]" strokeWidth={1.5} />
               </div>
               <p className="text-sm text-[#9CA3AF] leading-relaxed">
                 Aún no hay proveedores registrados para esta necesidad.
@@ -415,7 +419,6 @@ export function ProvidersDrawer({
             </div>
           )}
         </div>
-
       </div>
     </>
   )

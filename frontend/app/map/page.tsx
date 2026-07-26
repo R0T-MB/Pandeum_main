@@ -195,38 +195,38 @@ export default function MapPage() {
   const permissionDenied = geoError?.toLowerCase().includes('denied') || geoError?.toLowerCase().includes('denegado') || geoError?.toLowerCase().includes('permission')
 
   return (
-    <div className="flex h-screen bg-[#0B1020]">
+    <div className="flex h-screen bg-[#050816]">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-[#1E2D4A]">
+      <div className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
+        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-[rgba(255,255,255,0.06)]">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-2xl hover:bg-[#151E2F] transition-all duration-200 text-[#9CA3AF] hover:text-white"
+            className="p-2 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-all duration-200 text-[#9CA3AF] hover:text-white lg:hidden"
           >
             <Menu size={18} strokeWidth={1.75} />
           </button>
           <h1 className="text-base font-semibold text-white">Mapa de proveedores</h1>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center">
-            <MapPin size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+          <div className="w-8 h-8 rounded-xl bg-[#7C3AED]/10 flex items-center justify-center">
+            <MapPin size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
           </div>
         </header>
 
         {!hasUserLocation && !loading && providersWithCoords.length > 0 && (
-          <div className="px-4 py-2 bg-[#151E2F] border-b border-[#1E2D4A] flex items-center justify-between">
+          <div className="px-4 py-3 bg-[#111827] border-b border-[rgba(255,255,255,0.06)] flex items-center justify-between gap-3">
             <p className="text-xs text-[#9CA3AF]">
               {permissionDenied
                 ? 'Activa la ubicación en tu navegador para calcular distancias y rutas.'
-                : 'Activa tu ubicación para calcular distancias y rutas.'}
+                : 'Usa tu ubicación para ver distancias exactas.'}
             </p>
             {!permissionDenied && (
               <button
                 onClick={requestLocation}
                 disabled={geoLoading}
-                className="flex items-center gap-1.5 text-[11px] font-medium text-[#6D5EF8] hover:text-[#A78BFA] transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium text-white bg-[#6D5EF8] hover:bg-[#5B4FE0] transition-all duration-200 disabled:opacity-50 shadow-lg shadow-[#6D5EF8]/20 whitespace-nowrap"
               >
-                <Crosshair size={12} strokeWidth={1.75} />
-                {geoLoading ? 'Obteniendo...' : 'Usar mi ubicación'}
+                <Navigation size={14} strokeWidth={1.75} />
+                {geoLoading ? 'Obteniendo...' : 'Usar mi ubicación actual'}
               </button>
             )}
           </div>
@@ -234,18 +234,18 @@ export default function MapPage() {
 
         <div className="flex-1 relative">
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-20">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#050816] z-20">
               <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
-                <Loader2 size={16} className="animate-spin text-[#6D5EF8]" />
+                <Loader2 size={16} className="animate-spin text-[#7C3AED]" />
                 Cargando proveedores...
               </div>
             </div>
           )}
 
           {!loading && providersWithCoords.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-20">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#050816] z-20">
               <div className="text-center px-6">
-                <MapPin size={32} className="text-[#1E2D4A] mx-auto mb-3" strokeWidth={1.5} />
+                <MapPin size={32} className="text-[rgba(255,255,255,0.06)] mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-sm text-[#9CA3AF] mb-1">No hay proveedores con ubicación registrada</p>
                 <p className="text-xs text-[#6B7280]">Los proveedores aparecerán aquí cuando registren su ubicación.</p>
               </div>
@@ -282,11 +282,11 @@ export default function MapPage() {
                         ) : null}
                         <p className="font-semibold text-sm">{p.business_name}</p>
                       </div>
-                      <p className="text-xs text-[#6B7280] mb-1">{p.category}{p.subcategory ? ` · ${p.subcategory}` : ''}</p>
+                      <p className="text-xs text-[#9CA3AF] mb-1">{p.category}{p.subcategory ? ` · ${p.subcategory}` : ''}</p>
                       {(() => {
                         const d = getDistance(p)
                         return d != null ? (
-                          <p className="text-xs text-[#6D5EF8] mb-2 flex items-center gap-1">
+                          <p className="text-xs text-[#7C3AED] mb-2 flex items-center gap-1">
                             <MapPin size={10} />
                             {d.toFixed(1)} km
                           </p>
@@ -295,13 +295,13 @@ export default function MapPage() {
                       <div className="flex gap-2 mt-2">
                         <button
                           onClick={() => handleViewProfile(p)}
-                          className="flex-1 text-xs text-white bg-[#6D5EF8] hover:bg-[#5B4FE0] px-3 py-1.5 rounded-xl transition-colors"
+                          className="flex-1 text-xs text-white bg-[#7C3AED] hover:bg-[#6D5EF8] px-3 py-1.5 rounded-xl transition-colors"
                         >
                           Ver perfil
                         </button>
                         <button
                           onClick={() => handleSetRoute(p)}
-                          className="flex-1 text-xs text-white bg-[#151E2F] hover:bg-[#1A2440] px-3 py-1.5 rounded-xl border border-[#1E2D4A] transition-colors flex items-center justify-center gap-1"
+                          className="flex-1 text-xs text-white bg-[#151E2F] hover:bg-[#1A2440] px-3 py-1.5 rounded-xl border border-[rgba(255,255,255,0.06)] transition-colors flex items-center justify-center gap-1"
                         >
                           <Navigation size={10} />
                           Ruta
@@ -323,8 +323,8 @@ export default function MapPage() {
           )}
 
           {selectedRouteProvider && (
-            <div className="absolute bottom-6 left-4 right-4 z-[60]">
-              <div className="bg-[#151E2F] rounded-2xl border border-[#1E2D4A] p-4 shadow-xl">
+            <div className="absolute bottom-6 left-4 right-4 z-[60] lg:bottom-6 lg:left-4 lg:right-4">
+              <div className="bg-[#151E2F] rounded-xl border border-[rgba(255,255,255,0.06)] p-4 shadow-xl backdrop-blur-xl">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     {selectedRouteProvider.avatar_url ? (
@@ -337,7 +337,7 @@ export default function MapPage() {
                     <div>
                       <p className="text-sm font-semibold text-white">{selectedRouteProvider.business_name}</p>
                       {routeDistance != null && routeDuration != null ? (
-                        <p className="text-xs text-[#6D5EF8] mt-0.5">
+                        <p className="text-xs text-[#7C3AED] mt-0.5">
                           {MODE_LABELS[travelMode].label} · {formatDistance(routeDistance)} · {formatDuration(routeDuration)}
                         </p>
                       ) : routeError ? (
@@ -365,8 +365,8 @@ export default function MapPage() {
                         onClick={() => handleModeChange(mode)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium transition-all duration-200 ${
                           isActive
-                            ? 'bg-[#6D5EF8]/20 border border-[#6D5EF8]/50 text-white'
-                            : 'bg-[#111827] border border-[#1E2D4A] text-[#9CA3AF] hover:bg-[#1A2440] hover:text-white'
+                            ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-white'
+                            : 'bg-[#111827] border border-[rgba(255,255,255,0.06)] text-[#9CA3AF] hover:bg-[#151E2F] hover:text-white'
                         }`}
                       >
                         <Icon size={12} strokeWidth={1.75} />
@@ -380,8 +380,8 @@ export default function MapPage() {
           )}
 
           {selectedRouteProvider && routeLoading && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] bg-[#151E2F] rounded-xl px-4 py-2 border border-[#1E2D4A] flex items-center gap-2 shadow-lg">
-              <Loader2 size={14} className="animate-spin text-[#6D5EF8]" />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] bg-[#151E2F] rounded-xl px-4 py-2 border border-[rgba(255,255,255,0.06)] flex items-center gap-2 shadow-lg">
+              <Loader2 size={14} className="animate-spin text-[#7C3AED]" />
               <span className="text-xs text-[#9CA3AF]">Calculando ruta...</span>
             </div>
           )}

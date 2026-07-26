@@ -15,20 +15,20 @@ export default function CompanionPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-[#0B1020]">
+    <div className="flex h-screen bg-[#050816]">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-[#1E2D4A]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto pb-16 lg:pb-0">
+        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-[rgba(255,255,255,0.06)]">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-2xl hover:bg-[#151E2F] transition-all duration-200 text-[#9CA3AF] hover:text-white"
+            className="p-2 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-all duration-200 text-[#9CA3AF] hover:text-white lg:hidden"
           >
             <Menu size={18} strokeWidth={1.75} />
           </button>
           <h1 className="text-base font-semibold text-white">Mi Compañero</h1>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center">
-            <Sparkles size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+          <div className="w-8 h-8 rounded-xl bg-[#7C3AED]/10 flex items-center justify-center">
+            <Sparkles size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
           </div>
         </header>
 
@@ -36,10 +36,10 @@ export default function CompanionPage() {
           <div className="max-w-2xl mx-auto space-y-6">
 
             {/* Mascota */}
-            <div className="bg-[#111827] border border-[#1E2D4A] rounded-3xl p-6 text-center">
-              <div className="w-28 h-28 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#6D5EF8]/30 to-[#5B4FE0]/30 border-2 border-[#6D5EF8]/50 flex items-center justify-center">
+            <div className="bg-[#111827] border border-[rgba(255,255,255,0.06)] rounded-3xl p-6 text-center">
+              <div className="w-28 h-28 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#7C3AED]/20 to-[#6D5EF8]/20 border-2 border-[#7C3AED]/40 flex items-center justify-center">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-[#6D5EF8]/40 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-[#7C3AED]/30 flex items-center justify-center">
                     <Sparkles size={28} className="text-[#A78BFA]" strokeWidth={1.5} />
                   </div>
                   <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-yellow-500 flex items-center justify-center text-[10px] font-bold text-white">
@@ -52,30 +52,30 @@ export default function CompanionPage() {
 
               <div className="mt-4 flex items-center justify-center gap-1">
                 <div className="w-32 h-1.5 rounded-full bg-[#151E2F] overflow-hidden">
-                  <div className="h-full w-1/4 rounded-full bg-gradient-to-r from-[#6D5EF8] to-[#A78BFA]" />
+                  <div className="h-full w-1/4 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]" />
                 </div>
                 <span className="text-[11px] text-[#9CA3AF]">25%</span>
               </div>
             </div>
 
             {/* C\u00f3mo desbloquear */}
-            <div className="bg-[#111827] border border-[#1E2D4A] rounded-2xl p-5">
+            <div className="bg-[#111827] border border-[rgba(255,255,255,0.06)] rounded-xl p-5">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <Sparkles size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                <Sparkles size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
                 Cómo desbloquear accesorios
               </h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-3 border border-[#1E2D4A]">
-                  <div className="w-8 h-8 rounded-lg bg-[#6D5EF8]/20 flex items-center justify-center flex-shrink-0">
-                    <MapPin size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                <div className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-3 border border-[rgba(255,255,255,0.06)]">
+                  <div className="w-8 h-8 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0">
+                    <MapPin size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">Visita un negocio registrado</p>
                     <p className="text-[11px] text-[#9CA3AF]">Encuéntralos en el mapa de Pandeum</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-3 border border-[#1E2D4A]">
-                  <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-3 border border-[rgba(255,255,255,0.06)]">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
                     <MessageSquare size={14} className="text-yellow-400" strokeWidth={1.75} />
                   </div>
                   <div>
@@ -87,21 +87,21 @@ export default function CompanionPage() {
             </div>
 
             {/* Accesorios bloqueados */}
-            <div className="bg-[#111827] border border-[#1E2D4A] rounded-2xl p-5">
+            <div className="bg-[#111827] border border-[rgba(255,255,255,0.06)] rounded-xl p-5">
               <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                <Gift size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                <Gift size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
                 Accesorios desbloqueados
               </h3>
               <div className="text-center py-6">
-                <div className="w-10 h-10 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-2">
-                  <Lock size={16} className="text-[#1E2D4A]" strokeWidth={1.75} />
+                <div className="w-10 h-10 rounded-xl bg-[#151E2F] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mx-auto mb-2">
+                  <Lock size={16} className="text-[rgba(255,255,255,0.1)]" strokeWidth={1.75} />
                 </div>
                 <p className="text-sm text-[#9CA3AF]">Aún no tienes accesorios desbloqueados.</p>
               </div>
             </div>
 
             {/* Pr\u00f3ximas recompensas */}
-            <div className="bg-[#111827] border border-[#1E2D4A] rounded-2xl p-5">
+            <div className="bg-[#111827] border border-[rgba(255,255,255,0.06)] rounded-xl p-5">
               <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                 <Star size={14} className="text-yellow-400" strokeWidth={1.75} />
                 Próximas recompensas

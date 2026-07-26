@@ -6,16 +6,51 @@
 
 @layer base {
   :root {
-    --background: 11 16 32;
-    --foreground: 255 255 255;
+    --background: #050816;
+    --background-2: #080B14;
+    --panel: #0E1422;
+    --card: #111827;
+    --card-alt: #151E2F;
+    --primary: #7C3AED;
+    --primary-2: #6D5EF8;
+    --accent: #22D3EE;
+    --text: #FFFFFF;
+    --muted: #9CA3AF;
+    --border: rgba(255,255,255,0.08);
+    --success: #22C55E;
+    --danger: #EF4444;
   }
 
   body {
-    @apply bg-[#0B1020] text-white antialiased;
+    @apply bg-[#050816] text-white antialiased;
   }
 
   html {
     scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .pandeum-glow {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.15), 0 0 40px rgba(124, 58, 237, 0.05);
+  }
+  .pandeum-glow-strong {
+    box-shadow: 0 0 24px rgba(124, 58, 237, 0.3), 0 0 48px rgba(124, 58, 237, 0.1);
+  }
+  .pandeum-card {
+    @apply bg-[#111827] border border-[rgba(255,255,255,0.08)] rounded-2xl;
+  }
+  .pandeum-gradient {
+    @apply bg-gradient-to-br from-[#7C3AED] to-[#6D5EF8];
+  }
+  .pandeum-border {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .glass-panel {
+    @apply bg-[rgba(14,18,34,0.8)] backdrop-blur-xl border border-[rgba(255,255,255,0.08)] rounded-2xl;
+  }
+  .text-gradient {
+    @apply bg-gradient-to-br from-[#7C3AED] to-[#22D3EE] bg-clip-text text-transparent;
   }
 }
 
@@ -27,21 +62,40 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #1E2D4A;
+    background: rgba(124, 58, 237, 0.3);
     border-radius: 9999px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: #2D3F6A;
+    background: rgba(124, 58, 237, 0.5);
   }
 }
 
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.5);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.3) transparent;
+}
+
 .leaflet-container {
-  background: #0B1020 !important;
+  background: #050816 !important;
 }
 .leaflet-control-zoom a {
   background: #151E2F !important;
   color: #FFFFFF !important;
-  border-color: #1E2D4A !important;
+  border-color: rgba(255,255,255,0.08) !important;
 }
 .leaflet-control-attribution {
   background: #111827 !important;
@@ -53,7 +107,7 @@
 .leaflet-popup-content-wrapper {
   background: #151E2F !important;
   color: #FFFFFF !important;
-  border: 1px solid #1E2D4A !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
   border-radius: 16px !important;
 }
 .leaflet-popup-tip {

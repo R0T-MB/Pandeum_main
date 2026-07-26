@@ -44,37 +44,37 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-[#0B1020] items-center justify-center">
-        <Loader2 size={32} className="text-[#6D5EF8] animate-spin" />
+      <div className="flex h-screen bg-[#050816] items-center justify-center">
+        <Loader2 size={32} className="text-[#7C3AED] animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen bg-[#0B1020]">
+    <div className="flex h-screen bg-[#050816]">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-[#1E2D4A]">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-2xl hover:bg-[#151E2F] transition-all duration-200 text-[#9CA3AF] hover:text-white">
+      <div className="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
+        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0 border-b border-[rgba(255,255,255,0.06)]">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-all duration-200 text-[#9CA3AF] hover:text-white lg:hidden">
             <Menu size={18} strokeWidth={1.75} />
           </button>
           <h1 className="text-base font-semibold text-white">Mis Favoritos</h1>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center">
-            <Heart size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
+          <div className="w-8 h-8 rounded-xl bg-[#7C3AED]/10 flex items-center justify-center">
+            <Heart size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-6">
           {favorites.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-12 h-12 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-4">
-                <Heart size={22} className="text-[#1E2D4A]" strokeWidth={1.5} />
+              <div className="w-12 h-12 rounded-2xl bg-[#151E2F] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mx-auto mb-4">
+                <Heart size={22} className="text-[rgba(255,255,255,0.1)]" strokeWidth={1.5} />
               </div>
               <p className="text-sm text-[#9CA3AF]">No tienes favoritos aún</p>
             </div>
           ) : (
             <div className="space-y-3 max-w-2xl mx-auto">
               {favorites.map((favorite: any) => (
-                <div key={favorite.provider_id} className="bg-[#111827] border border-[#1E2D4A] rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-[#1E2D4A]/80 transition-all duration-200">
+                <div key={favorite.provider_id} className="bg-[#111827] border border-[rgba(255,255,255,0.06)] rounded-xl p-4 flex items-center justify-between gap-3 hover:border-[#7C3AED]/20 transition-all duration-200">
                   <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-white">{favorite.provider_name}</h3>
                     <p className="text-xs text-[#9CA3AF] mt-1">

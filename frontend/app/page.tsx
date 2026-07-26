@@ -8,11 +8,20 @@ import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ProvidersDrawer } from '@/components/chat/ProvidersDrawer'
 import { RouteMapModal } from '@/components/map/RouteMapModal'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Sparkles } from 'lucide-react'
+import { Sparkles, Zap, ChefHat, Laptop, Wrench, Calculator, Car, PaintBucket } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { Conversation, Message, ProviderRecommendation } from '@/types'
+
+const exampleProblems = [
+  { icon: ChefHat, label: 'Tengo hambre', text: 'Tengo hambre' },
+  { icon: Laptop, label: 'Mi laptop no enciende', text: 'Mi laptop no enciende' },
+  { icon: Wrench, label: 'Necesito un técnico', text: 'Necesito un técnico' },
+  { icon: Calculator, label: 'Tutor de matemáticas', text: 'Necesito un tutor de matemáticas' },
+  { icon: Car, label: 'Mecánico cerca', text: 'Busco un mecánico cerca' },
+  { icon: PaintBucket, label: 'Pintor para mi casa', text: 'Necesito un pintor para mi casa' },
+]
 
 export default function HomePage() {
   const { user } = useAuth()
@@ -132,88 +141,90 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#0B1020]">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-[#050816]">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Minimal header */}
-        <header className="px-6 py-4 flex items-center justify-between flex-shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-2xl hover:bg-[#151E2F] transition-all duration-200 text-[#9CA3AF] hover:text-white"
-          >
-            <Menu size={18} strokeWidth={1.75} />
-          </button>
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center">
-            <Sparkles size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
-          </div>
-        </header>
-
-        {/* Chat area */}
-        <div className="flex-1 overflow-y-auto px-6 py-2 space-y-5 scrollbar-thin">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 pb-16 lg:pb-0">
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center px-4 -mt-12">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6D5EF8] to-[#5B4FE0] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#6D5EF8]/20">
-                  <Sparkles size={28} className="text-white" strokeWidth={1.5} />
+            <div className="h-full flex flex-col items-center justify-center text-center px-5 py-8">
+              <div className="max-w-lg mx-auto w-full">
+                {/* Logo/Icon decorative */}
+                <div className="relative inline-block mb-8">
+                  <div className="w-20 h-20 rounded-2xl pandeum-gradient flex items-center justify-center mx-auto shadow-2xl shadow-[#7C3AED]/30">
+                    <Sparkles size={32} className="text-white" strokeWidth={1.5} />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#22D3EE] shadow-lg shadow-[#22D3EE]/30 flex items-center justify-center">
+                    <Zap size={12} className="text-[#050816]" strokeWidth={2.5} />
+                  </div>
                 </div>
+
                 <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
-                  Hola, ¿en qué puedo ayudarte hoy?
+                  ¿Qué necesitas hoy?
                 </h1>
                 <p className="text-sm text-[#9CA3AF] mb-8 leading-relaxed max-w-sm mx-auto">
-                  Estoy aquí para ayudarte a encontrar la mejor solución para tu problema.
+                  Pandeum conecta tu problema con la mejor solución.
                 </p>
-                <div className="space-y-2.5 max-w-sm mx-auto">
-                  {[
-                    "Mi laptop se apaga cuando juego",
-                    "Necesito un tutor de cálculo para mi examen",
-                    "El lavaplatos está inundando la cocina",
-                  ].map((example) => (
-                    <button
-                      key={example}
-                      onClick={() => handleSendMessage(example)}
-                      className="w-full bg-[#111827] border border-[#1E2D4A] hover:bg-[#151E2F] hover:border-[#1E2D4A]/80 rounded-2xl px-5 py-3 text-left transition-all duration-200 text-sm text-white"
-                    >
-                      {example}
-                    </button>
-                  ))}
+
+                {/* Example chips */}
+                <div className="grid grid-cols-2 gap-2.5 max-w-md mx-auto">
+                  {exampleProblems.map((example) => {
+                    const Icon = example.icon
+                    return (
+                      <button
+                        key={example.text}
+                        onClick={() => handleSendMessage(example.text)}
+                        className="flex items-center gap-2.5 bg-[#111827] border border-[rgba(255,255,255,0.06)] hover:border-[#7C3AED]/30 hover:bg-[rgba(124,58,237,0.05)] rounded-xl px-4 py-3 text-left transition-all duration-200 group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#7C3AED]/20 transition-colors">
+                          <Icon size={15} className="text-[#7C3AED]" strokeWidth={1.75} />
+                        </div>
+                        <span className="text-sm text-white font-medium leading-tight">{example.label}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
           ) : (
-            <AnimatePresence>
-              {messages.map((msg) => (
-                <ChatMessage key={msg.id} message={msg} onViewPlaces={handleViewPlaces} />
-              ))}
-              {isLoading && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start"
-                >
-                  <div className="bg-[#151E2F] border border-[#1E2D4A] rounded-[18px] rounded-tl-sm px-5 py-4">
-                    <div className="flex gap-1.5">
-                      <span className="w-2 h-2 bg-[#6D5EF8] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-2 h-2 bg-[#6D5EF8] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-2 h-2 bg-[#6D5EF8] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+              <AnimatePresence>
+                {messages.map((msg) => (
+                  <ChatMessage key={msg.id} message={msg} onViewPlaces={handleViewPlaces} />
+                ))}
+                {isLoading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-start"
+                  >
+                    <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.06)] rounded-[18px] rounded-tl-sm px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1.5">
+                          <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <span className="text-xs text-[#9CA3AF] ml-2">Pandeum está encontrando la mejor solución para ti...</span>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div ref={messagesEndRef} />
+            </div>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
-        <div className="px-6 py-4 flex-shrink-0">
-          <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+        <div className="flex-shrink-0 px-4 pb-4 pt-2 lg:pb-6">
+          <div className="max-w-3xl mx-auto">
+            <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+          </div>
         </div>
       </div>
 
-      {/* Providers Drawer */}
       <ProvidersDrawer
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -222,7 +233,6 @@ export default function HomePage() {
         onDistanceClick={handleDistanceClick}
       />
 
-      {/* Route Map Modal */}
       <RouteMapModal
         isOpen={mapOpen}
         onClose={() => setMapOpen(false)}
