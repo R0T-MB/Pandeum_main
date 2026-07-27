@@ -8,7 +8,8 @@ import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ProvidersDrawer } from '@/components/chat/ProvidersDrawer'
 import { RouteMapModal } from '@/components/map/RouteMapModal'
 import Sidebar from '@/components/layout/Sidebar'
-import { Sparkles, Zap, ChefHat, Laptop, Wrench, Calculator, Car, PaintBucket } from 'lucide-react'
+import { RightPanel } from '@/components/layout/RightPanel'
+import { Sparkles, Zap, ChefHat, Laptop, Wrench, Calculator, Car, PaintBucket, Bot } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -144,41 +145,57 @@ export default function HomePage() {
     <div className="flex h-screen bg-[#050816]">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 pb-16 lg:pb-0">
+      {/* Main center panel */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 pb-16 lg:pb-0 overflow-hidden">
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center px-5 py-8">
-              <div className="max-w-lg mx-auto w-full">
-                {/* Logo/Icon decorative */}
-                <div className="relative inline-block mb-8">
-                  <div className="w-20 h-20 rounded-2xl pandeum-gradient flex items-center justify-center mx-auto shadow-2xl shadow-[#7C3AED]/30">
-                    <Sparkles size={32} className="text-white" strokeWidth={1.5} />
+              <div className="max-w-xl mx-auto w-full">
+                {/* Premium decorative header */}
+                <div className="flex items-start justify-between mb-8">
+                  <div className="text-left">
+                    <h1 className="text-2xl font-bold text-white tracking-tight">
+                      ¡Hola{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}!
+                    </h1>
+                    <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed max-w-md">
+                      Estoy aquí para ayudarte a encontrar justo lo que necesitas.
+                    </p>
                   </div>
-                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#22D3EE] shadow-lg shadow-[#22D3EE]/30 flex items-center justify-center">
-                    <Zap size={12} className="text-[#050816]" strokeWidth={2.5} />
+                  <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7C3AED]/10 border border-[#7C3AED]/20">
+                    <Bot size={18} className="text-[#7C3AED]" strokeWidth={1.75} />
+                    <span className="text-xs font-medium text-[#7C3AED]">IA Asistente</span>
                   </div>
                 </div>
 
-                <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">
-                  ¿Qué necesitas hoy?
-                </h1>
-                <p className="text-sm text-[#9CA3AF] mb-8 leading-relaxed max-w-sm mx-auto">
-                  Pandeum conecta tu problema con la mejor solución.
-                </p>
+                {/* Decorative visual */}
+                <div className="relative mb-10">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-40 h-40 rounded-full bg-[#7C3AED]/5 blur-3xl" />
+                    <div className="w-24 h-24 rounded-full bg-[#22D3EE]/5 blur-2xl -ml-10" />
+                  </div>
+                  <div className="relative flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-2xl pandeum-gradient flex items-center justify-center shadow-2xl shadow-[#7C3AED]/30">
+                      <Sparkles size={28} className="text-white" strokeWidth={1.5} />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#22D3EE] shadow-lg shadow-[#22D3EE]/30 flex items-center justify-center">
+                      <Zap size={12} className="text-[#050816]" strokeWidth={2.5} />
+                    </div>
+                  </div>
+                </div>
 
-                {/* Example chips */}
-                <div className="grid grid-cols-2 gap-2.5 max-w-md mx-auto">
+                {/* Example chips - premium grid */}
+                <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
                   {exampleProblems.map((example) => {
                     const Icon = example.icon
                     return (
                       <button
                         key={example.text}
                         onClick={() => handleSendMessage(example.text)}
-                        className="flex items-center gap-2.5 bg-[#111827] border border-[rgba(255,255,255,0.06)] hover:border-[#7C3AED]/30 hover:bg-[rgba(124,58,237,0.05)] rounded-xl px-4 py-3 text-left transition-all duration-200 group"
+                        className="flex items-center gap-3 bg-[#111827] border border-[rgba(255,255,255,0.06)] hover:border-[#7C3AED]/30 hover:bg-[rgba(124,58,237,0.05)] rounded-xl px-4 py-3.5 text-left transition-all duration-200 group hover-lift"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#7C3AED]/20 transition-colors">
-                          <Icon size={15} className="text-[#7C3AED]" strokeWidth={1.75} />
+                        <div className="w-9 h-9 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#7C3AED]/20 transition-colors">
+                          <Icon size={16} className="text-[#7C3AED]" strokeWidth={1.75} />
                         </div>
                         <span className="text-sm text-white font-medium leading-tight">{example.label}</span>
                       </button>
@@ -199,14 +216,19 @@ export default function HomePage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start"
                   >
-                    <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.06)] rounded-[18px] rounded-tl-sm px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1.5">
-                          <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Bot size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
+                      </div>
+                      <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.06)] rounded-[18px] rounded-tl-sm px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-1.5">
+                            <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                          <span className="text-xs text-[#9CA3AF] ml-2">Pandeum está encontrando la mejor solución para ti...</span>
                         </div>
-                        <span className="text-xs text-[#9CA3AF] ml-2">Pandeum está encontrando la mejor solución para ti...</span>
                       </div>
                     </div>
                   </motion.div>
@@ -224,6 +246,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Right Panel - Desktop 3rd column */}
+      <RightPanel providers={drawerProviders} />
 
       <ProvidersDrawer
         isOpen={drawerOpen}

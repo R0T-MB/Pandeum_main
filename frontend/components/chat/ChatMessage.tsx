@@ -2,7 +2,7 @@
 
 import { Message, ProviderRecommendation } from '@/types'
 import { SolutionJourney } from './SolutionJourney'
-import { MapPin, Utensils, Shirt, Scissors, Wrench, ShoppingBag, HeartPulse, Info, Lightbulb, LucideIcon, CheckCheck } from 'lucide-react'
+import { MapPin, Utensils, Shirt, Scissors, Wrench, ShoppingBag, HeartPulse, Info, Lightbulb, LucideIcon, CheckCheck, Star } from 'lucide-react'
 
 interface ChatMessageProps {
   message: Message
@@ -145,18 +145,79 @@ export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
     }
 
     // Modo journey / providers
+    const hasInlineProviders = providers.length > 0
+
     return (
       <div className="flex justify-start">
         <div className="w-full max-w-[90%] sm:max-w-[85%]">
           <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.06)] rounded-[18px] rounded-tl-sm px-5 py-4 shadow-sm">
             <SolutionJourney response={aiResponse} />
-            {showProviderCta && (
+
+            {/* Inline provider recommendation cards */}
+            {hasInlineProviders && (
+              <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.06)]">
+                <h4 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3">
+                  {aiResponse.recommendation_label || 'Recomendados para ti'}
+                </h4>
+                <div className="space-y-2.5">
+                  {providers.slice(0, 3).map((p, idx) => (
+                    <div
+                      key={p.provider_id || idx}
+                      className="flex items-center gap-3 bg-[#111827] rounded-xl p-3 border border-[rgba(255,255,255,0.06)] transition-all duration-200 hover:border-[#7C3AED]/20 hover-lift cursor-pointer"
+                      onClick={() => onViewPlaces?.(providers, aiResponse.recommendation_label)}
+                    >
+                      {p.avatar_url ? (
+                        <img src={p.avatar_url} alt={p.business_name} className="w-10 h-10 rounded-lg object-cover border border-[rgba(255,255,255,0.06)] flex-shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center text-xs font-bold text-[#7C3AED] flex-shrink-0">
+                          {p.business_name.charAt(0)}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium text-white truncate">{p.business_name}</span>
+                          {p.available_now && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {typeof p.rating === 'number' && p.rating > 0 && (
+                            <span className="flex items-center gap-0.5 text-[10px] text-yellow-400">
+                              <Star size={9} className="fill-yellow-400" strokeWidth={1.5} />
+                              {p.rating.toFixed(1)}
+                            </span>
+                          )}
+                          {p.estimated_cost && (
+                            <span className="text-[10px] text-[#9CA3AF]">{p.estimated_cost}</span>
+                          )}
+                        </div>
+                      </div>
+                      {idx === 0 && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-[#7C3AED]/10 text-[#7C3AED] border border-[#7C3AED]/20 flex-shrink-0">
+                          Recomendado
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {providers.length > 3 && (
+                  <button
+                    onClick={() => onViewPlaces?.(providers, aiResponse.recommendation_label)}
+                    className="flex items-center justify-center gap-1.5 w-full mt-2 py-2 rounded-xl text-[11px] font-medium text-[#7C3AED] hover:bg-[rgba(124,58,237,0.05)] transition-all duration-200"
+                  >
+                    Ver más opciones ({providers.length})
+                  </button>
+                )}
+              </div>
+            )}
+
+            {showProviderCta && !hasInlineProviders && (
               <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.06)]">
                 {ctaButton}
               </div>
             )}
           </div>
-          <div className="mt-1 ml-1">
+          <div className="mt-1 ml-1 flex items-center gap-2">
             <span className="text-[10px] text-[#9CA3AF]">
               {message.timestamp ? formatTime(new Date(message.timestamp)) : ''}
             </span>

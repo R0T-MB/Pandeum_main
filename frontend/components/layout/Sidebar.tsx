@@ -83,7 +83,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-6 border-b border-[rgba(255,255,255,0.06)]">
-          <div className="w-9 h-9 rounded-xl pandeum-gradient flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-[#7C3AED]/20">
+          <div className="w-10 h-10 rounded-xl pandeum-gradient flex items-center justify-center text-white text-base font-bold shadow-lg shadow-[#7C3AED]/20">
             P
           </div>
           <div>
@@ -93,7 +93,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto scrollbar-thin">
+        <nav className="flex-1 px-3 py-5 space-y-0.5 overflow-y-auto scrollbar-thin">
           {allNavItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -103,21 +103,21 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group relative ${
                   isActive
-                    ? 'bg-[#7C3AED]/10 text-white font-medium border border-[#7C3AED]/20 pandeum-glow'
+                    ? 'bg-[#7C3AED]/10 text-white font-medium'
                     : 'text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)] hover:text-white'
                 }`}
               >
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/50" />
+                )}
                 <div className={`flex items-center justify-center w-5 h-5 ${
                   isActive ? 'text-[#7C3AED]' : 'text-[#9CA3AF] group-hover:text-[#7C3AED]'
                 }`}>
                   <Icon size={18} strokeWidth={isActive ? 2.5 : 1.75} />
                 </div>
                 <span className="text-sm">{item.label}</span>
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/50" />
-                )}
               </Link>
             )
           })}
@@ -125,19 +125,19 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
         {/* Pro Card */}
         <div className="px-3 py-3">
-          <div className="bg-gradient-to-br from-[#0E1422] to-[#080B14] rounded-xl border border-[rgba(255,255,255,0.06)] p-4 pandeum-glow">
+          <div className="bg-gradient-to-br from-[#0E1422] to-[#080B14] rounded-xl border border-[rgba(255,255,255,0.06)] p-4 pandeum-glow hover-lift">
             <div className="w-8 h-8 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center mb-3">
               <Sparkles size={14} className="text-[#7C3AED]" />
             </div>
             <p className="text-xs font-semibold text-white mb-1 leading-relaxed">
-              Mejora tu experiencia
+              Pandeum Pro
             </p>
             <p className="text-[10px] text-[#9CA3AF] mb-3 leading-relaxed">
-              Descubre todas las funciones de Pandeum.
+              Accede a funciones exclusivas y recomendaciones prioritarias.
             </p>
-            <button className="flex items-center gap-1.5 text-[11px] font-medium text-[#7C3AED] hover:text-white transition-colors duration-200">
-              Explorar funciones
-              <ArrowRight size={12} strokeWidth={2} />
+            <button className="flex items-center gap-1.5 text-[11px] font-medium text-[#7C3AED] hover:text-white transition-colors duration-200 group">
+              Actualizar ahora
+              <ArrowRight size={12} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>
@@ -155,7 +155,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                     onClick={() => setTheme(opt.value)}
                     className={`flex items-center justify-center flex-1 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
                       isThemeActive
-                        ? 'bg-[#7C3AED]/20 text-[#7C3AED]'
+                        ? 'bg-[#7C3AED]/20 text-[#7C3AED] shadow-sm'
                         : 'text-[#9CA3AF] hover:text-white hover:bg-[rgba(255,255,255,0.05)]'
                     }`}
                     title={opt.label}
@@ -171,8 +171,8 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         {/* User & Logout */}
         <div className="px-3 py-3 border-t border-[rgba(255,255,255,0.06)]">
           {user && (
-            <div className="flex items-center gap-3 px-3 py-2 mb-2 rounded-lg bg-[rgba(255,255,255,0.03)]">
-              <div className="w-8 h-8 rounded-lg bg-[#7C3AED]/20 flex items-center justify-center text-xs font-bold text-[#7C3AED]">
+            <div className="flex items-center gap-3 px-3 py-2 mb-2 rounded-lg bg-[rgba(255,255,255,0.03)] hover-lift">
+              <div className="w-9 h-9 rounded-full bg-[#7C3AED]/20 flex items-center justify-center text-xs font-bold text-[#7C3AED] ring-2 ring-[#7C3AED]/20">
                 {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className="min-w-0 flex-1">
@@ -183,9 +183,9 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           )}
           <button
             onClick={logout}
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)] hover:text-white transition-all duration-200 text-sm"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)] hover:text-white transition-all duration-200 text-sm group"
           >
-            <LogOut size={16} strokeWidth={1.75} />
+            <LogOut size={16} strokeWidth={1.75} className="group-hover:text-red-400 transition-colors" />
             <span className="text-sm">Cerrar sesión</span>
           </button>
         </div>
