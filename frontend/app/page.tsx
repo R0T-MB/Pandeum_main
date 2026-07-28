@@ -39,9 +39,8 @@ export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [drawerProviders, setDrawerProviders] = useState<ProviderRecommendation[]>([])
-  const [drawerLabel, setDrawerLabel] = useState<string | undefined>()
+  const [panelProviders, setPanelProviders] = useState<ProviderRecommendation[]>([])
+  const [panelLabel, setPanelLabel] = useState<string | undefined>()
   const [selectedProvider, setSelectedProvider] = useState<ProviderRecommendation | null>(null)
   const [mapOpen, setMapOpen] = useState(false)
   const [showSuggestionDrawer, setShowSuggestionDrawer] = useState(false)
@@ -158,9 +157,8 @@ export default function HomePage() {
   }
 
   const handleViewPlaces = (providers: ProviderRecommendation[], label?: string) => {
-    setDrawerProviders(providers)
-    setDrawerLabel(label)
-    setDrawerOpen(true)
+    setPanelProviders(providers)
+    setPanelLabel(label)
   }
 
   const handleDistanceClick = (provider: ProviderRecommendation) => {
@@ -324,21 +322,19 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* New recommendation panel */}
+      {/* New recommendation panel - always visible on desktop */}
       <ProvidersDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        providers={drawerProviders}
-        recommendationLabel={drawerLabel}
+        providers={panelProviders}
+        recommendationLabel={panelLabel}
         onDistanceClick={handleDistanceClick}
         onOpenSuggestionDrawer={() => setShowSuggestionDrawer(true)}
       />
 
-      {/* Old right panel content as a slide-in drawer */}
+      {/* Old panel content as a slide-in drawer */}
       <SuggestionDrawer
         isOpen={showSuggestionDrawer}
         onClose={() => setShowSuggestionDrawer(false)}
-        providers={drawerProviders}
+        providers={panelProviders}
       />
 
       <RouteMapModal
