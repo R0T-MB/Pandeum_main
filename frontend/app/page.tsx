@@ -15,6 +15,15 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { Conversation, Message, ProviderRecommendation } from '@/types'
 
+const quickActions = [
+  { icon: <ChefHat size={14} />, label: 'Tengo hambre', text: 'Tengo hambre' },
+  { icon: <Laptop size={14} />, label: 'Mi laptop no enciende', text: 'Mi laptop no enciende' },
+  { icon: <Wrench size={14} />, label: 'Necesito un técnico', text: 'Necesito un técnico' },
+  { icon: <Car size={14} />, label: 'Mecánico cerca', text: 'Busco un mecánico cerca' },
+  { icon: <PaintBucket size={14} />, label: 'Pintor para mi casa', text: 'Necesito un pintor para mi casa' },
+  { icon: <Calculator size={14} />, label: 'Tutor de matemáticas', text: 'Necesito un tutor de matemáticas' },
+]
+
 const exampleProblems = [
   { icon: ChefHat, label: 'Tengo hambre', text: 'Tengo hambre' },
   { icon: Laptop, label: 'Mi laptop no enciende', text: 'Mi laptop no enciende' },
@@ -159,11 +168,19 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-screen bg-[#050816]">
+    <div className="flex h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0d0d18] to-[#050508]">
+      {/* Premium background orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-[#7C3AED]/[0.04] blur-[150px] rounded-full" />
+        <div className="absolute top-1/3 -right-60 w-[600px] h-[600px] bg-[#22D3EE]/[0.02] blur-[150px] rounded-full" />
+        <div className="absolute -bottom-40 left-1/3 w-[400px] h-[400px] bg-[#7C3AED]/[0.03] blur-[120px] rounded-full" />
+        <div className="absolute top-1/2 left-1/4 w-[200px] h-[200px] bg-[#6D5EF8]/[0.02] blur-[100px] rounded-full" />
+      </div>
+
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main center panel */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 pb-16 lg:pb-0 overflow-hidden relative">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 pb-16 lg:pb-0 overflow-hidden relative z-10">
         {/* Subtle background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#7C3AED]/[0.03] blur-[120px] rounded-full pointer-events-none" />
 
@@ -239,14 +256,23 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
-              <AnimatePresence>
+              <AnimatePresence mode="popLayout">
                 {messages.map((msg) => (
-                  <ChatMessage key={msg.id} message={msg} onViewPlaces={handleViewPlaces} />
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+                  >
+                    <ChatMessage message={msg} onViewPlaces={handleViewPlaces} />
+                  </motion.div>
                 ))}
                 {isLoading && (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
                     className="flex justify-start"
                   >
                     <div className="flex items-start gap-3">
@@ -275,7 +301,7 @@ export default function HomePage() {
         {/* Input */}
         <div className="flex-shrink-0 px-4 pb-4 pt-3 lg:pb-6 relative">
           <div className="max-w-4xl mx-auto">
-            <ChatInput onSend={handleSendMessage} disabled={isLoading} onQuickFilter={handleQuickFilter} />
+            <ChatInput onSend={handleSendMessage} disabled={isLoading} onQuickFilter={handleQuickFilter} quickActions={quickActions} />
           </div>
         </div>
       </div>

@@ -111,6 +111,12 @@
   .text-gradient {
     @apply bg-gradient-to-br from-[#7C3AED] to-[#22D3EE] bg-clip-text text-transparent;
   }
+  .card-hover {
+    @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-[#7C3AED]/10;
+  }
+  .glow-border {
+    @apply border border-[rgba(255,255,255,0.06)] hover:border-[#7C3AED]/30 transition-all duration-300;
+  }
 }
 
 @layer utilities {
@@ -133,6 +139,64 @@
   @keyframes animate-in {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.3s ease-out;
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .animate-glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.15), 0 0 40px rgba(124, 58, 237, 0.05); }
+    50% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.25), 0 0 60px rgba(124, 58, 237, 0.1); }
+  }
+  .animate-slide-right {
+    animation: slide-right 0.4s ease-out;
+  }
+  @keyframes slide-right {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-route-line {
+    background-size: 200% 100%;
+    animation: route-shimmer 2s ease-in-out infinite;
+  }
+  @keyframes route-shimmer {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 0%; }
+    100% { background-position: 0% 0%; }
+  }
+  .animate-moving-dot {
+    animation: move-dot 2s ease-in-out infinite;
+  }
+  @keyframes move-dot {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(calc(100% - 12px)); }
+  }
+  .animate-flash {
+    animation: flash 0.6s ease-out;
+  }
+  @keyframes flash {
+    0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+    100% { box-shadow: 0 0 0 20px rgba(124, 58, 237, 0); }
   }
   .hover-lift {
     @apply transition-all duration-200;
