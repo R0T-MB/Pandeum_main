@@ -76,29 +76,29 @@ export const SolutionJourney = ({ response }: Props) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Mensaje natural del asistente */}
-      <div className="bg-[#111827] rounded-xl p-4">
-        <p className="text-sm text-white leading-relaxed">
+      <div className="bg-[#111827] rounded-[18px] p-5 pandeum-shadow-sm">
+        <p className="text-base text-white leading-relaxed">
           {getNaturalMessage()}
         </p>
       </div>
 
       {/* Diagnosis + Solutions cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Diagnóstico Card */}
         <div
           onClick={() => toggleSection('diagnosis')}
-          className={`cursor-pointer bg-[#111827] rounded-xl p-4 border transition-all duration-200 hover:scale-[1.02] ${
+          className={`cursor-pointer bg-[#111827] rounded-[18px] p-5 border transition-all duration-200 hover:scale-[1.02] pandeum-shadow-sm ${
             activeSection === 'diagnosis'
-              ? 'border-[#7C3AED]/40'
-              : 'border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.1)]'
+              ? 'border-[#6E42FF]/40'
+              : 'border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)]'
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 ${
+            <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center transition-colors duration-200 ${
               activeSection === 'diagnosis'
-                ? 'bg-[#7C3AED] text-white'
+                ? 'bg-[#6E42FF] text-white'
                 : 'bg-[#151E2F] text-[#9CA3AF]'
             }`}>
               <AlertCircle size={18} strokeWidth={1.75} />
@@ -122,16 +122,16 @@ export const SolutionJourney = ({ response }: Props) => {
         {/* Soluciones Card */}
         <div
           onClick={() => toggleSection('solutions')}
-          className={`cursor-pointer bg-[#111827] rounded-xl p-4 border transition-all duration-200 hover:scale-[1.02] ${
+          className={`cursor-pointer bg-[#111827] rounded-[18px] p-5 border transition-all duration-200 hover:scale-[1.02] pandeum-shadow-sm ${
             activeSection === 'solutions'
-              ? 'border-[#7C3AED]/40'
-              : 'border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.1)]'
+              ? 'border-[#6E42FF]/40'
+              : 'border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.12)]'
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-200 ${
+            <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center transition-colors duration-200 ${
               activeSection === 'solutions'
-                ? 'bg-[#7C3AED] text-white'
+                ? 'bg-[#6E42FF] text-white'
                 : 'bg-[#151E2F] text-[#9CA3AF]'
             }`}>
               <Wrench size={18} strokeWidth={1.75} />
@@ -154,18 +154,18 @@ export const SolutionJourney = ({ response }: Props) => {
       </div>
 
       {/* Expanded Sections */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Diagnóstico Detail */}
         {activeSection === 'diagnosis' && (
-          <div className="bg-[#111827] rounded-xl p-4 border border-[rgba(255,255,255,0.06)] animate-in fade-in slide-in-from-top-2 duration-200">
-            <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <AlertCircle size={16} className="text-[#7C3AED]" strokeWidth={1.75} />
+          <div className="bg-[#111827] rounded-[18px] p-5 border border-[rgba(255,255,255,0.08)] animate-in">
+            <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <AlertCircle size={16} className="text-[#6E42FF]" strokeWidth={1.75} />
               Causas identificadas
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {topCauses.map((cause, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-[#151E2F] rounded-xl">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-[rgba(255,255,255,0.06)] text-[#9CA3AF] text-xs font-semibold flex items-center justify-center">
+                <div key={idx} className="flex items-start gap-3 p-3.5 bg-[#151E2F] rounded-[14px]">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#9CA3AF] text-xs font-semibold flex items-center justify-center">
                     {idx + 1}
                   </span>
                   <span className="text-sm text-white leading-relaxed">{cause}</span>
@@ -182,22 +182,22 @@ export const SolutionJourney = ({ response }: Props) => {
 
         {/* Soluciones Detail */}
         {activeSection === 'solutions' && (
-          <div className="bg-[#111827] rounded-xl p-4 border border-[rgba(255,255,255,0.06)] animate-in fade-in slide-in-from-top-2 duration-200">
-            <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <Lightbulb size={16} className="text-[#7C3AED]" strokeWidth={1.75} />
+          <div className="bg-[#111827] rounded-[18px] p-5 border border-[rgba(255,255,255,0.08)] animate-in">
+            <h4 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <Lightbulb size={16} className="text-[#6E42FF]" strokeWidth={1.75} />
               Acciones recomendadas
             </h4>
             {hasSolutions ? (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {topSolutions.map((solution, idx) => {
                   const { title, detail } = parseSolution(solution);
                   const isExpanded = expandedSolutions[idx];
 
                   return (
-                    <div key={idx} className="bg-[#151E2F] rounded-xl border border-[rgba(255,255,255,0.06)] overflow-hidden transition-all duration-200">
-                      <div className="p-3.5">
+                    <div key={idx} className="bg-[#151E2F] rounded-[14px] border border-[rgba(255,255,255,0.08)] overflow-hidden transition-all duration-200">
+                      <div className="p-4">
                         <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0 w-6 h-6 rounded-lg bg-[rgba(255,255,255,0.06)] text-[#9CA3AF] text-xs font-semibold flex items-center justify-center">
+                          <div className="flex-shrink-0 w-7 h-7 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#9CA3AF] text-xs font-semibold flex items-center justify-center">
                             {idx + 1}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -215,7 +215,7 @@ export const SolutionJourney = ({ response }: Props) => {
                               e.stopPropagation();
                               toggleSolution(idx);
                             }}
-                            className="flex-shrink-0 text-xs font-medium text-[#9CA3AF] hover:text-white bg-[#111827] hover:bg-[rgba(255,255,255,0.05)] px-2.5 py-1.5 rounded-xl transition-all duration-200 flex items-center gap-1"
+                            className="flex-shrink-0 text-xs font-medium text-[#9CA3AF] hover:text-white bg-[#111827] hover:bg-[rgba(255,255,255,0.05)] px-3 py-1.5 rounded-[14px] transition-all duration-200 flex items-center gap-1"
                           >
                             {isExpanded ? (
                               <>
@@ -236,8 +236,8 @@ export const SolutionJourney = ({ response }: Props) => {
                 })}
               </div>
             ) : (
-              <div className="text-center py-5">
-                <div className="w-10 h-10 rounded-xl bg-[#151E2F] flex items-center justify-center mx-auto mb-3">
+              <div className="text-center py-6">
+                <div className="w-10 h-10 rounded-[14px] bg-[#151E2F] flex items-center justify-center mx-auto mb-3">
                   <Wrench size={18} className="text-[rgba(255,255,255,0.1)]" strokeWidth={1.75} />
                 </div>
                 <p className="text-sm text-[#9CA3AF] leading-relaxed max-w-xs mx-auto">
@@ -250,10 +250,10 @@ export const SolutionJourney = ({ response }: Props) => {
 
         {/* Alerta de confianza baja */}
         {response.confidence_score < 0.6 && (
-          <div className="flex items-start gap-3 p-3.5 bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)]">
-            <AlertCircle size={16} className="text-[#7C3AED] flex-shrink-0 mt-0.5" strokeWidth={1.75} />
+          <div className="flex items-start gap-3 p-4 bg-[#111827] rounded-[18px] border border-[rgba(255,255,255,0.08)]">
+            <AlertCircle size={16} className="text-[#6E42FF] flex-shrink-0 mt-0.5" strokeWidth={1.75} />
             <div>
-              <p className="text-xs font-medium text-white">Confianza baja</p>
+              <p className="text-sm font-medium text-white">Confianza baja</p>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
                 Verifica esta información con un profesional antes de tomar decisiones.
               </p>

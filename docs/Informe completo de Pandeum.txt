@@ -1,0 +1,1965 @@
+Informe completo de Pandeum
+1. Resumen general
+
+Pandeum es una webapp que busca funcionar como un asistente inteligente para resolver necesidades cotidianas del usuario. La idea central no es que sea un chatbot común, sino una plataforma que entienda lo que una persona necesita en ese momento y la conecte con una solución práctica, ya sea mediante una orientación inmediata, una sugerencia de producto, una recomendación de servicio o una lista de proveedores disponibles.
+
+En términos simples, Pandeum quiere responder a situaciones como:
+
+“Se dañaron mis audífonos”
+“Quiero reparar mis audífonos”
+“Tengo hambre”
+“Un restaurante de comida rápida”
+“Mi suéter me aprieta”
+“Necesito una batería para mi celular”
+“Me duele la cabeza”
+“Quiero comprar una guitarra barata”
+
+Pero la diferencia está en que Pandeum debe interpretar qué tipo de necesidad hay detrás del mensaje. No todas las frases deben ir al mismo flujo. Algunas necesitan diagnóstico, otras sugerencias, otras proveedores, otras atención médica básica, otras solo una respuesta directa.
+
+La visión de Pandeum es convertirse en una plataforma que combine:
+
+IA conversacional
+diagnóstico de problemas
+sugerencias inteligentes
+búsqueda de proveedores
+ubicación del usuario
+disponibilidad en tiempo real
+historial de casos
+lista de espera
+panel de administración
+confianza y reputación de proveedores
+
+Actualmente, Pandeum está en una etapa de MVP funcional en desarrollo, con backend, frontend, autenticación, base de datos, integración de IA y despliegue en Railway/Vercel. La parte más fuerte que se ha trabajado últimamente es el flujo conversacional, especialmente para que el sistema no confunda comida, ropa, salud, tecnología, productos y servicios.
+
+2. Qué es Pandeum
+
+Pandeum es una plataforma digital asistida por IA que ayuda a los usuarios a resolver problemas, encontrar productos, ubicar servicios y conectar con proveedores.
+
+No se limita a responder texto. Su objetivo es actuar como una especie de intermediario inteligente entre tres elementos:
+
+1. La necesidad del usuario
+2. La interpretación de esa necesidad mediante IA
+3. La conexión con soluciones o proveedores reales
+
+Por ejemplo, si un usuario escribe:
+
+“Se dañaron mis audífonos”
+
+Pandeum debe entender que eso probablemente es un problema técnico. Entonces debería ofrecer una guía de revisión inicial, posibles causas, soluciones rápidas y, si corresponde, técnicos o proveedores cercanos.
+
+Si el usuario dice:
+
+“Quiero reparar mis audífonos”
+
+eso ya no es exactamente un diagnóstico técnico. Es una intención de servicio. Pandeum debería mostrar opciones relacionadas con reparación y posibles proveedores.
+
+Si dice:
+
+“Tengo hambre”
+
+Pandeum no debería diagnosticar nada. Debe preguntar qué tipo de comida desea o sugerir opciones.
+
+Si dice:
+
+“Un restaurante de comida rápida”
+
+Pandeum debe entender que la persona busca comida y, además, probablemente un proveedor: restaurantes disponibles cerca.
+
+Si dice:
+
+“Mi suéter me ajusta el pecho”
+
+no debe tratarlo como dolor en el pecho, porque está hablando de una prenda. Debe clasificarlo como ropa o ajuste de prenda y sugerir costurera, sastre, cambio de talla o revisión del material.
+
+Si dice:
+
+“Me duele el pecho”
+
+ahí sí debe tratarlo como salud y responder de forma cuidadosa.
+
+Esa es la esencia de Pandeum: entender la intención real detrás de lo que el usuario escribe.
+
+3. Problema que resuelve Pandeum
+
+Pandeum nace para resolver una situación común: las personas tienen necesidades en el momento, pero no siempre saben qué hacer, a quién acudir o cómo buscar.
+
+Ejemplos cotidianos:
+
+No sé si mi problema necesita técnico.
+No sé dónde reparar algo.
+No sé qué comer.
+No sé qué producto comprar.
+No sé qué proveedor está disponible.
+No sé si debo preocuparme por un síntoma.
+No sé si hay alguien cerca que pueda ayudarme.
+
+Actualmente, una persona normalmente tendría que usar muchas herramientas separadas:
+
+Google para buscar información
+Maps para buscar lugares
+WhatsApp para preguntar a conocidos
+TikTok o YouTube para buscar tutoriales
+Marketplaces para comprar
+Apps de delivery para comida
+Directorios locales para proveedores
+
+Pandeum busca unir todo eso en una experiencia más directa:
+
+Usuario escribe lo que necesita
+Pandeum interpreta
+Pandeum recomienda acción
+Pandeum sugiere opciones
+Pandeum muestra proveedores
+Pandeum permite continuar el caso
+
+La meta final es que el usuario no tenga que pensar demasiado en “cómo buscar”, sino simplemente decir lo que le pasa o lo que quiere.
+
+4. Visión del producto
+
+La visión de Pandeum es convertirse en una webapp de asistencia inteligente para necesidades reales.
+
+El modelo sería algo así:
+
+Necesidad espontánea del usuario
+        ↓
+IA interpreta intención
+        ↓
+Clasifica categoría
+        ↓
+Decide modo de respuesta
+        ↓
+Genera sugerencias, diagnóstico o búsqueda
+        ↓
+Consulta proveedores reales
+        ↓
+Muestra opciones disponibles
+        ↓
+Usuario elige, solicita, guarda o continúa
+
+Pandeum no debería sentirse como un chatbot genérico. Debe sentirse como un asistente que entiende el contexto.
+
+Por ejemplo, una conversación ideal sería:
+
+Usuario: Se dañaron mis audífonos.
+Pandeum: Te doy una guía rápida para revisar si el problema es del cable, batería, Bluetooth o dispositivo.
+
+Usuario: Mejor quiero repararlos.
+Pandeum: Perfecto, entonces conviene buscar un técnico o servicio de reparación de audífonos.
+
+Usuario: Aprovecharé para comer algo.
+Pandeum: Claro, ¿buscas algo rápido, económico o algo específico?
+
+Usuario: Un restaurante de comida rápida.
+Pandeum: Aquí tienes opciones de comida rápida y restaurantes disponibles cerca.
+
+La plataforma debe poder cambiar de tema sin romper el flujo. Esa fue una de las partes más importantes que se corrigió recientemente.
+
+5. A quién beneficia Pandeum
+5.1. Beneficia a usuarios comunes
+
+El usuario principal de Pandeum es cualquier persona que tenga una necesidad inmediata.
+
+Puede ser alguien que necesita:
+
+arreglar algo
+comprar algo
+buscar comida
+resolver una duda técnica
+encontrar un proveedor
+pedir orientación rápida
+tomar una decisión
+
+El beneficio para el usuario es que reduce el tiempo de búsqueda. En vez de buscar por separado en Google, redes, mapas o chats, escribe directamente su necesidad.
+
+Pandeum debe ayudarle a:
+
+entender qué necesita
+recibir orientación clara
+evitar diagnósticos innecesarios
+encontrar proveedores cercanos
+comparar opciones
+saber si hay alguien disponible
+guardar el caso
+recibir seguimiento
+
+Ejemplo:
+
+Usuario: “Mi celular no carga”
+Beneficio: recibe una guía para revisar cargador, cable, puerto, batería y posibles proveedores.
+Usuario: “Necesito una batería para mi celular”
+Beneficio: no recibe diagnóstico, sino sugerencias de compra o tiendas/proveedores.
+Usuario: “Mi camisa me aprieta”
+Beneficio: recibe opciones de arreglo, costurera o cambio de talla.
+5.2. Beneficia a proveedores
+
+Pandeum también beneficia a técnicos, restaurantes, costureras, zapateros, tiendas, profesionales y pequeños negocios.
+
+El proveedor puede recibir clientes que ya tienen una necesidad clara.
+
+Por ejemplo:
+
+técnico de celulares
+reparador de audífonos
+restaurante
+costurera
+sastre
+zapatero
+tienda de repuestos
+proveedor de internet
+profesional especializado
+
+El beneficio para el proveedor es que Pandeum puede convertirse en un canal de captación de clientes.
+
+El proveedor puede:
+
+registrarse
+mostrar servicios
+mostrar disponibilidad
+indicar precios aproximados
+recibir solicitudes
+aparecer en recomendaciones
+mejorar su reputación
+recibir reseñas
+ser filtrado por categoría y ubicación
+
+La plataforma podría ayudar especialmente a proveedores pequeños que no tienen buena presencia digital.
+
+5.3. Beneficia al administrador de la plataforma
+
+El administrador de Pandeum puede ver datos muy valiosos:
+
+qué buscan los usuarios
+qué categorías tienen más demanda
+dónde faltan proveedores
+qué búsquedas no tienen respuesta
+qué proveedores funcionan mejor
+qué errores tiene la IA
+qué conversaciones fallan
+
+Esto permite tomar decisiones de negocio.
+
+Ejemplo:
+
+Si muchas personas buscan “costurera en Sangolquí” y no hay proveedores registrados, Pandeum sabe que debe captar costureras en esa zona.
+
+Eso convierte las búsquedas fallidas en oportunidades comerciales.
+
+5.4. Beneficia al ecosistema local
+
+Pandeum también puede beneficiar al comercio local, porque conecta necesidades reales con negocios cercanos.
+
+Puede ayudar a que negocios pequeños aparezcan cuando alguien los necesita, incluso si no son fuertes en redes sociales o posicionamiento web.
+
+Ejemplo:
+
+Una costurera que trabaja en su barrio podría recibir clientes porque Pandeum detecta usuarios con problemas de ropa.
+Un técnico independiente podría aparecer cuando alguien tiene problemas con audífonos, celulares, laptops o internet.
+6. Tecnología actual de Pandeum
+
+Según lo trabajado hasta ahora, Pandeum usa una arquitectura moderna de webapp separada en frontend, backend, base de datos e inteligencia artificial.
+
+6.1. Frontend
+
+El frontend está construido con:
+
+Next.js 14
+React
+TypeScript
+Tailwind CSS
+App Router
+Vercel
+
+El frontend se encarga de la interfaz que ve el usuario.
+
+Ahí están partes como:
+
+pantalla principal
+login
+registro
+chat
+tarjetas de respuesta
+tarjeta de sugerencias
+tarjeta de proveedores
+SolutionJourney
+paneles visuales
+tipos TypeScript
+
+El frontend está desplegado en Vercel.
+
+La URL estable trabajada para frontend es:
+
+https://pandeum-main.vercel.app
+
+También se trabajó con dominios temporales generados por Vercel durante despliegues.
+
+6.2. Backend
+
+El backend está construido con:
+
+FastAPI
+Python
+SQLAlchemy
+JWT
+PostgreSQL
+Railway
+Google Gemini API
+OpenRouter como fallback
+
+El backend se encarga de:
+
+autenticación
+registro de usuarios
+login
+gestión de proveedores
+conexión con base de datos
+procesamiento de IA
+rutas API
+guardar conversaciones
+devolver respuestas estructuradas
+
+El backend está desplegado en Railway.
+
+La URL del backend trabajada es:
+
+https://pandeummain-production.up.railway.app
+6.3. Base de datos
+
+La base de datos actual está en:
+
+PostgreSQL en Railway
+
+Antes hubo problemas porque la tabla users no existía. Eso se resolvió creando/migrando tablas en PostgreSQL.
+
+La base de datos debe guardar información como:
+
+usuarios
+proveedores
+respuestas de proveedores
+conversaciones
+reseñas
+categorías
+solicitudes
+posibles listas de espera
+
+Actualmente ya existe estructura suficiente para usuarios y proveedores, aunque todavía faltan módulos más completos.
+
+6.4. IA principal
+
+La IA principal usada es:
+
+Gemini 2.5 Flash
+
+Se actualizó el modelo a gemini-2.5-flash porque el anterior ya generaba problemas o no era el más adecuado.
+
+Gemini se usa para:
+
+interpretar necesidades
+generar diagnósticos
+generar soluciones inmediatas
+crear sugerencias
+responder de forma natural
+manejar comida
+manejar ropa
+manejar productos
+manejar servicios
+continuar conversaciones
+6.5. IA suplente
+
+Se empezó a implementar OpenRouter como suplente.
+
+La idea es:
+
+Gemini intenta primero
+si Gemini falla, entra OpenRouter
+si OpenRouter también falla, respuesta directa sin tarjetas falsas
+
+Esto nació porque Gemini podía quedarse sin disponibilidad o cuota. Cuando eso ocurría, Pandeum antes mostraba respuestas pobres como:
+
+“El asistente de IA no está disponible temporalmente”
+“Error temporal en el procesamiento”
+
+y lo mostraba dentro de diagnóstico, lo cual se veía mal.
+
+Ahora la lógica correcta es:
+
+Si no hay IA disponible:
+no inventar diagnóstico
+no mostrar tarjetas falsas
+responder directo y claro
+
+Ejemplo:
+
+No pude procesar tu solicitud en este momento porque el servicio de IA no está disponible. Intenta nuevamente en unos segundos.
+
+Para salud:
+
+No puedo darte una orientación completa en este momento porque la IA no está disponible. Si el dolor es fuerte, empeora, viene con síntomas preocupantes o no mejora, busca ayuda médica.
+7. Arquitectura general esperada
+
+La arquitectura de Pandeum puede entenderse así:
+
+Usuario
+  ↓
+Frontend Next.js
+  ↓
+API Backend FastAPI
+  ↓
+Router conversacional
+  ↓
+IA Gemini / OpenRouter
+  ↓
+Base de datos PostgreSQL
+  ↓
+Proveedor / sugerencia / diagnóstico
+  ↓
+Frontend muestra tarjetas
+
+El backend no debe devolver texto sin estructura. Debe devolver una respuesta organizada, por ejemplo:
+
+{
+  "response_mode": "suggestions",
+  "intent_category": "food",
+  "direct_answer": "Claro, si quieres comida rápida...",
+  "suggestions_label": "Opciones de comida rápida",
+  "suggestions": ["Hamburguesas", "Pizza", "Pollo frito"],
+  "recommendation_label": "Restaurantes disponibles",
+  "has_providers": true,
+  "providers": []
+}
+
+El frontend debe tomar esa estructura y decidir qué mostrar:
+
+burbuja de respuesta
+tarjeta de sugerencias
+tarjeta de proveedores
+tarjeta de diagnóstico
+tarjeta de soluciones
+estado vacío
+8. Flujo conversacional de Pandeum
+
+Esta es una de las partes más importantes.
+
+Antes, Pandeum estaba mezclando todo. El modo suggestions funcionaba casi como si siempre fuera comida. Eso causaba errores.
+
+Por ejemplo:
+
+Usuario: y aprovecharé para hacer algo con mi suéter
+
+Pandeum respondía con comida porque detectaba “algo con”.
+
+Ese error ya se empezó a corregir separando dos conceptos:
+
+intent_category = de qué trata el mensaje
+response_mode = cómo se debe mostrar la respuesta
+8.1. intent_category
+
+intent_category representa el tema o intención principal del usuario.
+
+Las categorías actuales son:
+
+food
+clothing
+health
+tech
+product
+service
+general
+food
+
+Para comida, hambre, almuerzo, restaurantes, pizza, sushi, arepas, encebollado, etc.
+
+Ejemplos:
+
+tengo hambre
+quiero comer
+un restaurante de comida rápida
+quiero pizza
+algo de sushi
+no alcancé a almorzar
+clothing
+
+Para ropa, prendas, tallas o ajustes.
+
+Ejemplos:
+
+mi suéter me ajusta el pecho
+mi camisa me aprieta
+el pantalón me queda pequeño
+quiero arreglar mi chaqueta
+health
+
+Para salud, dolores, malestares, cortes, fiebre, presión, pecho, cabeza, etc.
+
+Ejemplos:
+
+me duele la cabeza
+me duele el pecho
+me corté la oreja
+siento presión en el pecho
+tech
+
+Para problemas técnicos.
+
+Ejemplos:
+
+mi celular no carga
+se dañaron mis audífonos
+mi internet falla
+mi computadora se apaga
+product
+
+Para intención de compra o búsqueda de producto.
+
+Ejemplos:
+
+quiero comprar audífonos
+necesito una batería para mi celular
+quiero una guitarra barata
+dónde consigo un cargador
+service
+
+Para intención de buscar proveedor o servicio.
+
+Ejemplos:
+
+quiero reparar mis audífonos
+necesito una costurera
+quiero un zapatero
+busco especialista para arreglar mi router
+general
+
+Para mensajes que no entran claramente en otra categoría.
+
+Ejemplos:
+
+gracias
+qué puedes hacer
+cuéntame más
+8.2. response_mode
+
+response_mode representa cómo se debe mostrar la respuesta.
+
+Los modos actuales o esperados son:
+
+direct
+food
+suggestions
+journey
+providers
+follow_up
+direct
+
+Respuesta simple, sin tarjetas.
+
+Ejemplo:
+
+Usuario: gracias
+Pandeum: Con gusto.
+
+También se usa cuando la IA falla y no se debe inventar información.
+
+food
+
+Modo inicial para hambre abierta.
+
+Ejemplo:
+
+Usuario: tengo hambre
+Pandeum: ¿Se te antoja algo rápido, económico, saludable o algo específico?
+
+No debe mostrar diagnóstico.
+
+suggestions
+
+Modo para sugerencias generales.
+
+Puede usarse para:
+
+comida
+ropa
+productos
+servicios
+decisiones
+
+Ejemplo comida:
+
+Usuario: un restaurante de comida rápida
+Pandeum muestra:
+- sugerencias de comida rápida
+- tarjeta de restaurantes disponibles
+
+Ejemplo ropa:
+
+Usuario: mi suéter me ajusta el pecho
+Pandeum muestra:
+- sugerencias de arreglo de prenda
+- tarjeta de costureras o sastres disponibles
+
+Ejemplo producto:
+
+Usuario: necesito una batería para mi celular
+Pandeum muestra:
+- criterios para comprar batería
+- tiendas o proveedores disponibles
+journey
+
+Modo para problemas reales que requieren diagnóstico o guía paso a paso.
+
+Ejemplos:
+
+se dañaron mis audífonos
+mi celular no carga
+mi internet falla
+me duele la cabeza
+
+El journey suele mostrar:
+
+diagnóstico
+posibles causas
+soluciones inmediatas
+proveedor recomendado
+confianza
+providers
+
+Modo esperado para mostrar directamente proveedores, aunque actualmente se ha trabajado más con proveedores dentro de journey y suggestions.
+
+Ejemplo futuro:
+
+Usuario: muéstrame técnicos cerca
+Pandeum: lista de técnicos disponibles
+follow_up
+
+Modo para continuar una conversación anterior.
+
+Ejemplo:
+
+Usuario: quiero pizza
+Pandeum: te muestra opciones
+Usuario: la de piña me interesa
+Pandeum: entiende que sigue hablando de pizza
+Usuario: sí
+Pandeum: continúa con pizza hawaiana, no abre diagnóstico
+9. Funcionamiento esperado por tipo de necesidad
+9.1. Problemas técnicos
+
+Ejemplos:
+
+se dañaron mis audífonos
+mi celular no carga
+mi computadora se apaga
+mi internet falla
+
+Flujo esperado:
+
+1. Pandeum detecta intent_category: tech
+2. response_mode: journey
+3. IA genera diagnóstico
+4. Se muestran causas posibles
+5. Se muestran soluciones inmediatas
+6. Se consulta base de proveedores
+7. Se muestra proveedor recomendado o estado vacío
+
+Ejemplo ideal:
+
+Usuario: se dañaron mis audífonos
+
+Pandeum:
+Te dejo una guía práctica para revisar el problema.
+
+Diagnóstico:
+- batería descargada
+- daño en cable
+- problema de Bluetooth
+- fallo del dispositivo
+
+Soluciones:
+- probar en otro dispositivo
+- revisar carga
+- reiniciar emparejamiento
+- revisar conector
+
+Proveedor:
+Técnicos disponibles cerca
+9.2. Búsqueda de servicios
+
+Ejemplos:
+
+quiero reparar mis audífonos
+quiero un zapatero
+necesito una costurera
+busco especialista para arreglar mi router
+
+Flujo esperado:
+
+1. Pandeum detecta intent_category: service
+2. response_mode: suggestions
+3. No debe diagnosticar
+4. Debe orientar qué proveedor buscar
+5. Debe mostrar tarjeta de proveedores
+
+Ejemplo ideal:
+
+Usuario: quiero reparar mis audífonos
+
+Pandeum:
+Claro, en este caso te conviene buscar un técnico o servicio de reparación de audífonos.
+
+Sugerencias:
+- revisar si tienen garantía
+- preguntar costo de revisión
+- indicar si son Bluetooth o alámbricos
+- llevar cargador o estuche
+- pedir diagnóstico antes de pagar
+
+Proveedores disponibles:
+Aún no encontramos proveedores disponibles para esta categoría.
+9.3. Búsqueda de productos
+
+Ejemplos:
+
+necesito una batería para mi celular
+quiero comprar audífonos
+quiero una guitarra barata
+dónde consigo un cargador
+
+Flujo esperado:
+
+1. Pandeum detecta intent_category: product
+2. response_mode: suggestions
+3. No debe diagnosticar como problema técnico
+4. Debe ofrecer criterios de compra
+5. Puede mostrar tiendas o proveedores
+
+Ejemplo:
+
+Usuario: necesito una batería para mi celular
+
+Pandeum:
+Entiendo. En este caso conviene buscar una batería compatible con el modelo exacto de tu celular.
+
+Sugerencias:
+- revisar modelo del celular
+- pedir batería original o certificada
+- consultar garantía
+- evitar baterías sin marca
+- comparar precio con instalación
+- preguntar si incluye revisión del puerto de carga
+
+Tiendas o proveedores disponibles:
+Aún no encontramos proveedores disponibles para esta categoría.
+9.4. Comida
+
+Ejemplos:
+
+tengo hambre
+quiero comer pizza
+un restaurante de comida rápida
+algo de sushi
+no alcancé a almorzar
+
+Flujo esperado:
+
+1. Pandeum detecta food
+2. Si es hambre abierta, pregunta preferencia
+3. Si es comida específica, muestra sugerencias
+4. Si se menciona restaurante, muestra proveedores
+5. Si no hay proveedores, muestra tarjeta vacía
+
+Ejemplo:
+
+Usuario: tengo hambre
+
+Pandeum:
+¿Se te antoja algo rápido, económico, saludable o algo específico como pizza, sushi, hamburguesa o comida casera?
+Usuario: un restaurante de comida rápida
+
+Pandeum:
+Claro, si buscas comida rápida, podrías elegir algo práctico y fácil de conseguir.
+
+Opciones:
+- hamburguesas
+- pizza
+- pollo frito
+- tacos
+- sándwiches
+- papas con toppings
+
+Restaurantes disponibles:
+Aún no encontramos proveedores disponibles para esta categoría.
+9.5. Ropa y prendas
+
+Ejemplos:
+
+mi suéter me ajusta el pecho
+mi camisa me aprieta
+el pantalón me queda pequeño
+quiero arreglar una chaqueta
+
+Flujo esperado:
+
+1. Pandeum detecta clothing
+2. response_mode: suggestions
+3. No debe clasificar como salud si menciona pecho pero hay prenda
+4. Debe sugerir costurera, sastre, cambio o arreglo
+5. Puede mostrar proveedores
+
+Ejemplo:
+
+Usuario: mi suéter me ajusta el pecho
+
+Pandeum:
+Entiendo. Si el suéter te queda ajustado en el pecho, podrías revisar si tiene arreglo con una costurera o sastre, o considerar una talla más cómoda.
+
+Opciones:
+- revisar costuras laterales
+- comprobar si encogió al lavar
+- llevarlo a una costurera
+- cambiarlo por una talla más grande
+- evitar usarlo si limita el movimiento
+
+Costureras o sastres disponibles:
+Aún no encontramos proveedores disponibles para esta categoría.
+9.6. Salud y seguridad
+
+Ejemplos:
+
+me duele la cabeza
+me duele el pecho
+me corté la oreja
+siento presión en el pecho
+
+Pandeum no debe hacerse pasar por médico. Debe dar orientación general y recomendar atención cuando hay señales de riesgo.
+
+Flujo esperado:
+
+1. Detectar health
+2. response_mode puede ser journey o direct según el caso
+3. Dar orientación básica segura
+4. No inventar diagnóstico
+5. No minimizar síntomas graves
+6. Recomendar atención médica si hay señales de alarma
+
+Ejemplo:
+
+Usuario: me corté la oreja
+
+Pandeum:
+Lamento que te haya pasado. Si el corte es pequeño, puedes limpiar la zona con cuidado, cubrirlo con una curita limpia y vigilar que no aumente el sangrado. Si el corte es profundo, no deja de sangrar, hay dolor fuerte, separación de bordes o pérdida de tejido, busca atención médica.
+
+Para un menor de edad o usuario joven, es importante que Pandeum sea especialmente cuidadoso con salud, lesiones y urgencias.
+
+10. Herramientas que podrá usar el usuario
+10.1. Chat inteligente
+
+La herramienta principal es el chat.
+
+El usuario podrá escribir necesidades en lenguaje natural:
+
+tengo hambre
+se dañó mi celular
+quiero comprar zapatos
+me duele la cabeza
+necesito un técnico
+quiero una costurera
+
+La clave es que el usuario no tenga que usar formularios complejos al inicio.
+
+10.2. Sugerencias inteligentes
+
+Pandeum podrá mostrar sugerencias según la categoría.
+
+Ejemplos:
+
+comida → opciones para comer
+ropa → formas de arreglar una prenda
+producto → criterios de compra
+servicio → qué proveedor buscar
+tecnología → pasos de revisión
+salud → orientación básica segura
+10.3. Tarjetas visuales
+
+La webapp usa tarjetas para ordenar la información.
+
+Tipos de tarjetas esperadas:
+
+tarjeta de sugerencias
+tarjeta de diagnóstico
+tarjeta de soluciones inmediatas
+tarjeta de proveedores
+tarjeta de estado vacío
+tarjeta de confianza
+tarjeta de seguimiento
+
+Actualmente se está corrigiendo que la tarjeta de sugerencias no use siempre el ícono de comida. El backend ya empezó a devolver intent_category, y el frontend ya empezó a usar íconos distintos según categoría. También se está trabajando para que la tarjeta de proveedores aparezca aunque no existan proveedores registrados todavía.
+
+10.4. Proveedores cercanos
+
+Esta será una de las herramientas más importantes.
+
+El usuario debería poder ver:
+
+nombre del proveedor
+categoría
+distancia
+calificación
+trust_score
+disponibilidad
+precio aproximado
+tiempo de respuesta
+razones de recomendación
+
+Ejemplo:
+
+Técnico Roberto
+Disponible ahora
+Rating: 5
+Costo estimado: $15 - $45
+Tiempo de respuesta: 2 horas
+
+Actualmente existe lógica para proveedores, pero falta fortalecerla con ubicación real, distancia y categorías más completas.
+
+10.5. Estado vacío útil
+
+Si no hay proveedores, Pandeum no debe simplemente ocultar la sección.
+
+Debe decir:
+
+Aún no encontramos proveedores disponibles para esta categoría.
+
+Luego, en una versión más avanzada, debería ofrecer:
+
+¿Quieres que te avisemos cuando haya uno?
+
+Eso conecta con la lista de espera.
+
+10.6. Lista de espera
+
+Función futura muy importante.
+
+Cuando no hay proveedor, el usuario podría entrar a una lista.
+
+Ejemplo:
+
+Usuario busca: costurera en Sangolquí
+No hay proveedores
+Pandeum guarda la demanda
+Admin ve que hay demanda sin cubrir
+Cuando se registre una costurera, el usuario recibe aviso
+
+Esto es valioso porque transforma una falla en información comercial.
+
+10.7. Historial de casos
+
+El usuario debería tener historial:
+
+casos consultados
+proveedores vistos
+servicios solicitados
+respuestas recibidas
+casos pendientes
+casos resueltos
+
+Ejemplo:
+
+Caso: audífonos dañados
+Estado: pendiente
+Proveedor sugerido: ninguno
+Fecha: hoy
+Acción recomendada: buscar técnico
+10.8. Solicitud de servicio
+
+Más adelante, el usuario no solo debería ver proveedores. Debe poder actuar.
+
+Acciones posibles:
+
+solicitar cotización
+pedir ayuda
+reservar cita
+enviar mensaje
+ver WhatsApp
+guardar proveedor
+marcar como favorito
+10.9. Comparación de opciones
+
+Para productos y servicios, Pandeum podría ayudar a comparar.
+
+Ejemplo:
+
+quiero comprar audífonos
+
+Pandeum podría comparar:
+
+inalámbricos vs alámbricos
+batería
+precio
+garantía
+cancelación de ruido
+uso deportivo
+uso para llamadas
+10.10. Ubicación
+
+El usuario debe poder usar ubicación para obtener mejores resultados.
+
+Opciones:
+
+usar ubicación actual
+escribir ciudad
+escribir barrio
+guardar ubicación preferida
+buscar cerca de mí
+cambiar ubicación
+
+Esto es vital para proveedores.
+
+11. Herramientas para proveedores
+11.1. Registro como proveedor
+
+El proveedor debería poder crear cuenta con:
+
+nombre
+correo
+contraseña
+nombre del negocio
+categoría
+subcategoría
+ubicación
+servicios
+precios
+disponibilidad
+11.2. Perfil comercial
+
+El proveedor debe tener una ficha visible.
+
+Campos esperados:
+
+nombre del negocio
+descripción
+categoría
+subcategoría
+zona de cobertura
+horario
+disponible ahora
+precio mínimo
+precio máximo
+fotos
+calificación
+reseñas
+tiempo de respuesta
+contacto
+11.3. Disponibilidad
+
+Función clave.
+
+El proveedor debería poder activar:
+
+Disponible ahora
+No disponible
+Disponible con cita
+Atiende a domicilio
+Atiende en local
+
+Esto ayuda a que Pandeum recomiende mejor.
+
+11.4. Solicitudes recibidas
+
+El proveedor debería ver:
+
+solicitudes nuevas
+mensajes de usuarios
+cotizaciones pendientes
+servicios aceptados
+servicios rechazados
+historial de clientes
+11.5. Reseñas y reputación
+
+Para generar confianza, faltará:
+
+reseñas
+calificaciones
+historial de atención
+proveedor verificado
+trust_score
+reportes
+12. Herramientas para administradores
+
+El panel admin debe ser fuerte porque Pandeum depende mucho de oferta y demanda.
+
+Funciones esperadas:
+
+ver usuarios
+ver proveedores
+aprobar proveedores
+ver categorías más buscadas
+ver búsquedas sin proveedor
+ver errores de IA
+ver conversaciones fallidas
+ver métricas por zona
+ver proveedores pendientes
+ver reportes
+
+El admin debe poder responder preguntas como:
+
+¿Qué buscan más los usuarios?
+¿Dónde faltan proveedores?
+¿Qué categorías debo captar?
+¿Qué proveedores tienen mejor desempeño?
+¿Qué problemas está confundiendo la IA?
+¿Qué mensajes terminan sin solución?
+13. Estado actual del desarrollo
+13.1. Backend
+
+Ya se ha trabajado en:
+
+FastAPI funcionando
+Railway funcionando
+PostgreSQL funcionando
+registro de usuarios
+login con JWT
+creación de tablas
+modelo de usuario
+modelo de proveedor
+integración con Gemini
+manejo de errores de Gemini
+fallback con OpenRouter
+normalización de respuestas
+router conversacional
+response modes
+intent categories
+proveedores en respuestas
+
+También se resolvieron problemas importantes:
+
+tabla users inexistente
+error 500 en registro
+bcrypt incompatible
+retorno de password hash en users/me
+errores por updated_at opcional
+modelo Gemini actualizado
+limpieza de markdown JSON
+fallback por cuota de Gemini
+separación food/suggestions
+manejo de contexto
+13.2. Frontend
+
+Ya se ha trabajado en:
+
+Next.js funcionando
+Vercel funcionando
+login/register visual
+chat
+ChatMessage
+SolutionJourney
+tarjetas de solución
+tarjetas de sugerencias
+tipos TypeScript
+ocultar tarjetas en direct/follow_up
+mejorar diseño de cards
+evitar duplicación de proveedores
+íconos por categoría en suggestions
+
+Últimamente se estaba ajustando que:
+
+suggestions no use siempre ícono de comida
+suggestions pueda mostrar tarjeta de proveedores
+tarjeta de proveedores aparezca vacía si no hay proveedores
+13.3. IA y conversación
+
+Este es el punto donde más avance hubo.
+
+Antes el flujo fallaba en casos como:
+
+“sí” abría diagnóstico
+“algo con mi suéter” se interpretaba como comida
+“mi suéter me ajusta el pecho” se interpretaba como salud
+“no alcancé a almorzar” podía caer como diagnóstico
+“necesito una batería para mi celular” podía caer como problema técnico
+
+Ahora se ha avanzado hacia un router con categorías:
+
+food
+clothing
+health
+tech
+product
+service
+general
+
+Y modos:
+
+direct
+food
+suggestions
+journey
+follow_up
+providers
+14. Funciones que todavía faltan añadir
+14.1. Búsqueda real de proveedores por ubicación
+
+Esta es probablemente la función más importante pendiente.
+
+Hoy se puede buscar proveedores por categoría, pero falta hacerlo bien por:
+
+latitud
+longitud
+distancia
+ciudad
+barrio
+zona de cobertura
+disponibilidad
+horario
+rating
+trust_score
+precio
+
+Debe permitir:
+
+restaurantes cerca
+técnicos cerca
+costureras cerca
+zapateros cerca
+tiendas cerca
+14.2. Ubicación del usuario
+
+Pandeum necesita saber dónde está el usuario.
+
+Opciones:
+
+pedir permiso de ubicación
+permitir escribir ciudad/barrio
+guardar ubicación predeterminada
+permitir cambiar ubicación
+calcular distancia
+
+Sin ubicación, la recomendación de proveedores queda incompleta.
+
+14.3. Categorías y subcategorías profesionales
+
+Hoy la clasificación todavía depende mucho de keywords e IA.
+
+Se necesita una taxonomía sólida:
+
+Tecnología
+  - celulares
+  - computadoras
+  - internet
+  - audio
+  - impresoras
+
+Comida
+  - restaurantes
+  - comida rápida
+  - cafeterías
+  - comida casera
+  - sushi
+  - pizza
+
+Ropa
+  - costureras
+  - sastres
+  - arreglos
+  - lavandería
+
+Hogar
+  - plomería
+  - electricidad
+  - cerrajería
+  - limpieza
+
+Vehículos
+  - mecánica
+  - llantas
+  - lavado
+  - grúa
+
+Salud
+  - orientación general
+  - clínicas
+  - farmacias
+14.4. Perfil completo del proveedor
+
+Falta fortalecer perfil con:
+
+logo o foto
+descripción
+servicios específicos
+precios
+horario
+fotos de trabajos
+certificaciones
+dirección
+mapa
+WhatsApp
+políticas
+reseñas
+14.5. Solicitudes de servicio
+
+Debe existir un flujo tipo:
+
+Usuario elige proveedor
+↓
+Pide cotización
+↓
+Proveedor recibe solicitud
+↓
+Proveedor responde
+↓
+Usuario acepta o rechaza
+↓
+Caso cambia de estado
+
+Estados posibles:
+
+nuevo
+enviado
+visto
+respondido
+aceptado
+rechazado
+completado
+cancelado
+14.6. Lista de espera
+
+Cuando no hay proveedor, guardar demanda.
+
+Campos:
+
+usuario
+categoría
+subcategoría
+ubicación
+mensaje original
+fecha
+estado
+notificado o no
+
+Esto permitiría que el admin vea:
+
+20 usuarios buscan comida rápida en X zona
+12 usuarios buscan costureras
+8 usuarios buscan técnicos de audífonos
+14.7. Panel admin completo
+
+Funciones faltantes:
+
+dashboard general
+usuarios activos
+proveedores activos
+proveedores pendientes
+categorías más buscadas
+zonas con más demanda
+búsquedas sin resultado
+errores de IA
+reportes de usuarios
+aprobación de proveedores
+verificación
+14.8. Sistema de verificación
+
+Para confianza:
+
+proveedor no verificado
+proveedor verificado
+documentos revisados
+reseñas reales
+historial de servicios
+reportes
+trust_score calculado
+14.9. Notificaciones
+
+Canales posibles:
+
+email
+notificación web
+WhatsApp futuro
+push futuro
+
+Casos:
+
+proveedor respondió
+nuevo proveedor disponible
+cita próxima
+seguimiento post-servicio
+14.10. Seguimiento de casos
+
+Después de sugerir o conectar, Pandeum debería preguntar:
+
+¿Pudiste resolverlo?
+¿El proveedor te respondió?
+¿Quieres otra opción?
+¿Quieres cerrar este caso?
+
+Esto mejora la experiencia y permite medir efectividad.
+
+14.11. Mejorar memoria conversacional
+
+Aunque ya hay contexto, falta hacerlo más fuerte.
+
+Debe recordar dentro de la conversación:
+
+tema anterior
+categoría anterior
+opción elegida
+proveedor mencionado
+preferencia de usuario
+cambio de tema
+confirmaciones
+
+Ejemplo:
+
+Usuario: quiero pizza
+Pandeum: opciones
+Usuario: de piña
+Pandeum: entiende pizza hawaiana
+Usuario: sí
+Pandeum: continúa con pizza hawaiana
+Usuario: también quiero arreglar mi suéter
+Pandeum: cambia a ropa
+14.12. Métricas de IA
+
+Pandeum debe registrar:
+
+cuándo falla Gemini
+cuándo entra OpenRouter
+cuándo ambas IA fallan
+qué prompts fallan
+qué categorías se confunden
+qué respuestas reciben baja confianza
+
+Esto sirve para mejorar el producto.
+
+14.13. Modo emergencia o salud segura
+
+Para salud y accidentes, Pandeum debe tener reglas especiales.
+
+Ejemplos:
+
+me duele el pecho
+me corté
+me siento muy mal
+no puedo respirar
+
+Debe evitar:
+
+diagnósticos médicos falsos
+tratamientos peligrosos
+minimizar síntomas
+
+Debe hacer:
+
+orientación básica
+señales de alarma
+recomendar atención médica
+pedir ayuda de un adulto o profesional si aplica
+14.14. Marketplace o monetización futura
+
+Más adelante, Pandeum podría generar ingresos por:
+
+suscripción de proveedores
+proveedores destacados
+leads pagos
+comisión por servicio
+planes premium
+publicidad local controlada
+dashboard para negocios
+
+Pero mi recomendación sigue siendo: no meter pagos todavía.
+
+Primero debe funcionar bien:
+
+necesidad → interpretación → proveedor → solicitud
+15. Prioridad recomendada
+
+Yo ordenaría el desarrollo así:
+
+Fase 1: cerrar MVP conversacional
+1. Terminar tarjeta de proveedores en suggestions
+2. Verificar íconos por categoría
+3. Probar food/clothing/service/product/health/tech
+4. Evitar diagnósticos falsos
+5. Confirmar fallback Gemini/OpenRouter
+Fase 2: proveedores reales
+1. Mejorar modelo de proveedor
+2. Agregar categorías/subcategorías
+3. Mejorar búsqueda por categoría
+4. Mostrar tarjeta vacía si no hay proveedor
+5. Crear lista de espera
+Fase 3: ubicación
+1. Capturar ubicación del usuario
+2. Guardar ciudad/barrio
+3. Calcular distancia
+4. Ordenar proveedores por cercanía
+5. Mostrar “cerca de ti”
+Fase 4: solicitud de servicio
+1. Botón solicitar ayuda
+2. Crear solicitud
+3. Notificar proveedor
+4. Estado de solicitud
+5. Historial del usuario
+Fase 5: admin y confianza
+1. Dashboard admin
+2. Verificación de proveedores
+3. Métricas de demanda
+4. Reportes
+5. Reseñas y trust_score
+16. En qué etapa se encuentra Pandeum
+
+Pandeum está en una etapa de MVP técnico avanzado, pero todavía no en una etapa de producto completo.
+
+Ya tiene:
+
+frontend desplegado
+backend desplegado
+base de datos
+autenticación
+registro/login
+chat
+integración IA
+fallback IA
+proveedores básicos
+router conversacional en mejora
+tarjetas visuales
+
+Todavía falta para que sea producto sólido:
+
+búsqueda real por ubicación
+proveedores reales suficientes
+tarjeta de proveedores en suggestions terminada
+lista de espera
+solicitudes de servicio
+panel admin fuerte
+perfil proveedor completo
+reseñas
+notificaciones
+
+La etapa actual puede describirse así:
+
+Pandeum ya funciona como prototipo conversacional con IA.
+Ahora está pasando de chatbot a plataforma de conexión entre necesidades y proveedores.
+
+Ese cambio es muy importante. Ya no estás creando solo “un chat con IA”. Estás construyendo un sistema que debe entender necesidades, clasificarlas y convertirlas en acciones.
+
+17. Conclusión
+
+Pandeum tiene una idea fuerte: convertirse en un asistente que entiende necesidades reales y conecta al usuario con soluciones prácticas.
+
+Su valor no está únicamente en responder, sino en dirigir correctamente la intención del usuario.
+
+La clave está en que Pandeum pueda distinguir entre:
+
+problema técnico
+servicio requerido
+producto buscado
+comida
+ropa
+salud
+seguimiento conversacional
+
+Eso ya se empezó a resolver con el nuevo router.
+
+La siguiente gran meta es que Pandeum deje de ser solo conversación y se convierta en una herramienta accionable:
+
+mostrar proveedores
+usar ubicación
+permitir solicitudes
+guardar demanda
+notificar disponibilidad
+medir oportunidades
+
+En resumen:
+
+Pandeum hoy:
+MVP con IA, backend, frontend, login, proveedores básicos y router conversacional en desarrollo.
+
+Pandeum ideal:
+asistente inteligente + marketplace local + motor de demanda + buscador de proveedores + guía de solución personalizada.
+
+Y el siguiente paso técnico concreto sigue siendo:
+
+terminar la tarjeta de proveedores dentro de suggestions,
+aunque providers esté vacío,
+sin usar SolutionJourney completo.
+
+
+Dirección visual recomendada para Pandeum
+Concepto de marca
+
+Pandeum no debería verse como un chatbot colorido.
+Debería verse como:
+
+una plataforma inteligente de ayuda, recomendación y conexión con proveedores, confiable, clara y útil.
+
+La sensación que debería transmitir es:
+
+confianza
+orden
+seriedad
+claridad
+tecnología útil
+diseño limpio
+experiencia premium sobria
+Estilo que te recomiendo:
+Minimalista profesional / SaaS serio
+
+Este sería el mejor camino para Pandeum.
+
+Personalidad visual
+elegante
+silenciosa
+moderna
+limpia
+sobria
+tecnológica, pero no futurista exagerada
+1) PALETA DE COLORES RECOMENDADA
+
+En vez de azul + lila brillante, usa una base neutra con un solo color acento.
+
+Opción recomendada (la mejor)
+Base neutra + acento azul petróleo / slate
+
+Fondos
+
+#F8FAFC → fondo general claro
+#FFFFFF → tarjetas / paneles
+#F1F5F9 → secciones suaves
+#E2E8F0 → bordes
+
+Texto
+
+#0F172A → texto principal
+#334155 → texto secundario
+#64748B → texto tenue
+
+Acento
+
+#1E3A5F → azul sobrio
+#2F5D7C → acento secundario
+#0F766E → opcional para estados positivos / disponibles
+
+Estados
+
+éxito: #166534
+advertencia: #92400E
+error: #991B1B
+Opción alternativa 2
+Gris carbón + verde oliva/desaturado
+
+Da una sensación más ejecutiva y distinta.
+
+Acento
+
+#3F5B4B
+#6B7D6D
+Opción alternativa 3
+Gris oscuro + azul acero
+
+Más corporativa y tecnológica.
+
+Acento
+
+#2C4251
+#4F6D7A
+2) QUÉ EVITAR VISUALMENTE
+
+Para que no se vea “hecha por IA”, evita:
+
+gradientes fuertes morado/azul
+botones con demasiada saturación
+esquinas excesivamente redondeadas en todo
+muchas tarjetas con colores distintos
+iconografía infantil o juguetona
+encabezados demasiado llamativos
+sombras grandes tipo dribbble
+textos muy emotivos en grandes banners
+demasiadas animaciones
+3) TIPOGRAFÍA RECOMENDADA
+Mejor opción
+
+Inter
+
+Porque se ve:
+
+moderna
+limpia
+profesional
+muy buena para apps SaaS
+Otras buenas opciones
+Manrope
+Geist
+Source Sans 3
+Jerarquía sugerida
+Títulos principales: font-semibold o font-bold
+Subtítulos: font-medium
+Texto normal: font-normal
+Labels: pequeños, discretos, muy limpios
+
+No uses tipografías demasiado “creativas” o llamativas.
+
+4) ESTILO DE COMPONENTES
+Bordes
+limpios
+finos
+discretos
+usa mucho border border-slate-200
+Radio
+moderado, no exagerado
+rounded-xl o rounded-2xl
+no todo extremadamente redondo
+Sombras
+muy sutiles
+shadow-sm o shadow-md
+evita sombras duras o muy difusas
+Espaciado
+generoso y limpio
+que respire bien
+no amontonar texto
+5) CÓMO DEBERÍA VERSE CADA PARTE DE LA WEBAPP
+A. LOGIN / REGISTER
+
+Debe verse:
+
+limpio
+serio
+centrado
+con un panel simple
+sin gradientes llamativos
+Estructura recomendada
+fondo muy claro
+tarjeta blanca centrada
+logo arriba
+título sobrio
+formulario con inputs limpios
+botón principal oscuro / azul sobrio
+enlaces discretos
+Estilo
+input con fondo blanco
+borde gris suave
+focus azul muy sutil
+nada de fondos morados o decoraciones intensas
+B. HOME / LANDING
+
+La home debería dejar claro:
+
+qué es Pandeum
+cómo ayuda
+qué puede hacer el usuario
+por qué confiar
+Secciones recomendadas
+Hero sobrio
+título fuerte y claro
+subtítulo corto
+CTA principal
+CTA secundario
+Cómo funciona
+paso 1: describe tu necesidad
+paso 2: recibe orientación
+paso 3: conecta con proveedores
+paso 4: resuelve
+Casos de uso
+reparación
+comida
+compras
+aprendizaje
+salud orientativa
+recomendaciones
+Beneficios
+ahorro de tiempo
+orientación clara
+proveedores relevantes
+experiencia centralizada
+CTA final
+Importante
+
+La home no debe parecer “chatbot mágico”.
+Debe parecer una plataforma inteligente de soluciones.
+
+C. DASHBOARD / APP INTERNA
+
+Aquí es donde más se debe notar el cambio.
+
+Sidebar
+
+Hazla:
+
+oscura o blanca, pero sobria
+muy limpia
+con poco ruido visual
+Recomendación
+
+Sidebar en:
+
+#FFFFFF con borde derecho suave
+o
+#0F172A si quieres look más premium en dark sidebar
+Items del menú
+texto limpio
+icono discreto
+item activo con fondo suave
+sin brillos ni gradientes
+D. CHAT
+
+Tu chat debería sentirse como una conversación útil con una asistente seria, no como una demo de IA.
+
+Recomendaciones
+burbujas limpias
+asistente en gris claro o blanco
+usuario con acento sobrio
+evitar fondos demasiado brillantes
+Muy importante
+
+El encabezado de cada respuesta NO debería ser siempre llamativo.
+Ya lo detectaste bien.
+
+Debe responder así:
+
+natural
+contextual
+sin frases repetitivas
+
+Ejemplo:
+
+“Entiendo. Vamos a revisar opciones.”
+“Claro, aquí tienes algunas alternativas.”
+“Perfecto, si buscas algo de comida rápida, estas serían buenas opciones.”
+“Si lo que quieres es comprar, te muestro algunas sugerencias.”
+
+Eso se siente mucho más humano y profesional.
+
+E. TARJETAS DE DIAGNÓSTICO / SOLUCIONES / PROVEEDORES
+
+Ahora mismo estas tarjetas existen, pero visualmente deberían sentirse más serias.
+
+Diagnóstico
+fondo blanco
+título pequeño y claro
+lista breve
+sin bloques demasiado grandes
+mostrar solo lo esencial
+Soluciones
+formato de tarjetas simples
+numeración discreta
+botón “Ver más” o expansión limpia
+textos resumidos primero
+Proveedores
+
+Aquí sí conviene que se vea más “premium” porque es parte central del producto.
+
+Cada tarjeta debería mostrar:
+
+nombre
+categoría
+precio estimado
+tiempo estimado
+disponibilidad
+distancia (cuando exista)
+confianza / rating
+botón “Ver detalle” o “Contactar”
+Estilo recomendado
+fondo blanco
+borde suave
+sin gradientes
+badges discretos:
+“Más rápido”
+“Más cercano”
+“Mejor valorado”
+“Disponible ahora”
+F. TARJETAS DE SUGERENCIAS
+
+Esto aplica a casos como:
+
+comida
+productos
+ideas
+opciones para comprar
+
+Deben verse diferentes a las de diagnóstico.
+
+Ejemplo visual
+
+Sugerencias con pescado
+
+Ceviche
+Encebollado
+Corvina apanada
+Pescado al ajillo
+Arroz marinero
+Tacos de pescado
+Estilo recomendado
+título de sección
+tarjetas o lista limpia
+cada sugerencia simple
+opcional: mini descripción
+opcional: botón “Ver más opciones”
+6) MODO OSCURO
+
+Si vas a mantener dark mode, que sea elegante.
+
+Colores recomendados dark
+fondo: #0B1220
+paneles: #111827
+bordes: #1F2937
+texto principal: #E5E7EB
+texto secundario: #94A3B8
+acento: #3B82F6 muy moderado o #2F5D7C
+Evita en dark mode
+neones
+azules eléctricos
+morados saturados
+demasiado contraste artificial
+7) SISTEMA VISUAL RECOMENDADO
+Botones
+Primario
+fondo oscuro o azul sobrio
+texto blanco
+hover leve
+sin gradiente
+Secundario
+blanco
+borde suave
+hover gris claro
+Ghost
+texto gris oscuro
+fondo transparente
+hover suave
+Inputs
+blancos
+borde gris suave
+focus con outline discreto
+nada de glow fuerte
+Chips / badges
+pequeños
+discretos
+colores suaves
+
+Ejemplo:
+
+disponible: verde suave
+pendiente: ámbar suave
+no disponible: gris
+8) CÓMO DEBERÍA SENTIRSE LA MARCA
+
+Pandeum debería verse como mezcla de:
+
+una plataforma SaaS seria
+un asistente inteligente útil
+un marketplace de soluciones
+una herramienta cotidiana confiable
+
+No debería verse como:
+
+app experimental de IA
+landing genérica colorida
+producto juvenil tipo startup improvisada
+9) RECOMENDACIÓN CONCRETA DE DIRECCIÓN FINAL
+
+Si me preguntas qué camino escogería yo para Pandeum, te diría este:
+
+Dirección final ideal:
+“Minimalismo profesional con acento azul sobrio”
+Resumen del estilo
+fondo claro casi blanco
+tarjetas blancas con borde suave
+texto en slate oscuro
+acento azul petróleo / azul grisáceo
+iconos discretos
+poco gradiente
+más estructura y aire
+experiencia más editorial / SaaS premium
