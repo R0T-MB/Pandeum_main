@@ -8,7 +8,7 @@ import { ChatMessage } from '@/components/chat/ChatMessage'
 import { ProvidersDrawer } from '@/components/chat/ProvidersDrawer'
 import { RouteMapModal } from '@/components/map/RouteMapModal'
 import Sidebar from '@/components/layout/Sidebar'
-import { RightPanel } from '@/components/layout/RightPanel'
+import { SuggestionDrawer } from '@/components/layout/SuggestionDrawer'
 import { Bot, Stars, Sparkles, Zap, ChefHat, Laptop, Wrench, Calculator, Car, PaintBucket } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -44,6 +44,7 @@ export default function HomePage() {
   const [drawerLabel, setDrawerLabel] = useState<string | undefined>()
   const [selectedProvider, setSelectedProvider] = useState<ProviderRecommendation | null>(null)
   const [mapOpen, setMapOpen] = useState(false)
+  const [showSuggestionDrawer, setShowSuggestionDrawer] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -188,7 +189,7 @@ export default function HomePage() {
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto scrollbar-thin relative">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center px-6 py-10">
+            <div className="min-h-full flex flex-col items-center text-center px-6 pt-8 pb-10">
               <div className="max-w-2xl mx-auto w-full">
                 {/* Glass card wrapper */}
                 <div className="glass-panel p-10 md:p-12">
@@ -323,15 +324,21 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Right Panel - Desktop 3rd column */}
-      <RightPanel providers={drawerProviders} onOpenProviders={() => setDrawerOpen(true)} />
-
+      {/* New recommendation panel */}
       <ProvidersDrawer
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         providers={drawerProviders}
         recommendationLabel={drawerLabel}
         onDistanceClick={handleDistanceClick}
+        onOpenSuggestionDrawer={() => setShowSuggestionDrawer(true)}
+      />
+
+      {/* Old right panel content as a slide-in drawer */}
+      <SuggestionDrawer
+        isOpen={showSuggestionDrawer}
+        onClose={() => setShowSuggestionDrawer(false)}
+        providers={drawerProviders}
       />
 
       <RouteMapModal

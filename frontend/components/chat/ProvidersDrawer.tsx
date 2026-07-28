@@ -12,6 +12,7 @@ interface ProvidersDrawerProps {
   providers: ProviderRecommendation[]
   recommendationLabel?: string
   onDistanceClick: (provider: ProviderRecommendation) => void
+  onOpenSuggestionDrawer?: () => void
 }
 
 const getInitials = (name: string) => {
@@ -56,6 +57,7 @@ export function ProvidersDrawer({
   providers,
   recommendationLabel,
   onDistanceClick,
+  onOpenSuggestionDrawer,
 }: ProvidersDrawerProps) {
   const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
   const [activeSort, setActiveSort] = useState<SortMode>('rating')
@@ -121,7 +123,7 @@ export function ProvidersDrawer({
       )}
 
       <div
-        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-[440px] transform border-l border-[rgba(255,255,255,0.06)] bg-[#080B14] transition-transform duration-300 ${
+        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-[440px] transform border-l border-[rgba(255,255,255,0.06)] bg-[#111521] transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -132,12 +134,22 @@ export function ProvidersDrawer({
             </h2>
             <p className="text-xs text-[#9CA3AF] mt-0.5">Estos profesionales están cerca de ti</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-all duration-200 text-[#9CA3AF] hover:text-white"
-          >
-            <X size={18} strokeWidth={1.75} />
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenSuggestionDrawer && (
+              <button
+                onClick={onOpenSuggestionDrawer}
+                className="text-xs font-medium text-white hover:text-[#6E42FF] transition-all duration-200 hover:scale-[1.02]"
+              >
+                Ver más sugerencias
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-all duration-200 text-[#9CA3AF] hover:text-white"
+            >
+              <X size={18} strokeWidth={1.75} />
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-2 px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
@@ -150,7 +162,7 @@ export function ProvidersDrawer({
                 onClick={() => setActiveSort(key)}
                 className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-medium transition-all duration-200 flex-1 ${
                   isActive
-                    ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-white'
+                    ? 'bg-[#6E42FF]/10 border border-[#6E42FF]/30 text-white'
                     : 'bg-[#111827] border border-[rgba(255,255,255,0.06)] text-[#9CA3AF] hover:bg-[#151E2F] hover:text-white'
                 }`}
               >
@@ -162,7 +174,7 @@ export function ProvidersDrawer({
                       ? key === 'rating'
                         ? 'text-yellow-400'
                         : key === 'distance'
-                        ? 'text-[#7C3AED]'
+                        ? 'text-[#6E42FF]'
                         : 'text-[#FBBF24]'
                       : 'text-current'
                   }
@@ -179,7 +191,7 @@ export function ProvidersDrawer({
               {sortedProviders.map((provider, idx) => (
                 <div
                   key={provider.provider_id || idx}
-                  className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-4 space-y-3 transition-all duration-200 hover:border-[#7C3AED]/20 hover:shadow-lg hover:shadow-[#7C3AED]/5"
+                  className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-4 space-y-3 transition-all duration-200 hover:border-[#6E42FF]/20 hover:shadow-lg hover:shadow-[#6E42FF]/5"
                 >
                   <div className="flex items-start gap-3">
                     {provider.avatar_url ? (
@@ -189,7 +201,7 @@ export function ProvidersDrawer({
                         className="w-12 h-12 rounded-xl border border-[rgba(255,255,255,0.06)] object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-[#7C3AED]/10 flex items-center justify-center text-sm font-bold text-[#7C3AED] flex-shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-[#6E42FF]/10 flex items-center justify-center text-sm font-bold text-[#6E42FF] flex-shrink-0">
                         {getInitials(provider.business_name)}
                       </div>
                     )}
@@ -250,7 +262,7 @@ export function ProvidersDrawer({
                             </span>
                             <button
                               onClick={() => onDistanceClick(provider)}
-                              className="flex items-center gap-1 text-[11px] text-[#7C3AED] hover:text-[#A78BFA] font-medium transition-colors duration-200"
+                              className="flex items-center gap-1 text-[11px] text-[#6E42FF] hover:text-[#8B5CFF] font-medium transition-colors duration-200"
                             >
                               <Navigation size={11} strokeWidth={1.75} />
                               Ver ruta
@@ -289,7 +301,7 @@ export function ProvidersDrawer({
                   <div className="flex items-center gap-2 pt-1">
                     <Link
                       href={`/providers/${provider.provider_id}`}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-medium bg-[rgba(124,58,237,0.1)] border border-[#7C3AED]/20 text-[#7C3AED] hover:bg-[rgba(124,58,237,0.15)] transition-all duration-200"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-medium bg-[rgba(110,66,255,0.1)] border border-[#6E42FF]/20 text-[#6E42FF] hover:bg-[rgba(110,66,255,0.15)] transition-all duration-200"
                     >
                       <User size={13} strokeWidth={1.75} />
                       Ver perfil
