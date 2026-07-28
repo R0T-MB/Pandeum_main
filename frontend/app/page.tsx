@@ -9,7 +9,7 @@ import { ProvidersDrawer } from '@/components/chat/ProvidersDrawer'
 import { RouteMapModal } from '@/components/map/RouteMapModal'
 import Sidebar from '@/components/layout/Sidebar'
 import { RightPanel } from '@/components/layout/RightPanel'
-import { Sparkles, Zap, ChefHat, Laptop, Wrench, Calculator, Car, PaintBucket, Bot } from 'lucide-react'
+import { Sparkles, Zap, ChefHat, Laptop, Wrench, Calculator, Car, PaintBucket, Bot, Stars } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
@@ -130,6 +130,23 @@ export default function HomePage() {
     }
   }
 
+  const handleQuickFilter = (filter: string) => {
+    switch (filter) {
+      case 'Buscar cerca de mí':
+        handleSendMessage('busca opciones cerca de mí')
+        break
+      case 'Con presupuesto medio':
+        handleSendMessage('con presupuesto medio')
+        break
+      case 'Abierto ahora':
+        handleSendMessage('que esté abierto ahora')
+        break
+      case 'Más filtros':
+        toast('Más filtros estarán disponibles pronto')
+        break
+    }
+  }
+
   const handleViewPlaces = (providers: ProviderRecommendation[], label?: string) => {
     setDrawerProviders(providers)
     setDrawerLabel(label)
@@ -146,66 +163,82 @@ export default function HomePage() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main center panel */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 pb-16 lg:pb-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-0 pb-16 lg:pb-0 overflow-hidden relative">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#7C3AED]/[0.03] blur-[120px] rounded-full pointer-events-none" />
+
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin">
+        <div className="flex-1 overflow-y-auto scrollbar-thin relative">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center px-5 py-8">
-              <div className="max-w-xl mx-auto w-full">
-                {/* Premium decorative header */}
-                <div className="flex items-start justify-between mb-8">
-                  <div className="text-left">
-                    <h1 className="text-2xl font-bold text-white tracking-tight">
-                      ¡Hola{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}!
-                    </h1>
-                    <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed max-w-md">
-                      Estoy aquí para ayudarte a encontrar justo lo que necesitas.
-                    </p>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7C3AED]/10 border border-[#7C3AED]/20">
-                    <Bot size={18} className="text-[#7C3AED]" strokeWidth={1.75} />
-                    <span className="text-xs font-medium text-[#7C3AED]">IA Asistente</span>
-                  </div>
-                </div>
-
-                {/* Decorative visual */}
-                <div className="relative mb-10">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-40 h-40 rounded-full bg-[#7C3AED]/5 blur-3xl" />
-                    <div className="w-24 h-24 rounded-full bg-[#22D3EE]/5 blur-2xl -ml-10" />
-                  </div>
-                  <div className="relative flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-2xl pandeum-gradient flex items-center justify-center shadow-2xl shadow-[#7C3AED]/30">
-                      <Sparkles size={28} className="text-white" strokeWidth={1.5} />
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#22D3EE] shadow-lg shadow-[#22D3EE]/30 flex items-center justify-center">
-                      <Zap size={12} className="text-[#050816]" strokeWidth={2.5} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Example chips - premium grid */}
-                <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
-                  {exampleProblems.map((example) => {
-                    const Icon = example.icon
-                    return (
-                      <button
-                        key={example.text}
-                        onClick={() => handleSendMessage(example.text)}
-                        className="flex items-center gap-3 bg-[#111827] border border-[rgba(255,255,255,0.06)] hover:border-[#7C3AED]/30 hover:bg-[rgba(124,58,237,0.05)] rounded-xl px-4 py-3.5 text-left transition-all duration-200 group hover-lift"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#7C3AED]/20 transition-colors">
-                          <Icon size={16} className="text-[#7C3AED]" strokeWidth={1.75} />
+              <div className="max-w-2xl mx-auto w-full">
+                {/* Glass card wrapper */}
+                <div className="glass-panel p-8 md:p-10">
+                  {/* Premium header with greeting */}
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="text-left">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl pandeum-gradient flex items-center justify-center shadow-lg shadow-[#7C3AED]/30">
+                          <Stars size={20} className="text-white" strokeWidth={1.5} />
                         </div>
-                        <span className="text-sm text-white font-medium leading-tight">{example.label}</span>
-                      </button>
-                    )
-                  })}
+                        <div>
+                          <h1 className="text-2xl font-bold text-white tracking-tight">
+                            ¡Hola{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}!
+                          </h1>
+                          <p className="text-sm text-[#9CA3AF] mt-0.5">
+                            Estoy aquí para ayudarte a encontrar justo lo que necesitas.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#7C3AED]/10 border border-[#7C3AED]/20">
+                      <Bot size={18} className="text-[#7C3AED]" strokeWidth={1.75} />
+                      <span className="text-xs font-medium text-[#7C3AED]">IA Asistente</span>
+                    </div>
+                  </div>
+
+                  {/* Premium decorative visual */}
+                  <div className="relative mb-10">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-56 h-56 rounded-full bg-[#7C3AED]/[0.04] blur-3xl" />
+                      <div className="w-32 h-32 rounded-full bg-[#22D3EE]/[0.04] blur-2xl -ml-16" />
+                    </div>
+                    {/* Decorative rings */}
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute w-28 h-28 rounded-full border border-[rgba(124,58,237,0.15)] animate-pulse" style={{ animationDuration: '3s' }} />
+                      <div className="absolute w-36 h-36 rounded-full border border-[rgba(34,211,238,0.1)]" />
+                      <div className="w-16 h-16 rounded-2xl pandeum-gradient flex items-center justify-center shadow-2xl shadow-[#7C3AED]/40 relative">
+                        <Sparkles size={28} className="text-white" strokeWidth={1.5} />
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#22D3EE] shadow-lg shadow-[#22D3EE]/40 flex items-center justify-center">
+                        <Zap size={12} className="text-[#050816]" strokeWidth={2.5} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Example chips - premium grid */}
+                  <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+                    {exampleProblems.map((example) => {
+                      const Icon = example.icon
+                      return (
+                        <button
+                          key={example.text}
+                          onClick={() => handleSendMessage(example.text)}
+                          className="flex items-center gap-3 bg-[#111827] border border-[rgba(255,255,255,0.06)] hover:border-[#7C3AED]/40 hover:bg-[rgba(124,58,237,0.08)] rounded-xl px-4 py-3.5 text-left transition-all duration-200 group hover-lift"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#7C3AED]/20 transition-colors">
+                            <Icon size={16} className="text-[#7C3AED]" strokeWidth={1.75} />
+                          </div>
+                          <span className="text-sm text-white font-medium leading-tight">{example.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+            <div className="max-w-4xl mx-auto px-4 py-6 space-y-5">
               <AnimatePresence>
                 {messages.map((msg) => (
                   <ChatMessage key={msg.id} message={msg} onViewPlaces={handleViewPlaces} />
@@ -217,10 +250,10 @@ export default function HomePage() {
                     className="flex justify-start"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#7C3AED]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Bot size={14} className="text-[#7C3AED]" strokeWidth={1.75} />
+                      <div className="w-9 h-9 rounded-full pandeum-gradient flex items-center justify-center flex-shrink-0 mt-0.5 shadow-lg shadow-[#7C3AED]/20">
+                        <Bot size={16} className="text-white" strokeWidth={1.75} />
                       </div>
-                      <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.06)] rounded-[18px] rounded-tl-sm px-5 py-4">
+                      <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.06)] rounded-[18px] rounded-tl-sm px-5 py-4 shadow-lg shadow-black/10">
                         <div className="flex items-center gap-2">
                           <div className="flex gap-1.5">
                             <span className="w-2 h-2 bg-[#7C3AED] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -240,15 +273,15 @@ export default function HomePage() {
         </div>
 
         {/* Input */}
-        <div className="flex-shrink-0 px-4 pb-4 pt-2 lg:pb-6">
-          <div className="max-w-3xl mx-auto">
-            <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+        <div className="flex-shrink-0 px-4 pb-4 pt-3 lg:pb-6 relative">
+          <div className="max-w-4xl mx-auto">
+            <ChatInput onSend={handleSendMessage} disabled={isLoading} onQuickFilter={handleQuickFilter} />
           </div>
         </div>
       </div>
 
       {/* Right Panel - Desktop 3rd column */}
-      <RightPanel providers={drawerProviders} />
+      <RightPanel providers={drawerProviders} onOpenProviders={() => setDrawerOpen(true)} />
 
       <ProvidersDrawer
         isOpen={drawerOpen}

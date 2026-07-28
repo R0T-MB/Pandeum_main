@@ -191,7 +191,7 @@ export default function PublicProviderProfile() {
   return (
     <div className="min-h-screen bg-[#050816]">
       <div
-        className="relative h-48 sm:h-56 border-b border-[rgba(255,255,255,0.06)]"
+        className="relative h-28 sm:h-32 border-b border-[rgba(255,255,255,0.06)]"
         style={provider.cover_image_url ? {
           backgroundImage: `linear-gradient(to bottom, rgba(5,8,22,0.7), rgba(5,8,22,0.9)), url(${provider.cover_image_url})`,
           backgroundSize: 'cover',
@@ -218,18 +218,18 @@ export default function PublicProviderProfile() {
 
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-14 relative z-10 pb-10">
-        <div className="flex flex-col sm:flex-row items-start gap-5 mb-6">
-          <div className="w-28 h-28 rounded-2xl overflow-hidden border-2 border-[rgba(255,255,255,0.06)] bg-[#151E2F] flex-shrink-0 shadow-xl ring-2 ring-[#7C3AED]/10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-8 relative z-10 pb-10">
+        <div className="flex flex-row items-end gap-4 mb-4">
+          <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[rgba(255,255,255,0.06)] bg-[#151E2F] flex-shrink-0 shadow-xl ring-2 ring-[#7C3AED]/10">
             {provider.avatar_url ? (
               <img src={provider.avatar_url} alt={provider.business_name} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xl font-bold text-[#7C3AED] bg-gradient-to-br from-[#7C3AED]/10 to-[#6D5EF8]/10">
+              <div className="w-full h-full flex items-center justify-center text-base font-bold text-[#7C3AED] bg-gradient-to-br from-[#7C3AED]/10 to-[#6D5EF8]/10">
                 {getInitials(provider.business_name)}
               </div>
             )}
           </div>
-          <div className="flex-1 min-w-0 pt-2">
+          <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
@@ -375,43 +375,6 @@ export default function PublicProviderProfile() {
               )}
             </div>
 
-            {/* Horario - Accordion style */}
-            {scheduleEntries.length > 0 && (
-              <div className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-5">
-                <button
-                  onClick={() => setScheduleOpen(!scheduleOpen)}
-                  className="flex items-center justify-between w-full"
-                >
-                  <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <Clock size={15} className="text-[#7C3AED]" strokeWidth={1.75} />
-                    Horario de atención
-                  </h2>
-                  {scheduleOpen ? <ChevronUp size={16} className="text-[#9CA3AF]" /> : <ChevronDown size={16} className="text-[#9CA3AF]" />}
-                </button>
-                {scheduleOpen && (
-                  <div className="space-y-2 mt-4">
-                    {scheduleEntries.map(({ key, label, day }) => {
-                      const isOpen = day?.open === true
-                      return (
-                        <div key={key} className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-2.5 border border-[rgba(255,255,255,0.06)]">
-                          <span className={`text-sm w-20 flex-shrink-0 ${isOpen ? 'text-white' : 'text-[#9CA3AF]'}`}>
-                            {label}
-                          </span>
-                          {isOpen ? (
-                            <span className="text-xs text-[#D1D5DB]">
-                              {String(day?.from || '09:00')} — {String(day?.to || '18:00')}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[#9CA3AF]">Cerrado</span>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Reseñas */}
             <div className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-5">
               <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
@@ -482,10 +445,40 @@ export default function PublicProviderProfile() {
                 </div>
               )}
             </div>
+
+            {/* Galería */}
+            {galleryImages.length > 0 && (
+              <div className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-5">
+                <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                  <Image size={15} className="text-[#7C3AED]" strokeWidth={1.75} />
+                  Galería
+                </h2>
+                <div className="grid grid-cols-2 gap-2">
+                  {galleryImages.slice(0, 4).map((img, i) => (
+                    <div key={i} className="rounded-lg overflow-hidden border border-[rgba(255,255,255,0.06)] bg-[#151E2F] group hover:border-[#7C3AED]/30 transition-all duration-200">
+                      <button
+                        onClick={() => setGalleryModal({ images: galleryImages, index: i })}
+                        className="w-full aspect-square overflow-hidden"
+                      >
+                        <img src={img.url} alt={img.title || `Galería ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {galleryImages.length > 4 && (
+                  <button
+                    onClick={() => setGalleryModal({ images: galleryImages, index: 0 })}
+                    className="flex items-center justify-center gap-1 w-full mt-2 py-2 rounded-lg text-[11px] font-medium text-[#7C3AED] hover:bg-[rgba(124,58,237,0.05)] transition-all duration-200"
+                  >
+                    Ver todas ({galleryImages.length})
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right column - sidebar info */}
-          <div className="space-y-5">
+          <div className="space-y-5 lg:sticky lg:top-5">
             {/* Ubicación */}
             {(provider.address || provider.service_area || (provider.location_lat != null && provider.location_lng != null)) && (
               <div className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-5">
@@ -539,32 +532,39 @@ export default function PublicProviderProfile() {
               </div>
             </div>
 
-            {/* Galería */}
-            {galleryImages.length > 0 && (
+            {/* Horario - Accordion style */}
+            {scheduleEntries.length > 0 && (
               <div className="bg-[#111827] rounded-xl border border-[rgba(255,255,255,0.06)] p-5">
-                <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                  <Image size={15} className="text-[#7C3AED]" strokeWidth={1.75} />
-                  Galería
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {galleryImages.slice(0, 4).map((img, i) => (
-                    <div key={i} className="rounded-lg overflow-hidden border border-[rgba(255,255,255,0.06)] bg-[#151E2F] group hover:border-[#7C3AED]/30 transition-all duration-200">
-                      <button
-                        onClick={() => setGalleryModal({ images: galleryImages, index: i })}
-                        className="w-full aspect-square overflow-hidden"
-                      >
-                        <img src={img.url} alt={img.title || `Galería ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                {galleryImages.length > 4 && (
-                  <button
-                    onClick={() => setGalleryModal({ images: galleryImages, index: 0 })}
-                    className="flex items-center justify-center gap-1 w-full mt-2 py-2 rounded-lg text-[11px] font-medium text-[#7C3AED] hover:bg-[rgba(124,58,237,0.05)] transition-all duration-200"
-                  >
-                    Ver todas ({galleryImages.length})
-                  </button>
+                <button
+                  onClick={() => setScheduleOpen(!scheduleOpen)}
+                  className="flex items-center justify-between w-full"
+                >
+                  <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Clock size={15} className="text-[#7C3AED]" strokeWidth={1.75} />
+                    Horario de atención
+                  </h2>
+                  {scheduleOpen ? <ChevronUp size={16} className="text-[#9CA3AF]" /> : <ChevronDown size={16} className="text-[#9CA3AF]" />}
+                </button>
+                {scheduleOpen && (
+                  <div className="space-y-2 mt-4">
+                    {scheduleEntries.map(({ key, label, day }) => {
+                      const isOpen = day?.open === true
+                      return (
+                        <div key={key} className="flex items-center gap-3 bg-[#151E2F] rounded-xl px-4 py-2.5 border border-[rgba(255,255,255,0.06)]">
+                          <span className={`text-sm w-20 flex-shrink-0 ${isOpen ? 'text-white' : 'text-[#9CA3AF]'}`}>
+                            {label}
+                          </span>
+                          {isOpen ? (
+                            <span className="text-xs text-[#D1D5DB]">
+                              {String(day?.from || '09:00')} — {String(day?.to || '18:00')}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-[#9CA3AF]">Cerrado</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
             )}

@@ -6,6 +6,22 @@
 
 @layer base {
   :root {
+    --background: #ffffff;
+    --background-2: #f9fafb;
+    --panel: #f3f4f6;
+    --card: #ffffff;
+    --card-alt: #f9fafb;
+    --primary: #7C3AED;
+    --primary-2: #6D5EF8;
+    --accent: #0891B2;
+    --text: #111827;
+    --muted: #6B7280;
+    --border: rgba(0,0,0,0.08);
+    --success: #16A34A;
+    --danger: #DC2626;
+  }
+
+  html.dark {
     --background: #050816;
     --background-2: #080B14;
     --panel: #0E1422;
@@ -23,6 +39,49 @@
 
   body {
     @apply bg-[#050816] text-white antialiased;
+  }
+
+  html:not(.dark) body {
+    @apply bg-white text-gray-900 antialiased;
+  }
+
+  html:not(.dark) .bg-\[#050816\] {
+    background-color: #ffffff !important;
+  }
+  html:not(.dark) .bg-\[#080B14\] {
+    background-color: #f9fafb !important;
+  }
+  html:not(.dark) .bg-\[#0E1422\] {
+    background-color: #f3f4f6 !important;
+  }
+  html:not(.dark) .bg-\[#111827\] {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+  }
+  html:not(.dark) .bg-\[#151E2F\] {
+    background-color: #f9fafb !important;
+    border-color: #e5e7eb !important;
+  }
+  html:not(.dark) .text-\[#9CA3AF\] {
+    color: #6B7280 !important;
+  }
+  html:not(.dark) .text-\[#D1D5DB\] {
+    color: #4B5563 !important;
+  }
+  html:not(.dark) .text-white {
+    color: #111827 !important;
+  }
+  html:not(.dark) .border-\[rgba\(255\,255\,255\,0\.06\)\] {
+    border-color: #e5e7eb !important;
+  }
+  html:not(.dark) .border-\[rgba\(255\,255\,255\,0\.08\)\] {
+    border-color: #e5e7eb !important;
+  }
+  html:not(.dark) .text-\[\#7C3AED\] {
+    color: #7C3AED !important;
+  }
+  html:not(.dark) .bg-\[rgba\(255\,255\,255\,0\.03\)\] {
+    background-color: #f3f4f6 !important;
   }
 
   html {

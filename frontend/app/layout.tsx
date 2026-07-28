@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={inter.className}>
         <ClerkProvider>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={true}>
             <AuthProvider>
               {children}
               <Toaster position="top-right" />
