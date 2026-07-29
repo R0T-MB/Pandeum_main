@@ -46,6 +46,24 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
   const [fullProvider, setFullProvider] = useState<any | null>(null)
 
   useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [isOpen, onClose])
+
+  useEffect(() => {
     if (!isOpen || !provider) {
       setFullProvider(null)
       return
@@ -156,15 +174,16 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-2xl hover:bg-[#151E2F] transition-all duration-200 text-[#9CA3AF] hover:text-white flex-shrink-0"
+            className="p-2 rounded-2xl bg-[#151E2F]/80 hover:bg-[#1A2440] transition-all duration-200 text-[#9CA3AF] hover:text-white flex-shrink-0 border border-[rgba(255,255,255,0.06)]"
+            aria-label="Cerrar"
           >
             <X size={18} strokeWidth={1.75} />
           </button>
         </div>
 
-        <div className="flex-1 relative min-h-[300px]">
+        <div className="flex-1 relative min-h-[300px] overflow-hidden">
           {(geoLoading || routeLoading) && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-10">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-20">
               <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
                 <Loader2 size={16} className="animate-spin text-[#6D5EF8]" />
                 {routeLoading ? 'Calculando ruta...' : 'Obteniendo ubicación...'}
@@ -173,7 +192,7 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
           )}
 
           {geoError && !geoLoading && !routeLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-10">
+            <div className="absolute inset-0 flex items-center justify-center bg-[#111827] z-20">
               <div className="text-center px-6">
                 <Navigation size={32} className="text-[#1E2D4A] mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-sm text-[#9CA3AF] mb-1">No se pudo obtener tu ubicación</p>
@@ -189,12 +208,13 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
           )}
 
           {L && (
-            <MapContainer
-              center={[userLat ?? -0.22985, userLng ?? -78.52495]}
-              zoom={14}
-              className="h-full w-full"
-              zoomControl={true}
-            >
+            <div className="absolute inset-0 overflow-hidden" style={{ contain: 'strict' }}>
+              <MapContainer
+                center={[userLat ?? -0.22985, userLng ?? -78.52495]}
+                zoom={14}
+                className="h-full w-full"
+                zoomControl={true}
+              >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -228,10 +248,11 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
                 />
               )}
             </MapContainer>
+            </div>
           )}
 
           {!hasProviderCoords && !geoLoading && !geoError && !routeLoading && (
-            <div className="absolute bottom-4 left-4 right-4 bg-[#151E2F] rounded-2xl px-4 py-3 text-center z-10 border border-[#1E2D4A]">
+            <div className="absolute bottom-4 left-4 right-4 bg-[#151E2F] rounded-2xl px-4 py-3 text-center z-20 border border-[#1E2D4A]">
               <p className="text-xs text-[#9CA3AF]">
                 Este proveedor aún no tiene una ubicación registrada.
               </p>

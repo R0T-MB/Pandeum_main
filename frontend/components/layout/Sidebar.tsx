@@ -28,7 +28,6 @@ interface SidebarProps {
 
 const navItems = [
   { href: '/', label: 'Inicio', icon: Home },
-  { href: '/chat', label: 'Chat', icon: MessageSquare },
   { href: '/map', label: 'Mapa', icon: MapPin },
   { href: '/favorites', label: 'Favoritos', icon: Heart },
   { href: '/history', label: 'Historial', icon: History },

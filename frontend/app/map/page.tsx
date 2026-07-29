@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Provider } from '@/types'
@@ -9,12 +9,25 @@ import { MapPin, Navigation, Menu, Loader2, Crosshair, X, Car, Footprints, Bike 
 import dynamic from 'next/dynamic'
 import toast from 'react-hot-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { useMap } from 'react-leaflet'
 
 const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false })
 const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
 const Marker = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false })
 const Popup = dynamic(() => import('react-leaflet').then(m => m.Popup), { ssr: false })
 const Polyline = dynamic(() => import('react-leaflet').then(m => m.Polyline), { ssr: false })
+
+function MapResizer() {
+  const map = useMap()
+  useEffect(() => {
+    const el = map.getContainer()
+    const observer = new ResizeObserver(() => { map.invalidateSize() })
+    observer.observe(el)
+    const id = setTimeout(() => map.invalidateSize(), 120)
+    return () => { observer.disconnect(); clearTimeout(id) }
+  }, [map])
+  return null
+}
 
 type TravelMode = 'driving' | 'foot' | 'bike'
 
@@ -63,6 +76,8 @@ const formatDuration = (seconds: number): string => {
 
 export default function MapPage() {
   const router = useRouter()
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<any>(null)
   const [L, setL] = useState<typeof import('leaflet') | null>(null)
   const [providers, setProviders] = useState<Provider[]>([])
   const [loading, setLoading] = useState(true)
@@ -232,7 +247,7 @@ export default function MapPage() {
           </div>
         )}
 
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden" ref={mapContainerRef}>
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-[#050816] z-20">
               <div className="flex items-center gap-2 text-sm text-[#9CA3AF]">
@@ -253,73 +268,76 @@ export default function MapPage() {
           )}
 
           {L && !loading && (
-            <MapContainer
-              center={[userLat ?? -0.22985, userLng ?? -78.52495]}
-              zoom={13}
-              className="h-full w-full"
-              zoomControl={true}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {hasUserLocation && (
-                <Marker position={[userLat!, userLng!]}>
-                  <Popup>Tu ubicación</Popup>
-                </Marker>
-              )}
-              {providersWithCoords.map((p) => (
-                <Marker
-                  key={p.id}
-                  position={[p.location_lat!, p.location_lng!]}
-                  icon={createCustomIcon(p, L)}
-                >
-                  <Popup>
-                    <div className="min-w-[180px]">
-                      <div className="flex items-center gap-2 mb-1">
-                        {p.avatar_url ? (
-                          <img src={p.avatar_url} alt="" className="w-6 h-6 rounded-lg object-cover border border-[#1E2D4A]" />
-                        ) : null}
-                        <p className="font-semibold text-sm">{p.business_name}</p>
-                      </div>
-                      <p className="text-xs text-[#9CA3AF] mb-1">{p.category}{p.subcategory ? ` · ${p.subcategory}` : ''}</p>
-                      {(() => {
-                        const d = getDistance(p)
-                        return d != null ? (
-                          <p className="text-xs text-[#7C3AED] mb-2 flex items-center gap-1">
-                            <MapPin size={10} />
-                            {d.toFixed(1)} km
-                          </p>
-                        ) : null
-                      })()}
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => handleViewProfile(p)}
-                          className="flex-1 text-xs text-white bg-[#7C3AED] hover:bg-[#6D5EF8] px-3 py-1.5 rounded-xl transition-colors"
-                        >
-                          Ver perfil
-                        </button>
-                        <button
-                          onClick={() => handleSetRoute(p)}
-                          className="flex-1 text-xs text-white bg-[#151E2F] hover:bg-[#1A2440] px-3 py-1.5 rounded-xl border border-[rgba(255,255,255,0.06)] transition-colors flex items-center justify-center gap-1"
-                        >
-                          <Navigation size={10} />
-                          Ruta
-                        </button>
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-              {routeCoords && routeCoords.length >= 2 && (
-                <Polyline
-                  positions={routeCoords}
-                  color="#6D5EF8"
-                  weight={routeError ? 3 : 4}
-                  dashArray={routeError ? '6 4' : undefined}
+            <div className="absolute inset-0 overflow-hidden" style={{ contain: 'strict' }}>
+              <MapContainer
+                center={[userLat ?? -0.22985, userLng ?? -78.52495]}
+                zoom={13}
+                className="h-full w-full"
+                zoomControl={true}
+              >
+                <MapResizer />
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-              )}
-            </MapContainer>
+                {hasUserLocation && (
+                  <Marker position={[userLat!, userLng!]}>
+                    <Popup>Tu ubicación</Popup>
+                  </Marker>
+                )}
+                {providersWithCoords.map((p) => (
+                  <Marker
+                    key={p.id}
+                    position={[p.location_lat!, p.location_lng!]}
+                    icon={createCustomIcon(p, L)}
+                  >
+                    <Popup>
+                      <div className="min-w-[180px]">
+                        <div className="flex items-center gap-2 mb-1">
+                          {p.avatar_url ? (
+                            <img src={p.avatar_url} alt="" className="w-6 h-6 rounded-lg object-cover border border-[#1E2D4A]" />
+                          ) : null}
+                          <p className="font-semibold text-sm">{p.business_name}</p>
+                        </div>
+                        <p className="text-xs text-[#9CA3AF] mb-1">{p.category}{p.subcategory ? ` · ${p.subcategory}` : ''}</p>
+                        {(() => {
+                          const d = getDistance(p)
+                          return d != null ? (
+                            <p className="text-xs text-[#7C3AED] mb-2 flex items-center gap-1">
+                              <MapPin size={10} />
+                              {d.toFixed(1)} km
+                            </p>
+                          ) : null
+                        })()}
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => handleViewProfile(p)}
+                            className="flex-1 text-xs text-white bg-[#7C3AED] hover:bg-[#6D5EF8] px-3 py-1.5 rounded-xl transition-colors"
+                          >
+                            Ver perfil
+                          </button>
+                          <button
+                            onClick={() => handleSetRoute(p)}
+                            className="flex-1 text-xs text-white bg-[#151E2F] hover:bg-[#1A2440] px-3 py-1.5 rounded-xl border border-[rgba(255,255,255,0.06)] transition-colors flex items-center justify-center gap-1"
+                          >
+                            <Navigation size={10} />
+                            Ruta
+                          </button>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+                {routeCoords && routeCoords.length >= 2 && (
+                  <Polyline
+                    positions={routeCoords}
+                    color="#6D5EF8"
+                    weight={routeError ? 3 : 4}
+                    dashArray={routeError ? '6 4' : undefined}
+                  />
+                )}
+              </MapContainer>
+            </div>
           )}
 
           {selectedRouteProvider && (
