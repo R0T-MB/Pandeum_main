@@ -50,16 +50,16 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const isActive = (href: string) => pathname === href
 
   const content = (
-    <aside className="w-[260px] bg-[#07050d] border-r border-white/5 flex flex-col justify-between p-4 select-none h-screen shrink-0">
+    <aside className="w-[260px] bg-theme-bg border-r border-theme-border flex flex-col justify-between p-4 select-none h-screen shrink-0 transition-colors duration-200">
       <div>
         <div className="flex items-center justify-between mb-8 px-2">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-white text-base shadow-lg shadow-violet-500/30">
               P
             </div>
-            <span className="font-bold tracking-wider text-white text-base">PANDEUM</span>
+            <span className="font-bold tracking-wider text-theme-text text-base">PANDEUM</span>
           </div>
-          <button className="text-white/60 hover:text-white transition">
+          <button className="text-theme-text-secondary hover:text-theme-text transition">
             <Bell className="w-5 h-5" />
           </button>
         </div>
@@ -75,8 +75,8 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl transition ${
                   active
-                    ? 'bg-gradient-to-r from-violet-600/30 to-indigo-600/10 text-white font-medium border border-violet-500/30 shadow-sm'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                    ? 'bg-gradient-to-r from-violet-600/30 to-indigo-600/10 text-theme-text font-medium border border-violet-500/30 shadow-sm'
+                    : 'text-theme-text-secondary hover:text-theme-text hover:bg-theme-divider'
                 }`}
               >
                 <Icon className={`w-5 h-5 ${active ? 'text-violet-400' : ''}`} />
@@ -94,7 +94,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
             <Crown className="w-4 h-4 text-violet-400" />
             <h4 className="text-xs font-bold text-white">Pandeum Pro</h4>
           </div>
-          <p className="text-[11px] text-white/60 leading-relaxed mb-3">
+          <p className="text-[11px] text-theme-text-secondary leading-relaxed mb-3">
             Desbloquea beneficios exclusivos y experiencias premium.
           </p>
           <button className="w-full py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-violet-600/30 transition">
@@ -102,38 +102,38 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           </button>
         </div>
 
-        <div className="flex items-center justify-between px-2 py-2 bg-[#120f24] rounded-2xl border border-white/5">
+        <div className="flex items-center justify-between px-2 py-2 bg-theme-card rounded-2xl border border-theme-border transition-colors duration-200">
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-9 h-9 rounded-full bg-violet-600/40 border border-violet-500/40 overflow-hidden shrink-0 flex items-center justify-center font-bold text-white text-xs">
               {userInitials}
             </div>
             <div className="overflow-hidden">
-              <h4 className="text-xs font-semibold text-white truncate">{userName}</h4>
-              <span className="text-[10px] text-white/40 truncate block">{userEmail}</span>
+              <h4 className="text-xs font-semibold text-theme-text truncate">{userName}</h4>
+              <span className="text-[10px] text-theme-text-muted truncate block">{userEmail}</span>
             </div>
           </div>
-          <ChevronDown className="w-4 h-4 text-white/40 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-theme-text-muted shrink-0" />
         </div>
 
-        <div className="flex items-center justify-between bg-[#120f24] p-1.5 rounded-2xl border border-white/5">
+        <div className="flex items-center justify-between bg-theme-card p-1.5 rounded-2xl border border-theme-border transition-colors duration-200">
           {mounted ? (
             <>
-              <button onClick={() => setTheme('light')} className={`p-2 rounded-xl transition ${theme === 'light' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-white/40 hover:text-white'}`}><Sun className="w-4 h-4" /></button>
-              <button onClick={() => setTheme('dark')} className={`p-2 rounded-xl transition ${theme === 'dark' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-white/40 hover:text-white'}`}><Moon className="w-4 h-4" /></button>
-              <button onClick={() => setTheme('system')} className={`p-2 rounded-xl transition ${theme === 'system' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-white/40 hover:text-white'}`}><Monitor className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('light')} className={`p-2 rounded-xl transition ${theme === 'light' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-theme-text-muted hover:text-theme-text'}`}><Sun className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('dark')} className={`p-2 rounded-xl transition ${theme === 'dark' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-theme-text-muted hover:text-theme-text'}`}><Moon className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('system')} className={`p-2 rounded-xl transition ${theme === 'system' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-theme-text-muted hover:text-theme-text'}`}><Monitor className="w-4 h-4" /></button>
             </>
           ) : (
             <>
-              <span className="p-2"><Sun className="w-4 h-4 text-white/40" /></span>
-              <span className="p-2"><Moon className="w-4 h-4 text-white/40" /></span>
-              <span className="p-2"><Monitor className="w-4 h-4 text-white/40" /></span>
+              <span className="p-2"><Sun className="w-4 h-4 text-theme-text-muted" /></span>
+              <span className="p-2"><Moon className="w-4 h-4 text-theme-text-muted" /></span>
+              <span className="p-2"><Monitor className="w-4 h-4 text-theme-text-muted" /></span>
             </>
           )}
         </div>
 
         <button
           onClick={logout}
-          className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/40 hover:text-red-400 transition"
+          className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-theme-text-muted hover:text-red-400 transition"
         >
           <LogOut className="w-3.5 h-3.5" />
           Cerrar sesión

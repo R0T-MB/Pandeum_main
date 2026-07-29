@@ -191,19 +191,19 @@ export default function HomePage() {
   const userInitials = userName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'MF'
 
   return (
-    <div className="flex h-screen w-screen bg-[#07050d] text-white font-sans overflow-hidden">
+    <div className="flex h-screen w-screen bg-theme-bg text-theme-text font-sans overflow-hidden transition-colors duration-200">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 bg-[#07050d] p-6 flex flex-col justify-between overflow-y-auto">
+      <main className="flex-1 bg-theme-bg p-6 flex flex-col justify-between overflow-y-auto transition-colors duration-200">
         <div className="max-w-4xl mx-auto w-full">
           {/* Banner de Saludo e IA Superior */}
-          <div className="relative bg-[#0c0a15] border border-white/5 rounded-3xl p-6 mb-6 overflow-hidden shadow-2xl">
+          <div className="relative bg-theme-surface border border-theme-border rounded-3xl p-6 mb-6 overflow-hidden shadow-2xl transition-colors duration-200">
             <div className="absolute right-10 top-1/2 -translate-y-1/2 w-36 h-36 bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="flex justify-between items-start relative z-10 mb-4">
               <div>
-                <h1 className="text-2xl font-bold text-white mb-1">¡Hola, {userName.split(' ')[0]}! 👋</h1>
-                <p className="text-xs text-white/60">Estoy aquí para ayudarte a encontrar justo lo que necesitas.</p>
+                <h1 className="text-2xl font-bold text-theme-text mb-1">¡Hola, {userName.split(' ')[0]}! 👋</h1>
+                <p className="text-xs text-theme-text-secondary">Estoy aquí para ayudarte a encontrar justo lo que necesitas.</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-500 shadow-lg shadow-violet-600/40 flex items-center justify-center text-white shrink-0">
                 <Store className="w-6 h-6" />
@@ -217,7 +217,7 @@ export default function HomePage() {
                   <button
                     key={example.text}
                     onClick={() => handleSendMessage(example.text)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#120f24] border border-white/5 text-xs text-white hover:border-violet-500/40 transition whitespace-nowrap shrink-0"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-theme-card border border-theme-border text-xs text-theme-text hover:border-violet-500/40 transition whitespace-nowrap shrink-0"
                   >
                     <Icon className="w-3.5 h-3.5 text-violet-400" /> {example.label}
                   </button>
@@ -249,11 +249,11 @@ export default function HomePage() {
                     className="flex justify-start"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[#120f24] border border-violet-500/30 flex items-center justify-center text-violet-400 shrink-0 shadow-md">
+                      <div className="w-8 h-8 rounded-xl bg-theme-card border border-violet-500/30 flex items-center justify-center text-violet-400 shrink-0 shadow-md">
                         <Store className="w-4 h-4" />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-white">Pandeum IA</span>
+                        <span className="text-xs font-semibold text-theme-text">Pandeum IA</span>
                         <div className="flex gap-1">
                           <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }} className="w-1.5 h-1.5 bg-violet-400 rounded-full" />
                           <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} className="w-1.5 h-1.5 bg-violet-400 rounded-full" />
@@ -274,23 +274,23 @@ export default function HomePage() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-48 h-48 rounded-full bg-violet-600/[0.03] blur-3xl" />
               </div>
-              <p className="text-xs text-white/30 relative z-10">Haz una pregunta para empezar</p>
+              <p className="text-xs text-theme-text-muted relative z-10">Haz una pregunta para empezar</p>
             </div>
           )}
         </div>
 
         {/* Input + Filters */}
         <div className="max-w-4xl mx-auto w-full mt-6">
-          <div className="bg-[#0c0a15] border border-white/10 rounded-2xl p-2 flex items-center justify-between mb-3 shadow-2xl">
+          <div className="bg-theme-surface border border-theme-border rounded-2xl p-2 flex items-center justify-between mb-3 shadow-2xl transition-colors duration-200">
             <div className="flex items-center gap-3 px-3 flex-1">
-              <Paperclip className="w-5 h-5 text-white/40 cursor-pointer hover:text-white transition" />
+              <Paperclip className="w-5 h-5 text-theme-text-muted cursor-pointer hover:text-theme-text transition" />
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Cuéntame qué necesitas..."
-                className="bg-transparent border-none outline-none text-sm text-white placeholder-white/40 w-full"
+                className="bg-transparent border-none outline-none text-sm text-theme-text placeholder-[var(--color-text-muted)] w-full"
               />
             </div>
             <button
@@ -319,7 +319,7 @@ export default function HomePage() {
                 <button
                   key={f.label}
                   onClick={() => handleQuickFilter(f.label)}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0c0a15] border border-white/5 text-xs text-white/70 hover:border-violet-500/40 transition whitespace-nowrap"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-theme-surface border border-theme-border text-xs text-theme-text-secondary hover:border-violet-500/40 transition whitespace-nowrap"
                 >
                   <Icon className="w-3.5 h-3.5 text-violet-400" /> {f.label}
                 </button>
