@@ -4,18 +4,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   MessageSquare,
+  MapPin,
   Heart,
   History,
-  Briefcase,
-  MapPin,
-  LogOut,
-  Sparkles,
-  ArrowRight,
+  Users,
+  Bell,
+  Crown,
   Moon,
   Sun,
   Monitor,
-  Bell,
-  Home,
+  ChevronDown,
+  LogOut,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from 'next-themes'
@@ -25,14 +24,6 @@ interface SidebarProps {
   isOpen?: boolean
   onClose?: () => void
 }
-
-const navItems = [
-  { href: '/', label: 'Inicio', icon: Home },
-  { href: '/map', label: 'Mapa', icon: MapPin },
-  { href: '/favorites', label: 'Favoritos', icon: Heart },
-  { href: '/history', label: 'Historial', icon: History },
-  { href: '/companion', label: 'Mi Compañero', icon: Sparkles },
-]
 
 const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const pathname = usePathname()
@@ -44,164 +35,121 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     setMounted(true)
   }, [])
 
-  const allNavItems = [...navItems]
-  if (user?.is_provider) {
-    allNavItems.push({
-      href: '/provider-dashboard',
-      label: 'Panel Proveedor',
-      icon: Briefcase,
-    })
-  }
+  const userName = user?.full_name || 'María Fernanda'
+  const userEmail = user?.email || 'marialf@example.com'
+  const userInitials = userName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'MF'
 
-  const themeOptions = [
-    { value: 'dark', icon: Moon, label: 'Oscuro' },
-    { value: 'light', icon: Sun, label: 'Claro' },
-    { value: 'system', icon: Monitor, label: 'Sistema' },
+  const navItems = [
+    { href: '/', label: 'Chat', icon: MessageSquare },
+    { href: '/map', label: 'Mapa', icon: MapPin },
+    { href: '/favorites', label: 'Favoritos', icon: Heart },
+    { href: '/history', label: 'Historial', icon: History },
+    { href: '/companion', label: 'Mi Compañero', icon: Users },
   ]
 
-  return (
-    <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/70 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+  const isActive = (href: string) => pathname === href
 
-      <aside
-        className={`lg:fixed lg:left-4 lg:top-4 lg:z-50 lg:w-[300px] lg:h-[calc(100vh-32px)] lg:rounded-[24px] lg:border lg:border-[rgba(255,255,255,.08)] lg:sidebar-gradient lg:p-0 lg:flex lg:flex-col lg:shadow-[0_20px_50px_rgba(0,0,0,.25)] ${
-          isOpen
-            ? 'fixed inset-0 z-50 flex flex-col bg-[#0F1420] animate-slide-in-left overflow-y-auto'
-            : 'hidden'
-        } lg:flex`}
-      >
-        {/* Header: Logo + Notification */}
-        <div className="flex items-center justify-between flex-shrink-0 px-6 pt-[22px] pb-[18px]" style={{ minHeight: '72px' }}>
-          <div className="flex items-center gap-[10px]">
-            <svg width="34" height="20" viewBox="0 0 34 20" fill="none" className="flex-shrink-0">
-              <path d="M5 4V16M5 4H15C17.5 4 20 5.5 20 9C20 12.5 17.5 14 15 14H5"
-                stroke="url(#p-logo)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-              <defs>
-                <linearGradient id="p-logo" x1="0" y1="0" x2="34" y2="0">
-                  <stop offset="0%" stopColor="var(--logo-start, #FFFFFF)"/>
-                  <stop offset="100%" stopColor="#8A52FF"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <h1 className="text-[19px] font-semibold tracking-[.02em] leading-none" style={{ fontFamily: 'Inter' }}>
-              <span className="text-white">PAN</span><span className="text-[#7B4CFF]">DEUM</span>
-            </h1>
+  const content = (
+    <aside className="w-[260px] bg-[#07050d] border-r border-white/5 flex flex-col justify-between p-4 select-none h-screen shrink-0">
+      <div>
+        <div className="flex items-center justify-between mb-8 px-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-white text-base shadow-lg shadow-violet-500/30">
+              P
+            </div>
+            <span className="font-bold tracking-wider text-white text-base">PANDEUM</span>
           </div>
-
-          <button className="relative w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-[200ms] hover:bg-[rgba(255,255,255,.05)]">
-            <Bell size={22} strokeWidth={2} color="#E6EAF5" />
-            <span className="absolute top-[6px] right-[6px] w-2 h-2 rounded-full bg-[#7B4CFF] border-2 border-[#0F1420]" />
+          <button className="text-white/60 hover:text-white transition">
+            <Bell className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Gap after header */}
-        <div className="flex-shrink-0 h-7" />
-
-        {/* Navigation - natural height, scrolls if needed */}
-        <nav className="flex-shrink-0 flex flex-col gap-2 px-6 overflow-y-auto scrollbar-thin">
-          {allNavItems.map((item) => {
-            const isActive = pathname === item.href
+        <nav className="space-y-1">
+          {navItems.map((item) => {
             const Icon = item.icon
-
+            const active = isActive(item.href)
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-4 w-full h-14 px-5 rounded-[18px] transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isActive
-                    ? 'sidebar-item-active text-white'
-                    : 'text-[#D8DCE5] hover:bg-[rgba(255,255,255,.03)] hover:text-white border border-transparent'
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl transition ${
+                  active
+                    ? 'bg-gradient-to-r from-violet-600/30 to-indigo-600/10 text-white font-medium border border-violet-500/30 shadow-sm'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Icon
-                  size={22}
-                  strokeWidth={2}
-                  className={`flex-shrink-0 transition-colors duration-[180ms] ${
-                    isActive ? 'text-[#8A5DFF]' : 'text-[#C9CED9] group-hover:text-white'
-                  }`}
-                />
-                <span className="text-base font-medium leading-6">{item.label}</span>
+                <Icon className={`w-5 h-5 ${active ? 'text-violet-400' : ''}`} />
+                <span className="text-sm">{item.label}</span>
               </Link>
             )
           })}
         </nav>
+      </div>
 
-        {/* Spacer fills remaining space - keeps bottom section at bottom */}
-        <div className="flex-1 min-h-[12px]" />
-
-        {/* Pro Card - only for providers */}
-        {user?.is_provider && (
-          <div className="flex-shrink-0 px-6 pb-2">
-            <div className="rounded-[18px] border border-[rgba(110,66,255,.2)] p-5 bg-gradient-to-br from-[#0E1422] to-[#080B14] shadow-[0_0_18px_rgba(124,77,255,.10)]">
-              <div className="w-10 h-10 rounded-[14px] bg-[rgba(110,66,255,.1)] flex items-center justify-center mb-3">
-                <Sparkles size={18} className="text-[#6E42FF]" strokeWidth={2} />
-              </div>
-              <p className="text-sm font-semibold text-white mb-1.5 leading-relaxed">
-                Pandeum Pro
-              </p>
-              <p className="text-xs text-[#7E879E] mb-4 leading-relaxed">
-                Accede a funciones exclusivas y recomendaciones prioritarias.
-              </p>
-              <button className="flex items-center gap-1.5 text-xs font-medium text-[#6E42FF] hover:text-white transition-colors duration-[180ms] group">
-                Actualizar ahora
-                <ArrowRight size={14} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform duration-[180ms]" />
-              </button>
-            </div>
+      <div className="space-y-4">
+        <div className="relative bg-gradient-to-b from-[#151128] to-[#0c0a15] p-3.5 rounded-2xl border border-violet-500/30 overflow-hidden shadow-xl">
+          <div className="absolute right-[-10px] top-[-10px] w-20 h-20 bg-violet-600/20 rounded-full blur-xl pointer-events-none" />
+          <div className="flex items-center gap-2 mb-1.5">
+            <Crown className="w-4 h-4 text-violet-400" />
+            <h4 className="text-xs font-bold text-white">Pandeum Pro</h4>
           </div>
-        )}
-
-        {/* User + Theme + Logout */}
-        <div className="flex-shrink-0 px-6 pt-3 pb-[22px] space-y-1">
-          {user && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-[14px] hover:bg-[rgba(255,255,255,.03)] transition-colors duration-[180ms]">
-              <div className="w-10 h-10 rounded-full bg-[rgba(110,66,255,.2)] flex items-center justify-center text-sm font-bold text-[#6E42FF] ring-2 ring-[rgba(110,66,255,.2)]">
-                {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white truncate">{user.full_name || 'Usuario'}</p>
-                <p className="text-xs text-[#7E879E] truncate">{user.email}</p>
-              </div>
-            </div>
-          )}
-
-          {mounted && (
-            <div className="flex items-center gap-1 px-2 py-1.5 rounded-[14px] bg-[rgba(255,255,255,.03)]">
-              {themeOptions.map((opt) => {
-                const Icon = opt.icon
-                const isThemeActive = theme === opt.value
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => setTheme(opt.value)}
-                    className={`flex items-center justify-center flex-1 px-2 py-1.5 rounded-[14px] text-xs font-medium transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                      isThemeActive
-                        ? 'bg-[rgba(110,66,255,.2)] text-[#6E42FF] shadow-sm'
-                        : 'text-[#7E879E] hover:text-white hover:bg-[rgba(255,255,255,.05)]'
-                    }`}
-                    title={opt.label}
-                  >
-                    <Icon size={16} strokeWidth={2} />
-                  </button>
-                )
-              })}
-            </div>
-          )}
-
-          <button
-            onClick={logout}
-            className="flex items-center gap-3.5 w-full px-5 py-3 rounded-[14px] text-[#7E879E] hover:bg-[rgba(255,255,255,.03)] hover:text-white transition-all duration-[180ms] text-sm group"
-          >
-            <LogOut size={18} strokeWidth={2} className="group-hover:text-red-400 transition-colors duration-[180ms]" />
-            <span className="text-sm font-medium">Cerrar sesión</span>
+          <p className="text-[11px] text-white/60 leading-relaxed mb-3">
+            Desbloquea beneficios exclusivos y experiencias premium.
+          </p>
+          <button className="w-full py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-violet-600/30 transition">
+            Actualizar ahora &gt;
           </button>
         </div>
-      </aside>
+
+        <div className="flex items-center justify-between px-2 py-2 bg-[#120f24] rounded-2xl border border-white/5">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-violet-600/40 border border-violet-500/40 overflow-hidden shrink-0 flex items-center justify-center font-bold text-white text-xs">
+              {userInitials}
+            </div>
+            <div className="overflow-hidden">
+              <h4 className="text-xs font-semibold text-white truncate">{userName}</h4>
+              <span className="text-[10px] text-white/40 truncate block">{userEmail}</span>
+            </div>
+          </div>
+          <ChevronDown className="w-4 h-4 text-white/40 shrink-0" />
+        </div>
+
+        <div className="flex items-center justify-between bg-[#120f24] p-1.5 rounded-2xl border border-white/5">
+          {mounted ? (
+            <>
+              <button onClick={() => setTheme('light')} className={`p-2 rounded-xl transition ${theme === 'light' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-white/40 hover:text-white'}`}><Sun className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('dark')} className={`p-2 rounded-xl transition ${theme === 'dark' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-white/40 hover:text-white'}`}><Moon className="w-4 h-4" /></button>
+              <button onClick={() => setTheme('system')} className={`p-2 rounded-xl transition ${theme === 'system' ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30' : 'text-white/40 hover:text-white'}`}><Monitor className="w-4 h-4" /></button>
+            </>
+          ) : (
+            <>
+              <span className="p-2"><Sun className="w-4 h-4 text-white/40" /></span>
+              <span className="p-2"><Moon className="w-4 h-4 text-white/40" /></span>
+              <span className="p-2"><Monitor className="w-4 h-4 text-white/40" /></span>
+            </>
+          )}
+        </div>
+
+        <button
+          onClick={logout}
+          className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-white/40 hover:text-red-400 transition"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          Cerrar sesión
+        </button>
+      </div>
+    </aside>
+  )
+
+  return (
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 z-40 bg-black/70 lg:hidden" onClick={onClose} />
+      )}
+      <div className={`${isOpen ? 'fixed inset-y-0 left-0 z-50 animate-slide-in-left' : 'hidden'} lg:block`}>
+        {content}
+      </div>
     </>
   )
 }

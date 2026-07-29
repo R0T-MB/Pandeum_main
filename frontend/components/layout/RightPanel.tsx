@@ -1,269 +1,245 @@
 'use client'
 
-import { Star, MapPin, Clock, Zap, Navigation, Car, Footprints, Bike, MessageCircle, Phone, Heart, ChevronRight, ShieldCheck, Bot, Sparkles } from 'lucide-react'
-import Link from 'next/link'
-import { ProviderRecommendation } from '@/types'
+import { useState } from 'react'
+import {
+  Star,
+  Heart,
+  Share2,
+  Navigation,
+  Phone,
+  MessageSquare,
+  Utensils,
+  MapPin,
+  Footprints,
+  Car,
+  Bike,
+  Bus,
+} from 'lucide-react'
 
 interface RightPanelProps {
-  providers?: ProviderRecommendation[]
+  providers?: any[]
   onOpenProviders?: () => void
 }
 
+const miniCards = [
+  {
+    id: 'doncarlos',
+    name: 'Restaurante Don Carlos',
+    initials: 'DC',
+    rating: 4.9,
+    reviews: 256,
+    status: 'Abierto',
+    description: 'Comida tradicional ecuatoriana',
+    time: '4 min',
+    detail: {
+      fullName: 'Don Carlos',
+      rating: 4.9,
+      stars: 5,
+      reviews: 256,
+      status: 'Abierto',
+      category: 'Comida tradicional ecuatoriana',
+      experience: '15 años',
+      price: '$$',
+      open: '9:00 AM',
+      close: '10:00 PM',
+      desc: '15 años ofreciendo lo mejor de nuestra cocina casera con ingredientes frescos y de calidad.',
+      verified: true,
+    },
+    img: 'https://picsum.photos/seed/doncarlosavatar/100/100',
+    bg: 'https://picsum.photos/seed/doncarlos/400/200',
+  },
+  {
+    id: 'esquinagourmet',
+    name: 'La Esquina Gourmet',
+    initials: 'EG',
+    rating: 4.7,
+    reviews: 189,
+    status: 'Abierto',
+    description: 'Cocina internacional',
+    time: '6 min',
+    detail: {
+      fullName: 'La Esquina Gourmet',
+      rating: 4.7,
+      stars: 5,
+      reviews: 189,
+      status: 'Abierto',
+      category: 'Cocina internacional',
+      experience: '8 años',
+      price: '$$$',
+      open: '10:00 AM',
+      close: '11:00 PM',
+      desc: 'Cocina internacional con los mejores ingredientes importados y un toque local único.',
+      verified: false,
+    },
+    img: 'https://picsum.photos/seed/esquinagourmetavatar/100/100',
+    bg: 'https://picsum.photos/seed/esquinagourmet/400/200',
+  },
+  {
+    id: 'saborandino',
+    name: 'Sabor Andino',
+    initials: 'SA',
+    rating: 4.6,
+    reviews: 142,
+    status: 'Abierto',
+    description: 'Comida típica',
+    time: '8 min',
+    detail: {
+      fullName: 'Sabor Andino',
+      rating: 4.6,
+      stars: 5,
+      reviews: 142,
+      status: 'Abierto',
+      category: 'Comida típica',
+      experience: '12 años',
+      price: '$',
+      open: '8:00 AM',
+      close: '9:30 PM',
+      desc: 'Sabores auténticos de los Andes con recetas tradicionales transmitidas por generaciones.',
+      verified: false,
+    },
+    img: 'https://picsum.photos/seed/saborandinoavatar/100/100',
+    bg: 'https://picsum.photos/seed/saborandino/400/200',
+  },
+]
+
 export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps) {
-  const featured = providers[0] || null
-
-  if (providers.length === 0) {
-    return (
-      <aside className="hidden xl:flex xl:flex-col xl:w-[360px] flex-shrink-0 border-l border-[rgba(255,255,255,0.08)] bg-[#101522]/80 h-screen overflow-y-auto scrollbar-thin">
-        <div className="p-5 space-y-5">
-          <div className="bg-gradient-to-br from-[#151B2A] to-[#0F1420] rounded-[20px] border border-[rgba(255,255,255,0.08)] p-8 text-center shadow-[0_12px_30px_rgba(0,0,0,.18)]">
-            <div className="w-14 h-14 rounded-[18px] bg-gradient-to-br from-[#6E42FF]/20 to-[#7C4DFF]/10 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-[#6E42FF]/10">
-              <Bot size={26} className="text-[#6E42FF]" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">Proveedores recomendados</h3>
-            <p className="text-sm text-[#AEB5C5] leading-relaxed">
-              Haz una consulta para que Pandeum encuentre opciones cercanas.
-            </p>
-            <button
-              onClick={onOpenProviders}
-              className="mt-4 w-full py-2.5 rounded-[14px] text-xs font-medium bg-gradient-to-br from-[#6E42FF] to-[#835DFF] text-white transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-90 active:opacity-80"
-            >
-              Buscar proveedores
-            </button>
-          </div>
-        </div>
-      </aside>
-    )
-  }
-
-  const distanceStr = (km?: number) => km != null ? `${km.toFixed(1)} km` : null
+  const [selectedId, setSelectedId] = useState('doncarlos')
+  const selected = miniCards.find((c) => c.id === selectedId) || miniCards[0]
 
   return (
-    <aside className="hidden xl:flex xl:flex-col xl:w-[360px] flex-shrink-0 border-l border-[rgba(255,255,255,0.08)] bg-[#101522]/80 h-screen overflow-y-auto scrollbar-thin animate-slide-in-right">
-      <div className="p-5 space-y-5">
-        {/* SECTION 1: Más opciones cercanas */}
-        <div className="bg-gradient-to-br from-[#151B2A] to-[#0F1420] rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 shadow-[0_12px_30px_rgba(0,0,0,.18)]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-[14px] bg-[#6E42FF]/10 flex items-center justify-center">
-                <Sparkles size={14} className="text-[#6E42FF]" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-base font-semibold text-white">Más opciones cercanas</h3>
-            </div>
-            <button
-              onClick={onOpenProviders}
-              className="text-xs font-medium text-[#6E42FF] hover:text-white transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+    <aside className="hidden xl:flex xl:flex-col xl:w-[380px] bg-[#07050d] border-l border-white/5 p-4 gap-4 overflow-y-auto h-screen shrink-0 select-none">
+      {/* 1. Te puede interesar */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-bold text-white uppercase tracking-wider">Te puede interesar</h3>
+          <button className="text-[11px] text-violet-400 hover:underline">Ver más</button>
+        </div>
+        <div className="space-y-2">
+          {miniCards.map((card) => (
+            <div
+              key={card.id}
+              onClick={() => setSelectedId(card.id)}
+              className={`flex items-center justify-between p-2.5 rounded-2xl border transition cursor-pointer ${
+                selectedId === card.id
+                  ? 'bg-[#120f24] border-violet-500/30'
+                  : 'bg-[#120f24] border-white/5 hover:border-violet-500/30'
+              }`}
             >
-              Ver todos
-            </button>
-          </div>
-          <div className="space-y-2">
-            {providers.slice(0, 3).map((p, i) => {
-              const distance = distanceStr(p.distance_km)
-              return (
-                <div
-                  key={p.provider_id}
-                  className="flex items-center gap-3 p-3 rounded-[18px] hover:bg-[rgba(110,66,255,0.06)] hover:border hover:border-[#6E42FF]/20 transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] group border border-transparent active:scale-[0.98]"
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  <div className="w-11 h-11 rounded-[14px] bg-gradient-to-br from-[#6E42FF]/20 to-[#7C4DFF]/10 flex items-center justify-center text-sm font-bold text-[#6E42FF] flex-shrink-0 shadow-sm group-hover:shadow-lg group-hover:shadow-[#6E42FF]/20 transition-all duration-[180ms]">
-                    {p.business_name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      {p.provider_id ? (
-                        <Link href={`/providers/${p.provider_id}`} className="text-sm font-medium text-white truncate hover:text-[#6E42FF] transition-colors duration-[180ms]">
-                          {p.business_name}
-                        </Link>
-                      ) : (
-                        <span className="text-sm font-medium text-white truncate">{p.business_name}</span>
-                      )}
-                      {p.available_now && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0 shadow-sm shadow-emerald-400/50 animate-pulse" />}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="flex items-center gap-0.5 text-xs text-yellow-400">
-                        <Star size={10} className="fill-yellow-400" strokeWidth={1.5} />
-                        {p.rating}
-                      </span>
-                      <span className="text-xs text-[#AEB5C5]">({p.trust_score.toFixed(1)})</span>
-                      {distance && (
-                        <>
-                          <span className="text-xs text-[#AEB5C5]">·</span>
-                          <span className="text-xs text-[#AEB5C5]">{distance}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <Heart size={16} className="text-[#AEB5C5] hover:text-[#6E42FF] hover:scale-110 transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] flex-shrink-0" strokeWidth={1.5} />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-600/20 overflow-hidden shrink-0">
+                  <img src={card.img} alt="" className="w-full h-full object-cover" />
                 </div>
-              )
-            })}
+                <div>
+                  <h4 className="text-xs font-bold text-white">{card.name}</h4>
+                  <div className="flex items-center gap-1 text-[10px] text-white/60">
+                    <span className="text-yellow-400 font-semibold">{card.rating}</span>
+                    <span>⭐ ({card.reviews})</span>
+                    <span>•</span>
+                    <span className="text-emerald-400 font-medium">{card.status}</span>
+                  </div>
+                  <p className="text-[10px] text-white/40 truncate max-w-[170px]">{card.description}</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1.5">
+                <Heart className="w-3.5 h-3.5 text-white/40 hover:text-red-500 transition cursor-pointer" />
+                <span className="text-[10px] text-violet-400 flex items-center gap-0.5">
+                  <Navigation className="w-2.5 h-2.5" /> {card.time}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 2. Tarjeta Detallada */}
+      <div className="bg-[#120f24] rounded-3xl border border-white/5 p-4 shadow-xl">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-violet-600/20 shrink-0">
+              <img src={selected.img} alt="" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-white">{selected.detail.fullName}</h4>
+                {selected.detail.verified && (
+                  <span className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center text-[9px] text-white font-bold">✓</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-xs text-white/60 mt-0.5">
+                <span className="text-yellow-400 font-bold">{selected.detail.rating}</span>
+                <span>{'⭐'.repeat(selected.detail.stars)}</span>
+                <span>({selected.detail.reviews})</span>
+                <span>•</span>
+                <span className="text-emerald-400 font-semibold">{selected.detail.status}</span>
+              </div>
+              <p className="text-[11px] text-white/50">{selected.detail.category}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 transition"><Share2 className="w-3.5 h-3.5" /></button>
+            <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-red-400 transition"><Heart className="w-3.5 h-3.5 fill-current" /></button>
           </div>
         </div>
 
-        {/* SECTION 2: Proveedor destacado */}
-        {featured && (
-          <div className="bg-gradient-to-br from-[#151B2A] via-[#0F1420] to-[#0D121D] rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 space-y-4 shadow-[0_12px_30px_rgba(0,0,0,.18)]">
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-6 h-6 rounded-[14px] bg-emerald-500/10 flex items-center justify-center">
-                <ShieldCheck size={14} className="text-emerald-400" strokeWidth={1.5} />
-              </div>
-              <h3 className="text-base font-semibold text-white">Proveedor destacado</h3>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-[18px] bg-gradient-to-br from-[#6E42FF] to-[#835DFF] flex items-center justify-center text-xl font-bold text-white flex-shrink-0 shadow-xl shadow-[#6E42FF]/30">
-                {featured.business_name.charAt(0)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-base font-semibold text-white truncate">{featured.business_name}</h4>
-                  {featured.trust_score > 0.7 && (
-                    <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
-                      <ShieldCheck size={10} strokeWidth={2} />
-                      Verificado
-                    </span>
-                  )}
-                </div>
-                {featured.service_area && (
-                  <p className="text-xs text-[#AEB5C5] mt-0.5">{featured.service_area}</p>
-                )}
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="flex items-center gap-0.5 text-xs text-yellow-400">
-                    <Star size={11} className="fill-yellow-400" strokeWidth={1.5} />
-                    {featured.rating}
-                  </span>
-                  <span className="text-xs text-[#AEB5C5]">({featured.trust_score.toFixed(1)})</span>
-                  {featured.available_now && (
-                    <span className="flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      <Zap size={11} strokeWidth={2} />
-                      Abierto
-                    </span>
-                  )}
-                </div>
-                {featured.reason_bullets.length > 0 && (
-                  <p className="text-xs text-[#AEB5C5] mt-2 leading-relaxed line-clamp-2 italic">
-                    "{featured.reason_bullets[0]}"
-                  </p>
-                )}
-              </div>
-            </div>
+        <div className="grid grid-cols-4 gap-1.5 my-3 py-2 border-y border-white/5 text-center">
+          <div><span className="block text-xs font-bold text-white">{selected.detail.experience}</span><span className="text-[9px] text-white/40">Experiencia</span></div>
+          <div><span className="block text-xs font-bold text-white">{selected.detail.price}</span><span className="text-[9px] text-white/40">Precio medio</span></div>
+          <div><span className="block text-xs font-bold text-white">{selected.detail.open}</span><span className="text-[9px] text-white/40">Apertura</span></div>
+          <div><span className="block text-xs font-bold text-white">{selected.detail.close}</span><span className="text-[9px] text-white/40">Cierre</span></div>
+        </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="bg-[rgba(255,255,255,0.03)] rounded-[14px] px-3.5 py-2.5 border border-[rgba(255,255,255,0.04)]">
-                <p className="text-[11px] text-[#AEB5C5]">Confianza</p>
-                <p className="text-sm font-medium text-white">{(featured.trust_score * 100).toFixed(0)}%</p>
-              </div>
-              <div className="bg-[rgba(255,255,255,0.03)] rounded-[14px] px-3.5 py-2.5 border border-[rgba(255,255,255,0.04)]">
-                <p className="text-[11px] text-[#AEB5C5]">Costo</p>
-                <p className="text-sm font-medium text-white">{featured.estimated_cost || '—'}</p>
-              </div>
-              <div className="bg-[rgba(255,255,255,0.03)] rounded-[14px] px-3.5 py-2.5 border border-[rgba(255,255,255,0.04)]">
-                <p className="text-[11px] text-[#AEB5C5]">Distancia</p>
-                <p className="text-sm font-medium text-white">
-                  {distanceStr(featured.distance_km) || '—'}
-                </p>
-              </div>
-              <div className="bg-[rgba(255,255,255,0.03)] rounded-[14px] px-3.5 py-2.5 border border-[rgba(255,255,255,0.04)]">
-                <p className="text-[11px] text-[#AEB5C5]">Respuesta</p>
-                <p className="text-sm font-medium text-white">
-                  {featured.response_time_hours != null ? `~${featured.response_time_hours}h` : '—'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5">
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[14px] text-xs font-medium bg-gradient-to-br from-[#6E42FF] to-[#835DFF] text-white transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-90 active:opacity-80">
-                <Navigation size={14} strokeWidth={1.75} />
-                Cómo llegar
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[14px] text-xs font-medium bg-[rgba(39,194,106,0.1)] border border-[rgba(39,194,106,0.2)] text-[#27C26A] transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgba(39,194,106,0.15)] active:opacity-80">
-                <Phone size={14} strokeWidth={1.75} />
-                Llamar
-              </button>
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[14px] text-xs font-medium bg-[#151B2A] border border-[rgba(255,255,255,.08)] text-white transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[#1A2234] active:opacity-80">
-                <MessageCircle size={14} strokeWidth={1.75} />
-                Chat
-              </button>
-            </div>
-            {featured.provider_id && (
-              <Link
-                href={`/providers/${featured.provider_id}`}
-                className="flex items-center justify-center gap-1 w-full py-2.5 rounded-[14px] text-xs font-medium text-[#6E42FF] hover:bg-[rgba(110,66,255,0.05)] transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-              >
-                Ver perfil completo
-                <ChevronRight size={14} strokeWidth={1.75} />
-              </Link>
-            )}
-          </div>
-        )}
-
-        {/* SECTION 3: Ruta sugerida */}
-        <div className="bg-gradient-to-br from-[#0F1420] to-[#0D121D] rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 shadow-[0_12px_30px_rgba(0,0,0,.18)]">
-          <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-[14px] bg-[#22D3EE]/10 flex items-center justify-center">
-              <MapPin size={14} className="text-[#22D3EE]" strokeWidth={1.5} />
-            </div>
-            <h3 className="text-base font-semibold text-white">Ruta sugerida</h3>
-            {featured?.distance_km != null && (
-              <span className="ml-auto text-xs text-[#AEB5C5] bg-[rgba(255,255,255,0.03)] px-2.5 py-1 rounded-full">
-                {featured.distance_km.toFixed(1)} km
-              </span>
-            )}
-          </div>
-
-          <div className="text-center py-4 bg-[rgba(255,255,255,0.02)] rounded-[14px] mb-4">
-            <p className="text-4xl font-bold text-white">
-              {featured?.distance_km != null
-                ? `${Math.round(featured.distance_km / 0.1)} min`
-                : '—'}
-            </p>
-            <p className="text-sm text-[#AEB5C5] mt-1">
-              {featured?.distance_km != null
-                ? `${featured.distance_km.toFixed(1)} km · ${new Date(Date.now() + Math.round(featured.distance_km / 0.1) * 60000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
-                : 'Distancia no disponible'}
-            </p>
-          </div>
-
-          <div className="relative h-20 bg-[#151B2A] rounded-[14px] mb-4 overflow-hidden border border-[rgba(255,255,255,0.04)]">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-full px-5 flex items-center justify-between">
-                <div className="w-4 h-4 rounded-full bg-[#6E42FF] shadow-2xl shadow-[#6E42FF]/60 ring-2 ring-[#6E42FF]/20 z-10" />
-                <div className="flex-1 mx-4 h-1.5 bg-gradient-to-r from-[#6E42FF] via-[#7C4DFF] to-[#22D3EE] relative rounded-full overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#6E42FF]/50 to-[#22D3EE]/50 blur-sm" />
-                </div>
-                <div className="w-4 h-4 rounded-full bg-[#22D3EE] shadow-2xl shadow-[#22D3EE]/40 ring-2 ring-[#22D3EE]/20 z-10" />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 mb-4">
-            {[
-              { icon: Car, label: 'Auto', active: true },
-              { icon: Footprints, label: 'Caminar', active: false },
-              { icon: Bike, label: 'Bici', active: false },
-            ].map((mode) => {
-              const Icon = mode.icon
-              return (
-                <button
-                  key={mode.label}
-                  className={`flex items-center justify-center gap-1 flex-1 py-2 rounded-[14px] text-xs font-medium transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                    mode.active
-                      ? 'bg-[#6E42FF]/10 border border-[#6E42FF]/30 text-[#6E42FF] shadow-sm hover:bg-[#6E42FF]/15'
-                      : 'bg-[#151B2A] border border-[rgba(255,255,255,0.08)] text-[#AEB5C5] hover:bg-[#1A2234] hover:text-white'
-                  }`}
-                >
-                  <Icon size={14} strokeWidth={1.75} />
-                  {mode.label}
-                </button>
-              )
-            })}
-          </div>
-
-          <button className="flex items-center justify-center gap-2 w-full py-3 rounded-[14px] text-sm font-medium bg-gradient-to-br from-[#6E42FF] to-[#835DFF] text-white transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-90 active:opacity-80">
-            <Navigation size={16} strokeWidth={1.75} />
-            Iniciar navegación
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          <button className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-violet-600 text-white text-[10px] font-medium shadow-md shadow-violet-600/30">
+            <Navigation className="w-3.5 h-3.5 mb-1" /> Como llegar
+          </button>
+          <button className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/5 hover:bg-white/10 text-white text-[10px] font-medium transition">
+            <Phone className="w-3.5 h-3.5 mb-1 text-emerald-400" /> Llamar
+          </button>
+          <button className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/5 hover:bg-white/10 text-white text-[10px] font-medium transition">
+            <MessageSquare className="w-3.5 h-3.5 mb-1 text-violet-400" /> Chat
+          </button>
+          <button className="flex flex-col items-center justify-center py-2 px-1 rounded-xl bg-white/5 hover:bg-white/10 text-white text-[10px] font-medium transition">
+            <Utensils className="w-3.5 h-3.5 mb-1 text-indigo-400" /> Ver menú
           </button>
         </div>
+
+        <p className="text-[11px] text-white/60 leading-relaxed">{selected.detail.desc}</p>
+      </div>
+
+      {/* 3. Módulo de Ruta Sugerida */}
+      <div className="bg-[#120f24] rounded-3xl border border-white/5 p-4 shadow-xl">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-violet-400 flex items-center gap-1.5">
+            <Navigation className="w-3.5 h-3.5" /> Ruta sugerida
+          </span>
+          <span className="text-[10px] text-white/50">Llegada estimada 9:48 AM</span>
+        </div>
+
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-bold text-white">4 min <span className="text-xs text-white/50 font-normal">(350 m)</span></h4>
+          <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
+            <button className="p-1.5 bg-violet-600 text-white rounded-lg"><Footprints className="w-3.5 h-3.5" /></button>
+            <button className="p-1.5 text-white/40 hover:text-white rounded-lg transition"><Car className="w-3.5 h-3.5" /></button>
+            <button className="p-1.5 text-white/40 hover:text-white rounded-lg transition"><Bike className="w-3.5 h-3.5" /></button>
+            <button className="p-1.5 text-white/40 hover:text-white rounded-lg transition"><Bus className="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
+
+        <div className="relative h-28 rounded-2xl bg-[#090710] border border-white/5 overflow-hidden flex items-center justify-center mb-3">
+          <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#382b63_1px,transparent_1px)] [background-size:12px_12px]" />
+          <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 40 80 Q 90 30 150 60 T 280 30" fill="none" stroke="#a855f7" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          <div className="absolute top-6 right-8 w-6 h-6 rounded-full bg-violet-600 shadow-lg shadow-violet-600/50 flex items-center justify-center text-white text-xs">
+            <Utensils className="w-3 h-3" />
+          </div>
+          <div className="absolute bottom-5 left-10 w-4 h-4 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50 animate-ping" />
+          <div className="absolute bottom-5 left-10 w-4 h-4 rounded-full bg-cyan-400 border-2 border-white flex items-center justify-center" />
+        </div>
+
+        <button className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-violet-600/30 transition flex items-center justify-center gap-2">
+          <Navigation className="w-3.5 h-3.5" /> Iniciar navegación
+        </button>
       </div>
     </aside>
   )
