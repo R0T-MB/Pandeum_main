@@ -53,11 +53,110 @@
   body {
     @apply bg-[#090C14] text-white antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    transition: background-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+                color 200ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   html {
     scroll-behavior: smooth;
   }
+}
+
+.light {
+  --color-bg: #F4F5F7;
+  --color-bg-2: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-sidebar: #FFFFFF;
+  --color-card: #FFFFFF;
+  --color-card-hover: #F0F1F3;
+  --color-border: rgba(0,0,0,.08);
+  --color-divider: rgba(0,0,0,.05);
+  --color-text: #1A1D23;
+  --color-text-secondary: #6B7280;
+  --color-text-tertiary: #9CA3AF;
+  --color-text-muted: #9CA3AF;
+}
+
+.light body {
+  background-color: #F4F5F7 !important;
+  color: #1A1D23;
+}
+
+.light .sidebar-gradient {
+  background: #FFFFFF !important;
+  border-color: rgba(0,0,0,.08) !important;
+}
+
+.light {
+  --logo-start: #1A1D23;
+}
+
+.light .text-white {
+  color: #1A1D23;
+}
+
+.light .text-\[\#7E879E\] {
+  color: #9CA3AF;
+}
+
+.light .text-\[\#D8DCE5\] {
+  color: #6B7280;
+}
+
+.light .text-\[\#C9CED9\] {
+  color: #9CA3AF;
+}
+
+.light .text-\[\#AEB5C5\] {
+  color: #6B7280;
+}
+
+.light .bg-\[rgba\(255\,255\,255\,\.03\)\] {
+  background-color: rgba(0,0,0,.03);
+}
+
+.light .bg-\[rgba\(255\,255\,255\,\.05\)\] {
+  background-color: rgba(0,0,0,.05);
+}
+
+.light .border-\[rgba\(255\,255\,255\,\.08\)\] {
+  border-color: rgba(0,0,0,.08);
+}
+
+.light .bg-\[\#0F1420\],
+.light .bg-\[\#101522\],
+.light .bg-\[\#111521\] {
+  background-color: #FFFFFF;
+}
+
+.light .bg-\[\#151B2A\],
+.light .bg-\[\#111827\],
+.light .bg-\[\#151E2F\],
+.light .bg-\[\#0E1422\],
+.light .bg-\[\#0D121D\],
+.light .bg-\[\#171D2D\] {
+  background-color: #F4F5F7;
+}
+
+.light .glass-panel {
+  background: rgba(255,255,255,0.85) !important;
+  border-color: rgba(0,0,0,.08) !important;
+}
+
+.light .pandeum-bg-gradient {
+  background: #F4F5F7 !important;
+}
+
+.light .sidebar-item-active {
+  background: #EBE5FF !important;
+}
+
+.light .hover\:bg-\[rgba\(255\,255\,255\,\.03\)\]:hover {
+  background-color: rgba(0,0,0,.03) !important;
+}
+
+.light .hover\:bg-\[rgba\(255\,255\,255\,\.05\)\]:hover {
+  background-color: rgba(0,0,0,.05) !important;
 }
 
 @layer components {

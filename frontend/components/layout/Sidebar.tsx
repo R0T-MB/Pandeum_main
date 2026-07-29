@@ -72,19 +72,19 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       <aside
         className={`lg:fixed lg:left-4 lg:top-4 lg:z-50 lg:w-[300px] lg:h-[calc(100vh-32px)] lg:rounded-[24px] lg:border lg:border-[rgba(255,255,255,.08)] lg:sidebar-gradient lg:p-0 lg:flex lg:flex-col lg:shadow-[0_20px_50px_rgba(0,0,0,.25)] ${
           isOpen
-            ? 'fixed inset-0 z-50 flex flex-col bg-[#0F1420] animate-slide-in-left'
+            ? 'fixed inset-0 z-50 flex flex-col bg-[#0F1420] animate-slide-in-left overflow-y-auto'
             : 'hidden'
         } lg:flex`}
       >
         {/* Header: Logo + Notification */}
-        <div className="flex items-center justify-between px-6 pt-[22px] pb-[18px]" style={{ minHeight: '72px' }}>
+        <div className="flex items-center justify-between flex-shrink-0 px-6 pt-[22px] pb-[18px]" style={{ minHeight: '72px' }}>
           <div className="flex items-center gap-[10px]">
             <svg width="34" height="20" viewBox="0 0 34 20" fill="none" className="flex-shrink-0">
               <path d="M5 4V16M5 4H15C17.5 4 20 5.5 20 9C20 12.5 17.5 14 15 14H5"
                 stroke="url(#p-logo)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
               <defs>
                 <linearGradient id="p-logo" x1="0" y1="0" x2="34" y2="0">
-                  <stop offset="0%" stopColor="#FFFFFF"/>
+                  <stop offset="0%" stopColor="var(--logo-start, #FFFFFF)"/>
                   <stop offset="100%" stopColor="#8A52FF"/>
                 </linearGradient>
               </defs>
@@ -100,11 +100,11 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           </button>
         </div>
 
-        {/* Gap after header: 28px */}
-        <div className="h-7" />
+        {/* Gap after header */}
+        <div className="flex-shrink-0 h-7" />
 
-        {/* Navigation */}
-        <nav className="flex flex-col gap-2 px-6 overflow-y-auto scrollbar-thin flex-1">
+        {/* Navigation - natural height, scrolls if needed */}
+        <nav className="flex-shrink-0 flex flex-col gap-2 px-6 overflow-y-auto scrollbar-thin">
           {allNavItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -133,30 +133,32 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           })}
         </nav>
 
-        {/* Spacer pushes Pro card + User to bottom */}
-        <div className="flex-1 min-h-[20px]" />
+        {/* Spacer fills remaining space - keeps bottom section at bottom */}
+        <div className="flex-1 min-h-[12px]" />
 
-        {/* Pro Card */}
-        <div className="px-6 pb-2">
-          <div className="rounded-[18px] border border-[rgba(110,66,255,.2)] p-5 bg-gradient-to-br from-[#0E1422] to-[#080B14] shadow-[0_0_18px_rgba(124,77,255,.10)]">
-            <div className="w-10 h-10 rounded-[14px] bg-[rgba(110,66,255,.1)] flex items-center justify-center mb-3">
-              <Sparkles size={18} className="text-[#6E42FF]" strokeWidth={2} />
+        {/* Pro Card - only for providers */}
+        {user?.is_provider && (
+          <div className="flex-shrink-0 px-6 pb-2">
+            <div className="rounded-[18px] border border-[rgba(110,66,255,.2)] p-5 bg-gradient-to-br from-[#0E1422] to-[#080B14] shadow-[0_0_18px_rgba(124,77,255,.10)]">
+              <div className="w-10 h-10 rounded-[14px] bg-[rgba(110,66,255,.1)] flex items-center justify-center mb-3">
+                <Sparkles size={18} className="text-[#6E42FF]" strokeWidth={2} />
+              </div>
+              <p className="text-sm font-semibold text-white mb-1.5 leading-relaxed">
+                Pandeum Pro
+              </p>
+              <p className="text-xs text-[#7E879E] mb-4 leading-relaxed">
+                Accede a funciones exclusivas y recomendaciones prioritarias.
+              </p>
+              <button className="flex items-center gap-1.5 text-xs font-medium text-[#6E42FF] hover:text-white transition-colors duration-[180ms] group">
+                Actualizar ahora
+                <ArrowRight size={14} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform duration-[180ms]" />
+              </button>
             </div>
-            <p className="text-sm font-semibold text-white mb-1.5 leading-relaxed">
-              Pandeum Pro
-            </p>
-            <p className="text-xs text-[#7E879E] mb-4 leading-relaxed">
-              Accede a funciones exclusivas y recomendaciones prioritarias.
-            </p>
-            <button className="flex items-center gap-1.5 text-xs font-medium text-[#6E42FF] hover:text-white transition-colors duration-[180ms] group">
-              Actualizar ahora
-              <ArrowRight size={14} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform duration-[180ms]" />
-            </button>
           </div>
-        </div>
+        )}
 
         {/* User + Theme + Logout */}
-        <div className="px-6 pt-3 pb-[22px] space-y-1">
+        <div className="flex-shrink-0 px-6 pt-3 pb-[22px] space-y-1">
           {user && (
             <div className="flex items-center gap-3 px-4 py-3 rounded-[14px] hover:bg-[rgba(255,255,255,.03)] transition-colors duration-[180ms]">
               <div className="w-10 h-10 rounded-full bg-[rgba(110,66,255,.2)] flex items-center justify-center text-sm font-bold text-[#6E42FF] ring-2 ring-[rgba(110,66,255,.2)]">
