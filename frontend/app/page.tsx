@@ -50,6 +50,7 @@ export default function HomePage() {
   const [selectedProvider, setSelectedProvider] = useState<ProviderRecommendation | null>(null)
   const [mapOpen, setMapOpen] = useState(false)
   const [showSuggestionDrawer, setShowSuggestionDrawer] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -328,13 +329,14 @@ export default function HomePage() {
         </div>
       </main>
 
-      <RightPanel providers={panelProviders} onOpenProviders={() => setShowSuggestionDrawer(true)} />
+      <RightPanel providers={panelProviders} onOpenProviders={() => setIsDrawerOpen(true)} />
 
       <ProvidersDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
         providers={panelProviders}
         recommendationLabel={panelLabel}
         onDistanceClick={handleDistanceClick}
-        onOpenSuggestionDrawer={() => setShowSuggestionDrawer(true)}
       />
 
       <SuggestionDrawer
