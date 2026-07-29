@@ -14,6 +14,8 @@ import {
   Moon,
   Sun,
   Monitor,
+  Bell,
+  Home,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from 'next-themes'
@@ -25,19 +27,12 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: '/', label: 'Inicio', icon: MessageSquare },
+  { href: '/', label: 'Inicio', icon: Home },
+  { href: '/chat', label: 'Chat', icon: MessageSquare },
   { href: '/map', label: 'Mapa', icon: MapPin },
   { href: '/favorites', label: 'Favoritos', icon: Heart },
   { href: '/history', label: 'Historial', icon: History },
-  { href: '/companion', label: 'Compañero', icon: Sparkles },
-]
-
-const bottomNavItems = [
-  { href: '/', label: 'Inicio', icon: MessageSquare },
-  { href: '/map', label: 'Mapa', icon: MapPin },
-  { href: '/favorites', label: 'Favoritos', icon: Heart },
-  { href: '/history', label: 'Historial', icon: History },
-  { href: '/companion', label: 'Compañero', icon: Sparkles },
+  { href: '/companion', label: 'Mi Compañero', icon: Sparkles },
 ]
 
 const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
@@ -67,7 +62,6 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
   return (
     <>
-      {/* Overlay for mobile sidebar */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/70 lg:hidden"
@@ -75,25 +69,42 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
         />
       )}
 
-      {/* Desktop Sidebar */}
       <aside
-        className={`fixed left-0 top-0 z-50 h-screen w-[280px] transform border-r border-[rgba(255,255,255,0.08)] bg-[#111521] transition-transform duration-300 flex flex-col rounded-[22px] m-3 h-[calc(100vh-24px)] pandeum-shadow ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:static lg:translate-x-0 lg:ml-0 lg:mr-0 lg:my-0 lg:rounded-none lg:m-0 lg:h-screen`}
+        className={`lg:fixed lg:left-4 lg:top-4 lg:z-50 lg:w-[300px] lg:h-[calc(100vh-32px)] lg:rounded-[24px] lg:border lg:border-[rgba(255,255,255,.08)] lg:sidebar-gradient lg:p-0 lg:flex lg:flex-col lg:shadow-[0_20px_50px_rgba(0,0,0,.25)] ${
+          isOpen
+            ? 'fixed inset-0 z-50 flex flex-col bg-[#0F1420] animate-slide-in-left'
+            : 'hidden'
+        } lg:flex`}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 pt-8 pb-6">
-          <div className="w-12 h-12 rounded-[18px] pandeum-gradient-strong flex items-center justify-center text-white text-lg font-bold shadow-2xl shadow-[#6E42FF]/30">
-            P
+        {/* Header: Logo + Notification */}
+        <div className="flex items-center justify-between px-6 pt-[22px] pb-[18px]" style={{ minHeight: '72px' }}>
+          <div className="flex items-center gap-[10px]">
+            <svg width="34" height="20" viewBox="0 0 34 20" fill="none" className="flex-shrink-0">
+              <path d="M5 4V16M5 4H15C17.5 4 20 5.5 20 9C20 12.5 17.5 14 15 14H5"
+                stroke="url(#p-logo)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              <defs>
+                <linearGradient id="p-logo" x1="0" y1="0" x2="34" y2="0">
+                  <stop offset="0%" stopColor="#FFFFFF"/>
+                  <stop offset="100%" stopColor="#8A52FF"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <h1 className="text-[19px] font-semibold tracking-[.02em] leading-none" style={{ fontFamily: 'Inter' }}>
+              <span className="text-white">PAN</span><span className="text-[#7B4CFF]">DEUM</span>
+            </h1>
           </div>
-          <div>
-            <span className="text-lg font-bold text-white tracking-tight">Pandeum</span>
-            <span className="block text-[11px] text-[#9CA3AF] tracking-wider uppercase mt-0.5">Soluciones</span>
-          </div>
+
+          <button className="relative w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-[200ms] hover:bg-[rgba(255,255,255,.05)]">
+            <Bell size={22} strokeWidth={2} color="#E6EAF5" />
+            <span className="absolute top-[6px] right-[6px] w-2 h-2 rounded-full bg-[#7B4CFF] border-2 border-[#0F1420]" />
+          </button>
         </div>
 
+        {/* Gap after header: 28px */}
+        <div className="h-7" />
+
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto scrollbar-thin">
+        <nav className="flex flex-col gap-2 px-6 overflow-y-auto scrollbar-thin flex-1">
           {allNavItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
@@ -103,46 +114,63 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3.5 px-5 py-3 rounded-[14px] transition-all duration-200 group relative ${
+                className={`flex items-center gap-4 w-full h-14 px-5 rounded-[18px] transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   isActive
-                    ? 'bg-[#6E42FF]/15 text-white font-medium border border-[#6E42FF]/30 pandeum-glow-purple'
-                    : 'text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)] hover:text-white hover:border hover:border-[rgba(255,255,255,0.06)]'
+                    ? 'sidebar-item-active text-white'
+                    : 'text-[#D8DCE5] hover:bg-[rgba(255,255,255,.03)] hover:text-white border border-transparent'
                 }`}
               >
-                <div className={`flex items-center justify-center w-6 h-6 ${
-                  isActive ? 'text-[#6E42FF] drop-shadow-[0_0_8px_rgba(110,66,255,0.4)]' : 'text-[#9CA3AF] group-hover:text-[#6E42FF]'
-                }`}>
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 1.75} />
-                </div>
-                <span className="text-sm font-medium">{item.label}</span>
+                <Icon
+                  size={22}
+                  strokeWidth={2}
+                  className={`flex-shrink-0 transition-colors duration-[180ms] ${
+                    isActive ? 'text-[#8A5DFF]' : 'text-[#C9CED9] group-hover:text-white'
+                  }`}
+                />
+                <span className="text-base font-medium leading-6">{item.label}</span>
               </Link>
             )
           })}
         </nav>
 
+        {/* Spacer pushes Pro card + User to bottom */}
+        <div className="flex-1 min-h-[20px]" />
+
         {/* Pro Card */}
-        <div className="px-4 py-3">
-          <div className="bg-gradient-to-br from-[#0E1422] to-[#080B14] rounded-[18px] border border-[#6E42FF]/20 p-5 pandeum-glow-purple hover-lift">
-            <div className="w-10 h-10 rounded-[14px] bg-[#6E42FF]/10 flex items-center justify-center mb-3">
-              <Sparkles size={18} className="text-[#6E42FF]" />
+        <div className="px-6 pb-2">
+          <div className="rounded-[18px] border border-[rgba(110,66,255,.2)] p-5 bg-gradient-to-br from-[#0E1422] to-[#080B14] shadow-[0_0_18px_rgba(124,77,255,.10)]">
+            <div className="w-10 h-10 rounded-[14px] bg-[rgba(110,66,255,.1)] flex items-center justify-center mb-3">
+              <Sparkles size={18} className="text-[#6E42FF]" strokeWidth={2} />
             </div>
             <p className="text-sm font-semibold text-white mb-1.5 leading-relaxed">
               Pandeum Pro
             </p>
-            <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
+            <p className="text-xs text-[#7E879E] mb-4 leading-relaxed">
               Accede a funciones exclusivas y recomendaciones prioritarias.
             </p>
-            <button className="flex items-center gap-1.5 text-xs font-medium text-[#6E42FF] hover:text-white transition-colors duration-200 group">
+            <button className="flex items-center gap-1.5 text-xs font-medium text-[#6E42FF] hover:text-white transition-colors duration-[180ms] group">
               Actualizar ahora
-              <ArrowRight size={14} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight size={14} strokeWidth={2} className="group-hover:translate-x-0.5 transition-transform duration-[180ms]" />
             </button>
           </div>
         </div>
 
-        {/* Theme Toggle */}
-        {mounted && (
-          <div className="px-4 py-3 border-t border-[rgba(255,255,255,0.08)]">
-            <div className="flex items-center gap-1 px-2 py-1.5 rounded-[14px] bg-[rgba(255,255,255,0.03)]">
+        {/* User + Theme + Logout */}
+        <div className="px-6 pt-3 pb-[22px] space-y-1">
+          {user && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-[14px] hover:bg-[rgba(255,255,255,.03)] transition-colors duration-[180ms]">
+              <div className="w-10 h-10 rounded-full bg-[rgba(110,66,255,.2)] flex items-center justify-center text-sm font-bold text-[#6E42FF] ring-2 ring-[rgba(110,66,255,.2)]">
+                {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-white truncate">{user.full_name || 'Usuario'}</p>
+                <p className="text-xs text-[#7E879E] truncate">{user.email}</p>
+              </div>
+            </div>
+          )}
+
+          {mounted && (
+            <div className="flex items-center gap-1 px-2 py-1.5 rounded-[14px] bg-[rgba(255,255,255,.03)]">
               {themeOptions.map((opt) => {
                 const Icon = opt.icon
                 const isThemeActive = theme === opt.value
@@ -150,73 +178,29 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                   <button
                     key={opt.value}
                     onClick={() => setTheme(opt.value)}
-                    className={`flex items-center justify-center flex-1 px-2 py-1.5 rounded-[14px] text-xs font-medium transition-all duration-200 ${
+                    className={`flex items-center justify-center flex-1 px-2 py-1.5 rounded-[14px] text-xs font-medium transition-all duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       isThemeActive
-                        ? 'bg-[#6E42FF]/20 text-[#6E42FF] shadow-sm'
-                        : 'text-[#9CA3AF] hover:text-white hover:bg-[rgba(255,255,255,0.05)]'
+                        ? 'bg-[rgba(110,66,255,.2)] text-[#6E42FF] shadow-sm'
+                        : 'text-[#7E879E] hover:text-white hover:bg-[rgba(255,255,255,.05)]'
                     }`}
                     title={opt.label}
                   >
-                    <Icon size={16} strokeWidth={1.75} />
+                    <Icon size={16} strokeWidth={2} />
                   </button>
                 )
               })}
             </div>
-          </div>
-        )}
-
-        {/* User & Logout */}
-        <div className="px-4 py-3 border-t border-[rgba(255,255,255,0.08)]">
-          {user && (
-            <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-[14px] bg-[rgba(255,255,255,0.03)] hover-lift">
-              <div className="w-10 h-10 rounded-full bg-[#6E42FF]/20 flex items-center justify-center text-sm font-bold text-[#6E42FF] ring-2 ring-[#6E42FF]/20">
-                {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-white truncate">{user.full_name || 'Usuario'}</p>
-                <p className="text-xs text-[#9CA3AF] truncate">{user.email}</p>
-              </div>
-            </div>
           )}
+
           <button
             onClick={logout}
-            className="flex items-center gap-3.5 w-full px-5 py-3 rounded-[14px] text-[#9CA3AF] hover:bg-[rgba(255,255,255,0.03)] hover:text-white transition-all duration-200 text-sm group"
+            className="flex items-center gap-3.5 w-full px-5 py-3 rounded-[14px] text-[#7E879E] hover:bg-[rgba(255,255,255,.03)] hover:text-white transition-all duration-[180ms] text-sm group"
           >
-            <LogOut size={18} strokeWidth={1.75} className="group-hover:text-red-400 transition-colors" />
+            <LogOut size={18} strokeWidth={2} className="group-hover:text-red-400 transition-colors duration-[180ms]" />
             <span className="text-sm font-medium">Cerrar sesión</span>
           </button>
         </div>
       </aside>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-2 py-2 bg-[#111521]/95 backdrop-blur-xl border-t border-[rgba(255,255,255,0.08)] lg:hidden safe-area-bottom">
-        {bottomNavItems.map((item) => {
-          const isActive = pathname === item.href
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-[14px] transition-all duration-200 min-w-[48px] ${
-                isActive
-                  ? 'text-[#6E42FF]'
-                  : 'text-[#6B7280] hover:text-[#9CA3AF]'
-              }`}
-            >
-              <div className={`flex items-center justify-center w-6 h-6 ${
-                isActive ? 'drop-shadow-[0_0_8px_rgba(110,66,255,0.4)]' : ''
-              }`}>
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.75} />
-              </div>
-              <span className={`text-[9px] font-medium ${
-                isActive ? 'text-[#6E42FF]' : 'text-[#6B7280]'
-              }`}>
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
-      </nav>
     </>
   )
 }

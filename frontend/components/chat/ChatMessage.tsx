@@ -38,7 +38,7 @@ const formatTime = (date: Date) => {
 }
 
 const PandeumAvatar = () => (
-  <div className="w-10 h-10 rounded-full pandeum-gradient-strong flex items-center justify-center flex-shrink-0 mt-0.5 shadow-2xl shadow-[#6E42FF]/30">
+  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6E42FF] to-[#835DFF] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-2xl shadow-[#6E42FF]/30">
     <Bot size={18} className="text-white" strokeWidth={1.75} />
   </div>
 )
@@ -48,11 +48,11 @@ export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
     return (
       <div className="flex justify-end">
         <div className="max-w-[80%] sm:max-w-[70%]">
-          <div className="pandeum-gradient-strong text-white rounded-[18px] rounded-tr-sm px-5 py-4 pandeum-shadow shadow-[#6E42FF]/30">
+          <div className="bg-gradient-to-br from-[#6E42FF] to-[#835DFF] text-white rounded-[18px] rounded-tr-sm px-5 py-4 shadow-[0_12px_30px_rgba(0,0,0,.18)] shadow-[#6E42FF]/30">
             <p className="text-base leading-relaxed font-medium">{message.content}</p>
           </div>
           <div className="flex items-center justify-end gap-1.5 mt-1.5 mr-1">
-            <span className="text-xs text-[#9CA3AF]">
+            <span className="text-xs text-[#AEB5C5]">
               {message.timestamp ? formatTime(new Date(message.timestamp)) : ''}
             </span>
             <CheckCheck size={14} className="text-[#6E42FF]" strokeWidth={2} />
@@ -88,11 +88,11 @@ export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
               <div>
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-sm font-semibold text-white">Pandeum</span>
-                  <span className="text-[11px] text-[#9CA3AF]">
+                  <span className="text-[11px] text-[#AEB5C5]">
                     {message.timestamp ? formatTime(new Date(message.timestamp)) : ''}
                   </span>
                 </div>
-                <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.08)] rounded-[18px] rounded-tl-sm px-6 py-5 pandeum-shadow">
+                <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.08)] rounded-[18px] rounded-tl-sm px-6 py-5 shadow-[0_12px_30px_rgba(0,0,0,.18)]">
                   <p className="text-base text-white leading-relaxed whitespace-pre-wrap">
                     {aiResponse.direct_answer || aiResponse.natural_message || 'Lo siento, no pude generar una respuesta.'}
                   </p>
@@ -191,7 +191,7 @@ export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
                       {providers.slice(0, 3).map((p, idx) => (
                         <div
                           key={p.provider_id || idx}
-                          className="min-w-[240px] lg:min-w-0 bg-gradient-to-br from-[#151E2F] to-[#111827] rounded-[18px] border border-[rgba(255,255,255,0.08)] overflow-hidden transition-all duration-200 hover:scale-[1.03] hover:border-[#6E42FF]/40 hover:shadow-2xl hover:shadow-[#6E42FF]/20 cursor-pointer group flex-shrink-0 animate-fade-up active:scale-[0.97] pandeum-shadow-sm"
+                          className="min-w-[240px] lg:min-w-0 bg-gradient-to-br from-[#151E2F] to-[#111827] rounded-[18px] border border-[rgba(255,255,255,0.08)] overflow-hidden transition-all duration-200 hover:scale-[1.03] hover:border-[#6E42FF]/40 hover:shadow-2xl hover:shadow-[#6E42FF]/20 cursor-pointer group flex-shrink-0 animate-slide-up active:scale-[0.97] pandeum-shadow-sm"
                           style={{ animationDelay: `${idx * 80}ms` }}
                           onClick={() => onViewPlaces?.(providers, aiResponse.recommendation_label)}
                         >
