@@ -15,6 +15,10 @@ import {
   Wrench,
   CheckCircle2,
   ChevronRight,
+  Footprints,
+  Car,
+  Bike,
+  Bus,
 } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
 
@@ -215,7 +219,7 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
           <span className="text-xs text-theme-text-muted">Llegada estimada 9:48 AM</span>
         </div>
 
-        <div className="flex items-center justify-between text-xs font-semibold text-theme-text">
+        <div className="text-xs font-semibold text-theme-text">
           <span>
             {primary?.distance_km != null
               ? primary.distance_km < 1
@@ -226,13 +230,22 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
               {primary?.distance_km != null ? ' (estimado)' : ' (350 m)'}
             </span>
           </span>
+        </div>
 
-          <div className="flex items-center gap-2 dark:bg-[#0b0817] bg-gray-100 px-2.5 py-1.5 rounded-xl dark:border-white/5 border-gray-200 text-theme-text-muted">
-            <span className="text-violet-400 font-bold">🚶‍♂️</span>
-            <span className="hover:text-theme-text transition cursor-pointer">🚗</span>
-            <span className="hover:text-theme-text transition cursor-pointer">🚲</span>
-            <span className="hover:text-theme-text transition cursor-pointer">🚌</span>
-          </div>
+        {/* Transport selector — 4 square buttons */}
+        <div className="flex items-center gap-2">
+          <button className="w-8 h-8 rounded-lg bg-violet-600/20 border border-violet-500/40 flex items-center justify-center text-violet-400 transition">
+            <Footprints className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 rounded-lg dark:bg-[#0b0817] bg-gray-100 dark:border-white/5 border-gray-200 flex items-center justify-center text-theme-text-muted hover:text-theme-text transition">
+            <Car className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 rounded-lg dark:bg-[#0b0817] bg-gray-100 dark:border-white/5 border-gray-200 flex items-center justify-center text-theme-text-muted hover:text-theme-text transition">
+            <Bike className="w-4 h-4" />
+          </button>
+          <button className="w-8 h-8 rounded-lg dark:bg-[#0b0817] bg-gray-100 dark:border-white/5 border-gray-200 flex items-center justify-center text-theme-text-muted hover:text-theme-text transition">
+            <Bus className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Mini Map */}
