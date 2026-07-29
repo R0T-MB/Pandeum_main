@@ -88,20 +88,6 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       </div>
 
       <div className="space-y-4">
-        <div className="relative bg-gradient-to-b from-[#151128] to-[#0c0a15] p-3.5 rounded-2xl border border-violet-500/30 overflow-hidden shadow-xl">
-          <div className="absolute right-[-10px] top-[-10px] w-20 h-20 bg-violet-600/20 rounded-full blur-xl pointer-events-none" />
-          <div className="flex items-center gap-2 mb-1.5">
-            <Crown className="w-4 h-4 text-violet-400" />
-            <h4 className="text-xs font-bold text-white">Pandeum Pro</h4>
-          </div>
-          <p className="text-[11px] text-theme-text-secondary leading-relaxed mb-3">
-            Desbloquea beneficios exclusivos y experiencias premium.
-          </p>
-          <button className="w-full py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-violet-600/30 transition">
-            Actualizar ahora &gt;
-          </button>
-        </div>
-
         <div className="flex items-center justify-between px-2 py-2 bg-theme-card rounded-2xl border border-theme-border transition-colors duration-200">
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-9 h-9 rounded-full bg-violet-600/40 border border-violet-500/40 overflow-hidden shrink-0 flex items-center justify-center font-bold text-white text-xs">

@@ -206,17 +206,17 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
       )}
 
       {/* Route card */}
-      <div className="bg-theme-card rounded-3xl border border-theme-border p-4 shadow-xl transition-colors duration-200">
-        <div className="flex items-center justify-between mb-2">
+      <div className="bg-theme-card rounded-3xl border border-theme-border p-4 shadow-xl transition-colors duration-200 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Navigation className="w-4 h-4 text-violet-400" />
             <span className="text-xs font-bold text-theme-text tracking-wide">Ruta sugerida</span>
           </div>
-          <span className="text-[10px] text-theme-text-muted">Llegada estimada 9:48 AM</span>
+          <span className="text-xs text-theme-text-muted">Llegada estimada 9:48 AM</span>
         </div>
 
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-semibold text-theme-text">
+        <div className="flex items-center justify-between text-xs font-semibold text-theme-text">
+          <span>
             {primary?.distance_km != null
               ? primary.distance_km < 1
                 ? `${Math.round(primary.distance_km * 1000)} m`
@@ -226,22 +226,24 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
               {primary?.distance_km != null ? ' (estimado)' : ' (350 m)'}
             </span>
           </span>
-          <div className="flex items-center gap-2 bg-theme-divider px-2.5 py-1 rounded-xl border border-theme-border">
-            <span className="text-violet-400">🚶</span>
-            <span className="text-theme-text-muted">🚗</span>
-            <span className="text-theme-text-muted">🚲</span>
+
+          <div className="flex items-center gap-2 dark:bg-[#0b0817] bg-gray-100 px-2.5 py-1.5 rounded-xl dark:border-white/5 border-gray-200 text-theme-text-muted">
+            <span className="text-violet-400 font-bold">🚶‍♂️</span>
+            <span className="hover:text-theme-text transition cursor-pointer">🚗</span>
+            <span className="hover:text-theme-text transition cursor-pointer">🚲</span>
+            <span className="hover:text-theme-text transition cursor-pointer">🚌</span>
           </div>
         </div>
 
         {/* Mini Map */}
-        <div className="h-28 dark:bg-[#0b0817] bg-gray-100 rounded-2xl dark:border-white/5 border-gray-200 relative overflow-hidden flex items-center justify-center mb-3">
+        <div className="h-28 dark:bg-[#0b0817] bg-gray-100 rounded-2xl dark:border-white/5 border-gray-200 relative overflow-hidden flex items-center justify-center">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:12px_12px]"></div>
           <svg className="w-full h-full absolute inset-0 px-4" viewBox="0 0 200 60" fill="none">
             <path d="M10 45 Q 60 10, 100 30 T 190 20" stroke="#a78bfa" strokeWidth="2.5" strokeDasharray="4 4" />
           </svg>
           <div className="absolute left-6 bottom-4 w-3 h-3 rounded-full bg-cyan-400 ring-4 ring-cyan-400/20 animate-pulse"></div>
           <div className="absolute right-6 top-4 w-6 h-6 rounded-lg bg-violet-600 flex items-center justify-center text-white text-xs shadow-md">
-            <Wrench className="w-3 h-3" />
+            <Wrench className="w-3 h-3 text-white" />
           </div>
         </div>
 
