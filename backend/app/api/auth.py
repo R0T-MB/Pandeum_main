@@ -11,6 +11,9 @@ from ..auth import (
 from ..crud import get_or_create_user_from_clerk
 from ..config import settings
 import httpx
+import logging
+
+logger = logging.getLogger("pandeum")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -65,6 +68,13 @@ def clerk_sync(
     db: Session = Depends(get_db)
 ):
     expected = settings.CLERK_SYNC_SECRET
+    logger.info(
+        "[clerk-sync] expected_secret_exists=%s expected_len=%s received_secret_exists=%s received_len=%s",
+        bool(expected),
+        len(expected) if expected else 0,
+        bool(x_clerk_sync_secret),
+        len(x_clerk_sync_secret) if x_clerk_sync_secret else 0,
+    )
     if not expected:
         raise HTTPException(status_code=503, detail="Clerk sync no configurado")
     if x_clerk_sync_secret != expected:

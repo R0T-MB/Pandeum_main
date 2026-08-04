@@ -1,6 +1,13 @@
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
+from pathlib import Path
 from typing import Optional
+
+# Ruta ABSOLUTA al .env (backend/.env) para que se cargue sin importar
+# desde qué directorio se lance uvicorn (env_file relativo falla si se
+# ejecuta desde la raíz del repositorio).
+_BACKEND_DIR = Path(__file__).resolve().parent.parent
+_ENV_FILE = _BACKEND_DIR / ".env"
 
 class Settings(BaseSettings):
     # Database
@@ -30,7 +37,7 @@ class Settings(BaseSettings):
     # Clerk
     CLERK_ISSUER: Optional[str] = None
     CLERK_JWKS_URL: Optional[str] = None
-    CLERK_SYNC_SECRET: Optional[str] = None
+    CLERK_SYNC_SECRET: str = ""
 
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
@@ -40,6 +47,6 @@ class Settings(BaseSettings):
     GUEST_CHAT_MAX_PER_HOUR: int = 12
     GUEST_CHAT_WINDOW_SECONDS: int = 3600
 
-    model_config = ConfigDict(env_file=".env")
+    model_config = ConfigDict(env_file=str(_ENV_FILE), extra="ignore")
 
 settings = Settings()
