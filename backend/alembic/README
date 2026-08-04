@@ -1,1 +1,29 @@
 Generic single-database configuration.
+
+# Pandeum - Uso de Alembic (migraciones de base de datos)
+
+Este entorno configura Alembic para usar automáticamente la URL de la BD desde
+`backend/app/config.py` (settings.DATABASE_URL) y la metadata de los modelos ORM
+de `backend/app/models.py`. Ejecuta los comandos desde `backend/`.
+
+## Flujo diario (cuando cambias un modelo en `app/models.py`)
+
+1. Generar una nueva migración comparando los modelos con la BD:
+   `alembic revision --autogenerate -m "descripcion del cambio"`
+2. Revisar el archivo generado en `backend/alembic/versions/`.
+3. Aplicar:
+   `alembic upgrade head`
+
+## Comandos útiles
+
+- `alembic current`            → revisión aplicada en la BD
+- `alembic history`            → historial de migraciones
+- `alembic heads`              → última(s) revisión(es)
+- `alembic downgrade -1`       → deshacer la última migración
+- `alembic stamp head`         → marcar la BD como al día (sin ejecutar SQL)
+
+## Nota
+
+Las migraciones en `backend/alembic/versions/` son la fuente de verdad del
+esquema. Para una BD nueva basta con `alembic upgrade head` (no es necesario
+usar `schema.sql`). Mantén `schema.sql` solo como referencia de diseño.
