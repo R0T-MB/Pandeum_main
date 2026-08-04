@@ -1,9 +1,11 @@
 node_modules/
 .next/
 .env
+.env*.local
 venv/
 __pycache__/
 *.tsbuildinfo
 *.sqlite
 *.pyc
+*.log
 .pytest_cache/
