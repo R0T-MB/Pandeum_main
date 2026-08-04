@@ -68,7 +68,8 @@ def clerk_sync(
     x_clerk_sync_secret: str | None = Header(None),
     db: Session = Depends(get_db)
 ):
-    expected = settings.CLERK_SYNC_SECRET
+    expected = (settings.CLERK_SYNC_SECRET or "").strip()
+    received = (x_clerk_sync_secret or "").strip()
     # Fingerprint enmascarado para diagnosticar el 403 sin exponer el secreto.
     # Muestra longitud + sha256 corto; si los dos fingerprint difieren => los
     # secretos (Vercel vs Railway) no coinciden.
@@ -77,11 +78,11 @@ def clerk_sync(
     logger.info(
         "[clerk-sync] expected_fp=%s received_fp=%s",
         _fp(expected),
-        _fp(x_clerk_sync_secret),
+        _fp(received),
     )
     if not expected:
         raise HTTPException(status_code=503, detail="Clerk sync no configurado")
-    if x_clerk_sync_secret != expected:
+    if received != expected:
         raise HTTPException(status_code=403, detail="No autorizado")
     # Restringir account_type: nunca permitir admin vía sync (escalada de privilegios)
     account_type = data.account_type if data.account_type in ("client", "provider") else "client"
