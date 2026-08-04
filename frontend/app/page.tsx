@@ -89,13 +89,28 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!user) return
+    const loadLatest = async () => {
+      try {
+        const res = await api.get('/users/me/conversations', { params: { limit: 1 } })
+        const latest: Conversation[] = res.data
+        if (latest && latest.length > 0) {
+          loadConversation(latest[0].id)
+        } else {
+          setMessages([])
+          setCurrentConversationId(null)
+        }
+      } catch (error) {
+        console.error('Load latest conversation error:', error)
+        setMessages([])
+        setCurrentConversationId(null)
+      }
+    }
     const params = new URLSearchParams(window.location.search)
     const conversationId = params.get('conversation')
     if (conversationId) {
       loadConversation(conversationId)
     } else {
-      setMessages([])
-      setCurrentConversationId(null)
+      loadLatest()
     }
   }, [user, loadConversation])
 

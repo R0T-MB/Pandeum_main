@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # Gemini
     GEMINI_API_KEY: str
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
     # OpenRouter (fallback AI - optional)
     OPENROUTER_API_KEY: Optional[str] = None
@@ -29,6 +30,7 @@ class Settings(BaseSettings):
     # Clerk
     CLERK_ISSUER: Optional[str] = None
     CLERK_JWKS_URL: Optional[str] = None
+    CLERK_SYNC_SECRET: Optional[str] = None
 
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100

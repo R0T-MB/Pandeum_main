@@ -206,6 +206,14 @@ class ReviewCreate(BaseModel):
     rating: int = Field(ge=1, le=5)
     comment: Optional[str] = None
 
+class RecommendationFeedbackCreate(BaseModel):
+    conversation_id: UUID
+    provider_id: UUID
+    user_clicked: bool = False
+    user_hired: bool = False
+    review_left: bool = False
+    user_returned: bool = False
+
 class ReviewResponse(BaseModel):
     id: UUID
     user_id: UUID

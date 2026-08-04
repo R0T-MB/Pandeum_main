@@ -12,14 +12,6 @@ export const api: AxiosInstance = axios.create({
   },
 })
 
-export const setAuthToken = (token: string) => {
-  api.defaults.headers.common.Authorization = `Bearer ${token}` 
-}
-
-export const removeAuthToken = () => {
-  delete api.defaults.headers.common.Authorization
-}
-
 api.interceptors.request.use(
   async (config) => {
     if (typeof window !== 'undefined') {
@@ -33,14 +25,7 @@ api.interceptors.request.use(
           }
         }
       } catch {}
-
-      const oldToken = localStorage.getItem('access_token')
-
-      if (oldToken) {
-        config.headers.Authorization = `Bearer ${oldToken}` 
-      }
     }
-
     return config
   },
   (error) => Promise.reject(error)
@@ -68,41 +53,6 @@ api.interceptors.response.use(
           }
         }
       } catch {}
-
-      const refreshToken =
-        typeof window !== 'undefined'
-          ? localStorage.getItem('refresh_token')
-          : null
-
-      if (refreshToken) {
-        try {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken,
-          })
-
-          const newAccessToken = response.data.access_token
-          const newRefreshToken = response.data.refresh_token
-
-          localStorage.setItem('access_token', newAccessToken)
-          localStorage.setItem('refresh_token', newRefreshToken)
-
-          document.cookie = `access_token=${newAccessToken}; path=/; SameSite=Lax` 
-
-          setAuthToken(newAccessToken)
-
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}` 
-
-          return api(originalRequest)
-        } catch (refreshError) {
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-
-          document.cookie =
-            'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
-
-          return Promise.reject(refreshError)
-        }
-      }
     }
 
     return Promise.reject(error)

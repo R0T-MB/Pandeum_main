@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 
-const CLERK_SYNC_SECRET = process.env.NEXT_PUBLIC_CLERK_SYNC_SECRET
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
 type SyncError = { message: string; detail?: string; status?: number }
 
 export default function SyncPage() {
@@ -23,18 +20,6 @@ export default function SyncPage() {
       return
     }
 
-    if (!CLERK_SYNC_SECRET) {
-      setErrorMessage({ message: 'Falta configurar NEXT_PUBLIC_CLERK_SYNC_SECRET' })
-      setStatus('error')
-      return
-    }
-
-    if (!user.primaryEmailAddress?.emailAddress) {
-      setErrorMessage({ message: 'No se pudo obtener el correo de Clerk' })
-      setStatus('error')
-      return
-    }
-
     const sync = async () => {
       setStatus('syncing')
 
@@ -42,17 +27,12 @@ export default function SyncPage() {
       const businessName = localStorage.getItem('business_name') || null
 
       try {
-        const res = await fetch(`${API_URL}/auth/clerk-sync`, {
+        const res = await fetch('/api/auth/clerk-sync', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-clerk-sync-secret': CLERK_SYNC_SECRET,
           },
           body: JSON.stringify({
-            clerk_user_id: user.id,
-            email: user.primaryEmailAddress.emailAddress,
-            full_name: user.fullName,
-            email_verified: user.primaryEmailAddress.verification?.status === 'verified',
             account_type: accountType,
             business_name: businessName,
           }),

@@ -3,26 +3,13 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/nextjs'
-import { api, setAuthToken, removeAuthToken } from '@/lib/api'
+import api from '@/lib/api'
 import { User } from '@/types'
-
-// Helper para manejar cookies
-const setCookie = (name: string, value: string, days = 7) => {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`
-}
-
-const removeCookie = (name: string) => {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
-}
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   isGuest: boolean
-  login: (email: string, password: string) => Promise<void>
-  loginWithGoogle: (token: string) => Promise<void>
-  register: (data: any) => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
   switchRole: (role: 'client' | 'provider') => Promise<User>
@@ -35,9 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
   const { isLoaded: clerkLoaded, isSignedIn } = useUser()
-  const { getToken } = useClerkAuth()
   const { signOut: clerkSignOut } = useClerk()
 
   const fetchUser = async () => {
@@ -56,28 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!clerkLoaded) return
 
     const initAuth = async () => {
-      const oldToken = localStorage.getItem('access_token')
-
       if (isSignedIn) {
-        const clerkToken = await getToken()
-        if (clerkToken) {
-          setAuthToken(clerkToken)
-        }
-      }
-
-      if (oldToken && !isSignedIn) {
-        setCookie('access_token', oldToken)
-        setAuthToken(oldToken)
-      }
-
-      const hasAuth = !!(
-        isSignedIn ||
-        localStorage.getItem('access_token')
-      )
-
-      if (hasAuth) {
         await fetchUser()
       } else {
+        setUser(null)
         setLoading(false)
       }
     }
@@ -85,38 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth()
   }, [clerkLoaded, isSignedIn])
 
-  const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password })
-    const { access_token, refresh_token } = response.data
-    localStorage.setItem('access_token', access_token)
-    localStorage.setItem('refresh_token', refresh_token)
-    setCookie('access_token', access_token)
-    setAuthToken(access_token)
-    await fetchUser()
-    router.push('/')
-  }
-
-  const loginWithGoogle = async (googleToken: string) => {
-    const response = await api.post('/auth/google', { token: googleToken })
-    const { access_token, refresh_token } = response.data
-    localStorage.setItem('access_token', access_token)
-    localStorage.setItem('refresh_token', refresh_token)
-    setCookie('access_token', access_token)
-    setAuthToken(access_token)
-    await fetchUser()
-    router.push('/')
-  }
-
-  const register = async (data: any) => {
-    await api.post('/auth/register', data)
-    await login(data.email, data.password)
-  }
-
   const logout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    removeCookie('access_token')
-    removeAuthToken()
     setUser(null)
     clerkSignOut({ redirectUrl: '/login' })
   }
@@ -145,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isGuest: !loading && !user, login, loginWithGoogle, register, logout, refreshUser, switchRole, convertToProvider, deleteAccount }}>
+    <AuthContext.Provider value={{ user, loading, isGuest: !loading && !user, logout, refreshUser, switchRole, convertToProvider, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   )

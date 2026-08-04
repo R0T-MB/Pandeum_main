@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..schemas import ProblemRequest, AISolveResponse
+from ..schemas import ProblemRequest, AISolveResponse, RecommendationFeedbackCreate
 from ..ai_engine import AIEngine
 from ..auth import get_optional_current_user
-from ..models import User
+from ..models import User, RecommendationFeedback
 from ..crud import get_user_memory, save_conversation, add_to_waiting_list, get_external_resources, get_user_conversations
 from ..utils.guest_limit import GuestUsageTracker
 from ..config import settings
@@ -73,8 +73,9 @@ async def solve_problem(
             ]
     
     # Llamar al motor IA
-    import sys
-    print(f"[AI] problem={request.problem[:80]} context_from_frontend={bool(request.conversation_context)} context_from_db={bool(not request.conversation_context and user_id)} user_id={user_id}", file=sys.stderr)
+    import logging
+    logger = logging.getLogger("pandeum")
+    logger.info(f"[AI] problem={request.problem[:80]} ctx_front={bool(request.conversation_context)} ctx_db={bool(not request.conversation_context and user_id)} user_id={user_id}")
 
     result = await AIEngine.solve_problem(
         problem=request.problem,
@@ -161,3 +162,23 @@ async def explore_mode(
         budget=request.budget
     )
     return result
+
+@router.post("/feedback")
+def submit_feedback(
+    feedback: RecommendationFeedbackCreate,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    user_id = current_user.id if current_user else None
+    record = RecommendationFeedback(
+        conversation_id=str(feedback.conversation_id),
+        provider_id=str(feedback.provider_id),
+        user_clicked=feedback.user_clicked,
+        user_hired=feedback.user_hired,
+        review_left=feedback.review_left,
+        user_returned=feedback.user_returned,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return {"message": "Feedback registrado", "id": record.id}

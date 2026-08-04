@@ -113,6 +113,9 @@ def get_or_create_user_from_clerk(
     account_type: str = "client",
     business_name: Optional[str] = None
 ) -> User:
+    # Restringir account_type: client/provider únicamente (nunca admin vía sync)
+    if account_type not in ("client", "provider"):
+        account_type = "client"
     user = get_user_by_clerk_id(db, clerk_user_id)
     if user:
         changed = False

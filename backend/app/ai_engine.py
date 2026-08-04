@@ -11,7 +11,7 @@ from .models import Provider, UserMemory, Service
 from .crud import get_provider_rating
 
 genai.configure(api_key=settings.GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel(settings.GEMINI_MODEL)
 
 class AIEngine:
     @staticmethod
@@ -296,7 +296,7 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
 - Esta regla aplica para CUALQUIER contexto: dolor de ojo, dolor de espalda, mascota enferma, laptop dañada, trámite pendiente, problema de cocina, arreglo de ropa, reparación de instrumento, etc.
 """
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel(settings.GEMINI_MODEL)
             response = model.generate_content(prompt)
             response_text = response.text.strip()
             if response_text.startswith('```json'):
@@ -709,7 +709,7 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
         """Genera respuesta con Gemini como principal y OpenRouter como fallback."""
         # Intentar Gemini primero
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel(settings.GEMINI_MODEL)
             response = model.generate_content(prompt)
             return response.text.strip()
         except Exception:
@@ -719,10 +719,16 @@ Responde SOLO con JSON válido (sin markdown, sin texto adicional):
     @staticmethod
     async def _generate_json_with_fallback_ai(prompt: str) -> Optional[Dict[str, Any]]:
         """Genera JSON con Gemini como principal y OpenRouter como fallback."""
-        # Intentar Gemini primero
+        # Intentar Gemini primero con output estructurado JSON
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
-            response = model.generate_content(prompt)
+            model = genai.GenerativeModel(settings.GEMINI_MODEL)
+            response = model.generate_content(
+                prompt,
+                generation_config={
+                    "response_mime_type": "application/json",
+                    "temperature": 0.7,
+                }
+            )
             response_text = response.text.strip()
             
             # Limpiar markdown si existe
@@ -1476,7 +1482,7 @@ Soluciones anteriores:
         context_prompt += "Responde de forma natural y conversacional, explicando el contexto relevante. No uses formato JSON, solo responde directamente."
         
         try:
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            model = genai.GenerativeModel(settings.GEMINI_MODEL)
             response = model.generate_content(context_prompt)
             direct_answer = response.text.strip()
         except Exception:

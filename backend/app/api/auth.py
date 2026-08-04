@@ -11,12 +11,13 @@ from ..auth import (
 from ..crud import get_or_create_user_from_clerk
 from ..config import settings
 import httpx
-import os
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserResponse)
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    # DEPRECADO: mantener solo por compatibilidad con clientes antiguos.
+    # Pandeum usa Clerk como única fuente de autenticación.
     existing = db.query(User).filter(User.email == user_data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email ya registrado")
@@ -34,6 +35,8 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
+    # DEPRECADO: mantener solo por compatibilidad con clientes antiguos.
+    # Pandeum usa Clerk como única fuente de autenticación.
     user = db.query(User).filter(User.email == user_data.email).first()
     if not user or not user.password_hash or not verify_password(user_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
@@ -43,6 +46,8 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
 
 @router.post("/refresh", response_model=Token)
 def refresh(token_data: TokenRefresh):
+    # DEPRECADO: mantener solo por compatibilidad con clientes antiguos.
+    # Pandeum usa Clerk como única fuente de autenticación.
     payload = decode_token(token_data.refresh_token)
     if payload.get("type") != "refresh":
         raise HTTPException(status_code=401, detail="Token inválido")
@@ -59,24 +64,28 @@ def clerk_sync(
     x_clerk_sync_secret: str | None = Header(None),
     db: Session = Depends(get_db)
 ):
-    expected = os.environ.get("CLERK_SYNC_SECRET")
+    expected = settings.CLERK_SYNC_SECRET
     if not expected:
         raise HTTPException(status_code=503, detail="Clerk sync no configurado")
     if x_clerk_sync_secret != expected:
         raise HTTPException(status_code=403, detail="No autorizado")
+    # Restringir account_type: nunca permitir admin vía sync (escalada de privilegios)
+    account_type = data.account_type if data.account_type in ("client", "provider") else "client"
     user = get_or_create_user_from_clerk(
         db,
         clerk_user_id=data.clerk_user_id,
         email=data.email,
         full_name=data.full_name,
         email_verified=data.email_verified,
-        account_type=data.account_type,
+        account_type=account_type,
         business_name=data.business_name
     )
     return user
 
 @router.post("/google", response_model=Token)
 async def google_auth(google_data: GoogleAuth, db: Session = Depends(get_db)):
+    # DEPRECADO: mantener solo por compatibilidad con clientes antiguos.
+    # Pandeum usa Clerk como única fuente de autenticación.
     # Verificar token con Google
     async with httpx.AsyncClient() as client:
         resp = await client.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={google_data.token}")
