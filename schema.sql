@@ -21,6 +21,9 @@ CREATE TABLE users (
     city TEXT,
     is_provider BOOLEAN DEFAULT false,
     is_admin BOOLEAN DEFAULT false,
+    clerk_user_id TEXT UNIQUE,           -- ID de Clerk (autenticación única)
+    email_verified BOOLEAN DEFAULT false,
+    account_type TEXT DEFAULT 'client',  -- 'client' | 'provider'
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -45,6 +48,20 @@ CREATE TABLE providers (
     response_time_hours DECIMAL(5,2), -- promedio
     available_now BOOLEAN DEFAULT false,
     cases_resolved_similar INT DEFAULT 0,
+    address TEXT,
+    service_area TEXT,
+    phone TEXT,
+    whatsapp TEXT,
+    contact_email TEXT,
+    website_url TEXT,
+    facebook_url TEXT,
+    instagram_url TEXT,
+    tiktok_url TEXT,
+    linkedin_url TEXT,
+    cover_image_url TEXT,
+    gallery_images JSONB DEFAULT '[]',
+    search_tags JSONB DEFAULT '[]',
+    service_keywords JSONB DEFAULT '[]',
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -54,7 +71,12 @@ CREATE TABLE services (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     provider_id UUID REFERENCES providers(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    description TEXT,
     price_estimate TEXT,
+    price_min INT,
+    price_max INT,
+    tags JSONB DEFAULT '[]',
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -169,6 +191,8 @@ CREATE TABLE external_resources (
 CREATE INDEX idx_providers_category ON providers(category);
 CREATE INDEX idx_providers_location ON providers(location_lat, location_lng);
 CREATE INDEX idx_providers_trust_score ON providers(trust_score DESC);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_clerk_user_id ON users(clerk_user_id);
 CREATE INDEX idx_reviews_provider ON reviews(provider_id);
 CREATE INDEX idx_conversations_user ON conversations(user_id);
 CREATE INDEX idx_conversations_created ON conversations(created_at DESC);
