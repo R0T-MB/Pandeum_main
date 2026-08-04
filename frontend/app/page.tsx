@@ -217,7 +217,11 @@ export default function HomePage() {
 
             <div className="flex justify-between items-start relative z-10 mb-4">
               <div>
-                <h1 className="text-2xl font-bold text-theme-text mb-1">¡Hola, {userName.split(' ')[0]}! 👋</h1>
+                <h1 className="text-2xl font-bold text-theme-text mb-1">
+                  {isGuest
+                    ? '¡Hola! ¿Qué necesitas hoy?'
+                    : `¡Hola, ${userName.split(' ')[0]}!`}
+                </h1>
                 <p className="text-xs text-theme-text-secondary">Estoy aquí para ayudarte a encontrar justo lo que necesitas.</p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-500 shadow-lg shadow-violet-600/40 flex items-center justify-center text-white shrink-0">
