@@ -246,3 +246,10 @@ class ProviderVerification(BaseModel):
 
 class UserRoleUpdate(BaseModel):
     is_admin: bool
+
+# ========== Account ==========
+class AccountRoleUpdate(BaseModel):
+    role: str  # 'client' | 'provider'
+
+class AccountDeleteRequest(BaseModel):
+    confirm_email: str  # correo del usuario para confirmar borrado físico

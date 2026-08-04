@@ -23,6 +23,9 @@ interface AuthContextType {
   loginWithGoogle: (token: string) => Promise<void>
   register: (data: any) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
+  switchRole: (role: 'client' | 'provider') => Promise<User>
+  deleteAccount: (confirmEmail: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -116,8 +119,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clerkSignOut({ redirectUrl: '/login' })
   }
 
+  const refreshUser = async () => {
+    await fetchUser()
+  }
+
+  const switchRole = async (role: 'client' | 'provider') => {
+    const response = await api.put('/users/me/role', { role })
+    setUser(response.data)
+    return response.data
+  }
+
+  const deleteAccount = async (confirmEmail: string) => {
+    await api.delete('/users/me', { data: { confirm_email: confirmEmail } })
+    logout()
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, refreshUser, switchRole, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   )

@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..schemas import UserResponse, UserLogin, Token, ConversationResponse
+from ..schemas import (
+    UserResponse, UserLogin, Token, ConversationResponse,
+    AccountRoleUpdate, AccountDeleteRequest
+)
 from ..auth import get_current_user
 from ..models import User
-from ..crud import get_user_by_id, get_user_conversations, get_conversation_by_id
+from ..crud import (
+    get_user_by_id, get_user_conversations, get_conversation_by_id,
+    switch_user_role, delete_user_account
+)
 from typing import List
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -46,3 +52,26 @@ def get_my_conversation(
     if not conv:
         raise HTTPException(status_code=404, detail="Conversación no encontrada")
     return conv
+
+@router.put("/me/role", response_model=UserResponse)
+def update_my_role(
+    payload: AccountRoleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        updated = switch_user_role(db, current_user, payload.role)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Rol no válido. Usa 'client' o 'provider'.")
+    return updated
+
+@router.delete("/me", response_model=dict)
+def delete_my_account(
+    payload: AccountDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if payload.confirm_email.lower() != current_user.email.lower():
+        raise HTTPException(status_code=400, detail="El correo de confirmación no coincide con tu cuenta.")
+    delete_user_account(db, current_user)
+    return {"message": "Cuenta eliminada permanentemente."}

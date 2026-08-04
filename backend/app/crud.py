@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from .models import User, Provider, Review, UserMemory, Conversation, WaitingList, ExternalResource
+from .models import (
+    User, Provider, Service, Review, UserMemory, Conversation, WaitingList,
+    ExternalResource, Favorite, RecommendationFeedback, CaseHistory, ResolutionMetric
+)
 from .schemas import UserRegister, ProviderCreate
 from .auth import get_password_hash
 from uuid import UUID
@@ -178,4 +181,55 @@ def _ensure_provider_exists(db: Session, user: User, business_name: Optional[str
         available_now=False
     )
     db.add(provider)
+    db.commit()
+
+
+def switch_user_role(db: Session, user: User, role: str) -> User:
+    """Migra el rol del usuario entre cliente y proveedor, ajustando permisos
+    y garantizando la fila correspondiente en la tabla de proveedores."""
+    if role not in ("client", "provider"):
+        raise ValueError("Rol no válido")
+
+    user.account_type = role
+    user.is_provider = role == "provider"
+
+    if role == "provider":
+        user.is_admin = False
+        _ensure_provider_exists(db, user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def delete_user_account(db: Session, user: User):
+    """Borrado físico de la cuenta y toda la información asociada."""
+    user_id = user.id
+
+    # Filas que referencian al usuario de forma directa o indirecta
+    db.query(ResolutionMetric).filter(ResolutionMetric.user_id == user_id).delete(synchronize_session=False)
+    db.query(CaseHistory).filter(CaseHistory.user_id == user_id).delete(synchronize_session=False)
+    db.query(RecommendationFeedback).filter(
+        RecommendationFeedback.conversation_id.in_(
+            db.query(Conversation.id).filter(Conversation.user_id == user_id)
+        )
+    ).delete(synchronize_session=False)
+    db.query(Favorite).filter(Favorite.user_id == user_id).delete(synchronize_session=False)
+    db.query(Conversation).filter(Conversation.user_id == user_id).delete(synchronize_session=False)
+    db.query(WaitingList).filter(WaitingList.user_id == user_id).delete(synchronize_session=False)
+    db.query(UserMemory).filter(UserMemory.user_id == user_id).delete(synchronize_session=False)
+    db.query(Review).filter(Review.user_id == user_id).delete(synchronize_session=False)
+
+    # Proveedor asociado (y sus dependencias)
+    provider = db.query(Provider).filter(Provider.id == user_id).first()
+    if provider:
+        db.query(Service).filter(Service.provider_id == user_id).delete(synchronize_session=False)
+        db.query(Favorite).filter(Favorite.provider_id == user_id).delete(synchronize_session=False)
+        db.query(CaseHistory).filter(CaseHistory.provider_id == user_id).delete(synchronize_session=False)
+        db.query(RecommendationFeedback).filter(
+            RecommendationFeedback.provider_id == user_id
+        ).delete(synchronize_session=False)
+        db.query(Review).filter(Review.provider_id == user_id).delete(synchronize_session=False)
+        db.delete(provider)
+
+    db.delete(user)
     db.commit()
