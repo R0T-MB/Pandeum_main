@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import {
@@ -21,14 +21,46 @@ import {
   Loader2,
   Crosshair,
 } from 'lucide-react'
-import { ProviderRecommendation } from '@/types'
+import { ProviderRecommendation, Provider } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { useMap } from 'react-leaflet'
+import { api } from '@/lib/api'
 
 const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false })
 const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false })
 const Marker = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false })
-const CircleMarker = dynamic(() => import('react-leaflet').then(m => m.CircleMarker), { ssr: false })
 const Polyline = dynamic(() => import('react-leaflet').then(m => m.Polyline), { ssr: false })
+
+function MapResizer() {
+  const map = useMap()
+  useEffect(() => {
+    const el = map.getContainer()
+    const observer = new ResizeObserver(() => { map.invalidateSize() })
+    observer.observe(el)
+    const id = setTimeout(() => map.invalidateSize(), 120)
+    return () => { observer.disconnect(); clearTimeout(id) }
+  }, [map])
+  return null
+}
+
+function FitToBounds({ user, points }: { user: [number, number] | null; points: [number, number][] }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!user) return
+    if (points.length === 0) {
+      map.setView(user, 13)
+      return
+    }
+    const bounds = [user, ...points]
+    const allSame = bounds.every((p) => p[0] === bounds[0][0] && p[1] === bounds[0][1])
+    if (allSame) {
+      map.setView(user, 13)
+      return
+    }
+    map.fitBounds(bounds, { padding: [24, 24], maxZoom: 15 })
+  }, [map, user, points])
+  return null
+}
 
 interface RightPanelProps {
   providers?: ProviderRecommendation[]
@@ -91,6 +123,38 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
   const [routeDistance, setRouteDistance] = useState<number | null>(null)
   const [routeDuration, setRouteDuration] = useState<number | null>(null)
   const [routeLoading, setRouteLoading] = useState(false)
+  const [nearbyProviders, setNearbyProviders] = useState<Provider[]>([])
+
+  useEffect(() => {
+    api.get('/providers/')
+      .then(res => setNearbyProviders(res.data))
+      .catch(() => {})
+  }, [])
+
+  const NEARBY_RADIUS_KM = 50
+  const haversineDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLng = (lng2 - lng1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }
+
+  const nearMarkers = useMemo(() => {
+    if (userLat == null || userLng == null) return [] as Provider[]
+    return nearbyProviders.filter(p =>
+      p.location_lat != null && p.location_lng != null &&
+      haversineDistance(userLat, userLng, p.location_lat, p.location_lng) <= NEARBY_RADIUS_KM
+    )
+  }, [nearbyProviders, userLat, userLng])
+
+  const fitPoints: [number, number][] = useMemo(
+    () => nearMarkers.map(p => [p.location_lat!, p.location_lng!]),
+    [nearMarkers]
+  )
 
   useEffect(() => {
     import('leaflet').then((leaflet) => {
@@ -412,7 +476,7 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
 
         {/* Mini Map */}
         <div className="h-28 dark:bg-[#0b0817] bg-gray-100 rounded-2xl dark:border-white/5 border-gray-200 relative overflow-hidden flex items-center justify-center">
-          {L && hasProviderCoords && hasUserCoords ? (
+          {L && hasUserCoords ? (
             <div className="absolute inset-0 overflow-hidden" style={{ contain: 'strict' }}>
               <MapContainer
                 center={[userLat!, userLng!]}
@@ -422,23 +486,49 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
                 zoomControl={false}
                 attributionControl={false}
               >
+                <MapResizer />
+                <FitToBounds user={[userLat!, userLng!]} points={fitPoints} />
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <CircleMarker
-                  center={[userLat!, userLng!]}
-                  radius={5}
-                  pathOptions={{ color: '#22d3ee', fillColor: '#22d3ee', fillOpacity: 1, weight: 2 }}
-                />
                 <Marker
-                  position={[providerLat!, providerLng!]}
+                  position={[userLat!, userLng!]}
+                  zIndexOffset={1000}
                   icon={L.divIcon({
-                    html: `<div style="width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;border:2px solid #a78bfa;color:white;font-size:10px;font-weight:700;">${getInitials(primary.business_name)}</div>`,
-                    className: 'custom-marker-icon',
-                    iconSize: [26, 26],
-                    iconAnchor: [13, 13],
+                    html: `<div class="user-location-pulse"><span class="pulse-ring"></span><span class="pulse-core"></span></div>`,
+                    className: 'user-location-marker',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9],
                   })}
                 />
+                {nearMarkers.map((p) => (
+                  <Marker
+                    key={p.id}
+                    position={[p.location_lat!, p.location_lng!]}
+                    icon={L.divIcon({
+                      html: `<div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;border:2px solid #a78bfa;color:white;font-size:7px;font-weight:700;overflow:hidden;">${
+                        p.avatar_url
+                          ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;" />`
+                          : getInitials(p.business_name)
+                      }</div>`,
+                      className: 'provider-mini-marker',
+                      iconSize: [18, 18],
+                      iconAnchor: [9, 9],
+                    })}
+                  />
+                ))}
+                {hasProviderCoords && (
+                  <Marker
+                    position={[providerLat!, providerLng!]}
+                    zIndexOffset={500}
+                    icon={L.divIcon({
+                      html: `<div style="width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;border:2px solid #a78bfa;color:white;font-size:10px;font-weight:700;box-shadow:0 0 10px rgba(124,58,237,0.5);">${getInitials(primary.business_name)}</div>`,
+                      className: 'custom-marker-icon',
+                      iconSize: [26, 26],
+                      iconAnchor: [13, 13],
+                    })}
+                  />
+                )}
                 {routeCoords && routeCoords.length >= 2 && (
                   <Polyline
                     positions={routeCoords}
@@ -452,7 +542,7 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
           ) : (
             <>
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#8b5cf6_1px,transparent_1px)] [background-size:12px_12px]"></div>
-              {hasProviderCoords && !hasUserCoords && !geoError && (
+              {!hasUserCoords && !geoError && !geoLoading && (
                 <button
                   onClick={requestLocation}
                   className="relative z-10 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-600/20 border border-violet-500/40 text-violet-300 text-[11px] font-semibold hover:bg-violet-600/30 transition"
@@ -461,11 +551,13 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
                   Usar mi ubicación
                 </button>
               )}
-              {hasProviderCoords && hasUserCoords && routeLoading && (
+              {geoLoading && (
                 <Loader2 className="w-5 h-5 text-violet-400 animate-spin relative z-10" />
               )}
-              {hasProviderCoords && hasUserCoords && !routeLoading && routeDistance == null && routeCoords == null && (
-                <span className="relative z-10 text-[11px] text-theme-text-muted">No se pudo cargar el mapa</span>
+              {geoError && !geoLoading && (
+                <span className="relative z-10 text-[11px] text-theme-text-muted text-center px-3">
+                  No se pudo obtener tu ubicación
+                </span>
               )}
             </>
           )}

@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..schemas import (
     UserResponse, UserLogin, Token, ConversationResponse,
-    AccountRoleUpdate, AccountDeleteRequest
+    AccountRoleUpdate, ConvertToProviderRequest, AccountDeleteRequest
 )
 from ..auth import get_current_user
 from ..models import User
 from ..crud import (
     get_user_by_id, get_user_conversations, get_conversation_by_id,
-    switch_user_role, delete_user_account
+    switch_user_role, convert_to_provider, delete_user_account
 )
 from typing import List
 
@@ -63,6 +63,17 @@ def update_my_role(
         updated = switch_user_role(db, current_user, payload.role)
     except ValueError:
         raise HTTPException(status_code=400, detail="Rol no válido. Usa 'client' o 'provider'.")
+    return updated
+
+@router.post("/me/convert-to-provider", response_model=UserResponse)
+def convert_my_account_to_provider(
+    payload: ConvertToProviderRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.is_provider:
+        raise HTTPException(status_code=400, detail="Ya eres un proveedor")
+    updated = convert_to_provider(db, current_user, business_name=payload.business_name)
     return updated
 
 @router.delete("/me", response_model=dict)

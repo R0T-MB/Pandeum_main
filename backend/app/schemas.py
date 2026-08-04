@@ -253,5 +253,8 @@ class UserRoleUpdate(BaseModel):
 class AccountRoleUpdate(BaseModel):
     role: str  # 'client' | 'provider'
 
+class ConvertToProviderRequest(BaseModel):
+    business_name: Optional[str] = None  # nombre del negocio; si es vacío usa el nombre del usuario
+
 class AccountDeleteRequest(BaseModel):
     confirm_email: str  # correo del usuario para confirmar borrado físico

@@ -201,6 +201,18 @@ def switch_user_role(db: Session, user: User, role: str) -> User:
     return user
 
 
+def convert_to_provider(db: Session, user: User, business_name: Optional[str] = None) -> User:
+    """Convierte una cuenta de cliente a proveedor de forma permanente,
+    creando la fila de proveedor correspondiente (si no existe)."""
+    user.account_type = "provider"
+    user.is_provider = True
+    user.is_admin = False
+    _ensure_provider_exists(db, user, business_name=business_name)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def delete_user_account(db: Session, user: User):
     """Borrado físico de la cuenta y toda la información asociada."""
     user_id = user.id

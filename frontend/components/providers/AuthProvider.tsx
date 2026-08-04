@@ -26,6 +26,7 @@ interface AuthContextType {
   logout: () => void
   refreshUser: () => Promise<void>
   switchRole: (role: 'client' | 'provider') => Promise<User>
+  convertToProvider: (businessName?: string) => Promise<User>
   deleteAccount: (confirmEmail: string) => Promise<void>
 }
 
@@ -130,13 +131,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return response.data
   }
 
+  const convertToProvider = async (businessName?: string) => {
+    const response = await api.post('/users/me/convert-to-provider', {
+      business_name: businessName || null,
+    })
+    setUser(response.data)
+    return response.data
+  }
+
   const deleteAccount = async (confirmEmail: string) => {
     await api.delete('/users/me', { data: { confirm_email: confirmEmail } })
     logout()
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isGuest: !loading && !user, login, loginWithGoogle, register, logout, refreshUser, switchRole, deleteAccount }}>
+    <AuthContext.Provider value={{ user, loading, isGuest: !loading && !user, login, loginWithGoogle, register, logout, refreshUser, switchRole, convertToProvider, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   )

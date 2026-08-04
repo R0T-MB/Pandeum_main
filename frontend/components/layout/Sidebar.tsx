@@ -24,10 +24,12 @@ import {
   Loader2,
   Lock,
   LogIn,
+  Store,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 interface SidebarProps {
@@ -37,14 +39,17 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const pathname = usePathname()
-  const { user, isGuest, logout, switchRole, deleteAccount } = useAuth()
+  const router = useRouter()
+  const { user, isGuest, logout, deleteAccount, convertToProvider } = useAuth()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [roleSwitching, setRoleSwitching] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [confirmEmail, setConfirmEmail] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [convertModalOpen, setConvertModalOpen] = useState(false)
+  const [convertBusinessName, setConvertBusinessName] = useState('')
+  const [converting, setConverting] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -67,19 +72,21 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
 
   const isActive = (href: string) => pathname === href
 
-  const handleRoleSwitch = async () => {
-    if (roleSwitching) return
-    setRoleSwitching(true)
-    const newRole = isProvider ? 'client' : 'provider'
+  const handleConvertToProvider = async () => {
+    if (converting) return
+    setConverting(true)
     try {
-      await switchRole(newRole)
-      toast.success(`Rol cambiado a ${newRole === 'provider' ? 'Proveedor' : 'Cliente'}`)
+      await convertToProvider(convertBusinessName.trim() || undefined)
+      setConvertModalOpen(false)
+      setConvertBusinessName('')
+      toast.success('Tu cuenta ahora es de proveedor')
+      router.push('/provider-dashboard')
     } catch (error: any) {
       const detail = error?.response?.data?.detail || error?.message || ''
-      console.error('Role switch error:', detail)
-      toast.error(detail ? `Error: ${detail}` : 'Error al cambiar el rol')
+      console.error('Convert to provider error:', detail)
+      toast.error(detail ? `Error: ${detail}` : 'Error al convertir la cuenta')
     } finally {
-      setRoleSwitching(false)
+      setConverting(false)
     }
   }
 
@@ -185,33 +192,48 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 <h5 className="text-[10px] uppercase tracking-wider text-theme-text-muted mb-2 flex items-center gap-1.5">
                   <ArrowRightLeft className="w-3 h-3" /> Tipo de cuenta
                 </h5>
-                <div className="bg-theme-bg rounded-2xl border border-theme-border p-1 flex gap-1">
-                  <button
-                    onClick={() => !isProvider && handleRoleSwitch()}
-                    disabled={roleSwitching}
-                    className={`flex-1 py-2 rounded-xl text-[11px] font-semibold transition ${
-                      !isProvider
-                        ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30'
-                        : 'text-theme-text-muted hover:text-theme-text'
-                    }`}
-                  >
-                    Cliente
-                  </button>
-                  <button
-                    onClick={() => isProvider && handleRoleSwitch()}
-                    disabled={roleSwitching}
-                    className={`flex-1 py-2 rounded-xl text-[11px] font-semibold transition ${
-                      isProvider
-                        ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30'
-                        : 'text-theme-text-muted hover:text-theme-text'
-                    }`}
-                  >
-                    Proveedor
-                  </button>
-                </div>
-                <p className="text-[9px] text-theme-text-muted mt-2 leading-relaxed">
-                  Al cambiar de rol, tu registro se migra entre tablas y se ajustan tus permisos operativos.
-                </p>
+                {isProvider ? (
+                  <div className="bg-theme-bg rounded-2xl border border-theme-border p-3 flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-violet-600/20 text-violet-400 shrink-0">
+                      <Store className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-semibold text-theme-text">Proveedor</p>
+                      <p className="text-[9px] text-theme-text-muted truncate">Cuenta registrada como negocio o servicio</p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-300 text-[9px] font-semibold">
+                      Fija
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <div className="bg-theme-bg rounded-2xl border border-theme-border p-3 flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-cyan-600/15 text-cyan-400 shrink-0">
+                        <User className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-semibold text-theme-text">Cliente</p>
+                        <p className="text-[9px] text-theme-text-muted truncate">Cuenta registrada al crear tu perfil</p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-lg bg-cyan-600/15 border border-cyan-500/30 text-cyan-300 text-[9px] font-semibold">
+                        Fija
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setConvertBusinessName(user?.full_name || '')
+                        setConvertModalOpen(true)
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2.5 rounded-2xl bg-violet-600/15 border border-violet-500/30 text-violet-300 hover:bg-violet-600/25 transition text-[11px] font-semibold"
+                    >
+                      <Store className="w-3.5 h-3.5" />
+                      Convertir cuenta a proveedor
+                    </button>
+                    <p className="text-[9px] text-theme-text-muted leading-relaxed">
+                      Al convertir, podrás ofrecer tus servicios y gestionar tu negocio en Pandeum.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Mi Compañero */}
@@ -321,6 +343,67 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           </button>
         )}
       </div>
+
+      {/* Modal de conversión a proveedor */}
+      {convertModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => !converting && setConvertModalOpen(false)}>
+          <div
+            className="bg-theme-card border border-theme-border rounded-3xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 text-violet-400">
+              <div className="p-3 rounded-2xl bg-violet-600/20 border border-violet-500/30">
+                <Store className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-theme-text">Convertir a proveedor</h3>
+                <p className="text-xs text-theme-text-muted">Tu cuenta pasará a ser de proveedor de forma permanente.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-theme-text-secondary leading-relaxed bg-theme-bg p-3.5 rounded-2xl border border-theme-border">
+              Podrás ofrecer tus servicios, gestionar tu perfil de negocio, servicios y horarios desde el panel de proveedor. No se podrá volver a una cuenta de cliente.
+            </p>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-wider text-theme-text-muted">
+                Nombre de tu negocio o servicio
+              </label>
+              <input
+                type="text"
+                value={convertBusinessName}
+                onChange={(e) => setConvertBusinessName(e.target.value)}
+                placeholder="Ej: TechSolutions EC"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-theme-bg border border-theme-border text-xs text-theme-text placeholder-theme-text-muted outline-none focus:border-violet-500/40 transition"
+              />
+              <p className="text-[9px] text-theme-text-muted">
+                Si lo dejas vacío se usará tu nombre de perfil.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={() => {
+                  setConvertModalOpen(false)
+                  setConvertBusinessName('')
+                }}
+                disabled={converting}
+                className="flex-1 py-2.5 rounded-xl bg-theme-divider hover:bg-theme-card-hover text-theme-text text-xs font-semibold transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConvertToProvider}
+                disabled={converting}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-violet-600/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {converting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                {converting ? 'Convirtiendo...' : 'Convertir cuenta'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmación para eliminar cuenta */}
       {deleteModalOpen && (
