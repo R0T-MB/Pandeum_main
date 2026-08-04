@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
+import LoginRequired from '@/components/layout/LoginRequired'
 import { Menu, Heart, Loader2, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function FavoritesPage() {
-  const { user } = useAuth()
+  const { user, isGuest } = useAuth()
   const [favorites, setFavorites] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -47,6 +48,17 @@ export default function FavoritesPage() {
       <div className="flex h-screen bg-[#050816] items-center justify-center">
         <Loader2 size={32} className="text-[#7C3AED] animate-spin" />
       </div>
+    )
+  }
+
+  if (isGuest) {
+    return (
+      <LoginRequired
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        title="Inicia sesión para ver tus favoritos"
+        description="Los proveedores que guardes aparecerán aquí. Regístrate o inicia sesión para usarlos."
+      />
     )
   }
 

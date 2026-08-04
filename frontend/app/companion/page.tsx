@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
+import LoginRequired from '@/components/layout/LoginRequired'
+import { useAuth } from '@/components/providers/AuthProvider'
 import { Menu, Sparkles, Gift, Star, MapPin, MessageSquare, Lock, UtensilsCrossed, Heart, Eye, Flower2 } from 'lucide-react'
 
 const ACCESSORIES = [
@@ -12,7 +14,19 @@ const ACCESSORIES = [
 ]
 
 export default function CompanionPage() {
+  const { isGuest } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  if (isGuest) {
+    return (
+      <LoginRequired
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        title="Inicia sesión para usar Mi Compañero"
+        description="Desbloquea a tu asistente IA Pandi, sus accesorios y recompensas al crear una cuenta."
+      />
+    )
+  }
 
   return (
     <div className="flex h-screen bg-[#050816]">

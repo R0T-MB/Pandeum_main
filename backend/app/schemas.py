@@ -198,6 +198,8 @@ class AISolveResponse(BaseModel):
     suggestions_label: Optional[str] = None  # etiqueta para sugerencias de comida (ej: "Sugerencias con pescado")
     suggestions: Optional[List[str]] = None  # lista de sugerencias de platos
     intent_category: Optional[str] = None  # food, clothing, service, product, health, tech, general
+    guest_remaining: Optional[int] = None  # consultas restantes en modo invitado
+    guest_limit: Optional[int] = None  # límite total en modo invitado
 
 # ========== Reviews ==========
 class ReviewCreate(BaseModel):

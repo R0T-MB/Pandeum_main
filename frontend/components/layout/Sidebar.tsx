@@ -22,6 +22,8 @@ import {
   User,
   ShieldAlert,
   Loader2,
+  Lock,
+  LogIn,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from 'next-themes'
@@ -35,7 +37,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const pathname = usePathname()
-  const { user, logout, switchRole, deleteAccount } = useAuth()
+  const { user, isGuest, logout, switchRole, deleteAccount } = useAuth()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -58,9 +60,9 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   const navItems = [
     { href: '/', label: 'Chat', icon: MessageSquare },
     { href: '/map', label: 'Mapa', icon: MapPin },
-    { href: '/favorites', label: 'Favoritos', icon: Heart },
-    { href: '/history', label: 'Historial', icon: History },
-    { href: '/companion', label: 'Mi Compañero', icon: Users },
+    { href: '/favorites', label: 'Favoritos', icon: Heart, locked: isGuest },
+    { href: '/history', label: 'Historial', icon: History, locked: isGuest },
+    { href: '/companion', label: 'Mi Compañero', icon: Users, locked: isGuest },
   ]
 
   const isActive = (href: string) => pathname === href
@@ -114,6 +116,30 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)
+            const isLocked = item.locked
+            const content = (
+              <>
+                <Icon className={`w-5 h-5 ${active ? 'text-violet-400' : ''}`} />
+                <span className="text-sm flex-1">{item.label}</span>
+                {isLocked && <Lock className="w-3.5 h-3.5 text-theme-text-muted" />}
+              </>
+            )
+            if (isLocked) {
+              return (
+                <Link
+                  key={item.href}
+                  href="/login"
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl transition ${
+                    active
+                      ? 'bg-gradient-to-r from-violet-600/30 to-indigo-600/10 text-theme-text font-medium border border-violet-500/30 shadow-sm'
+                      : 'text-theme-text-secondary hover:text-theme-text hover:bg-theme-divider'
+                  }`}
+                >
+                  {content}
+                </Link>
+              )
+            }
             return (
               <Link
                 key={item.href}
@@ -125,8 +151,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                     : 'text-theme-text-secondary hover:text-theme-text hover:bg-theme-divider'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? 'text-violet-400' : ''}`} />
-                <span className="text-sm">{item.label}</span>
+                {content}
               </Link>
             )
           })}
@@ -134,7 +159,7 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
       </div>
 
       <div className="relative space-y-4">
-        {profileOpen && (
+        {profileOpen && !isGuest && (
           <div className="absolute bottom-full left-0 right-0 mb-2 bg-theme-card border border-theme-border rounded-3xl p-3 shadow-2xl shadow-black/50 z-30 animate-slide-up">
             <div className="max-h-[55vh] overflow-y-auto no-scrollbar flex flex-col gap-3 pr-0.5">
               {/* Cabecera de identidad */}
@@ -237,27 +262,38 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           </div>
         )}
 
-        <button
-          onClick={() => setProfileOpen((prev) => !prev)}
-          className={`w-full flex items-center justify-between px-2 py-2 rounded-2xl border transition-colors duration-200 ${
-            profileOpen
-              ? 'bg-theme-card border-violet-500/30'
-              : 'bg-theme-card border-theme-border hover:border-violet-500/20'
-          }`}
-        >
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-9 h-9 rounded-full bg-violet-600/40 border border-violet-500/40 overflow-hidden shrink-0 flex items-center justify-center font-bold text-white text-xs">
-              {userInitials || <User className="w-4 h-4 text-theme-text-muted" />}
+        {isGuest ? (
+          <Link
+            href="/login"
+            onClick={onClose}
+            className="w-full flex items-center justify-center gap-2 px-2 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition shadow-lg shadow-violet-600/25"
+          >
+            <LogIn className="w-4 h-4" />
+            Iniciar sesión
+          </Link>
+        ) : (
+          <button
+            onClick={() => setProfileOpen((prev) => !prev)}
+            className={`w-full flex items-center justify-between px-2 py-2 rounded-2xl border transition-colors duration-200 ${
+              profileOpen
+                ? 'bg-theme-card border-violet-500/30'
+                : 'bg-theme-card border-theme-border hover:border-violet-500/20'
+            }`}
+          >
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-9 h-9 rounded-full bg-violet-600/40 border border-violet-500/40 overflow-hidden shrink-0 flex items-center justify-center font-bold text-white text-xs">
+                {userInitials || <User className="w-4 h-4 text-theme-text-muted" />}
+              </div>
+              <div className="overflow-hidden text-left">
+                <h4 className="text-xs font-semibold text-theme-text truncate">{userName || 'Cuenta'}</h4>
+                <span className="text-[10px] text-theme-text-muted truncate block">
+                  {userEmail || 'Perfil y configuración'}
+                </span>
+              </div>
             </div>
-            <div className="overflow-hidden text-left">
-              <h4 className="text-xs font-semibold text-theme-text truncate">{userName || 'Cuenta'}</h4>
-              <span className="text-[10px] text-theme-text-muted truncate block">
-                {userEmail || 'Perfil y configuración'}
-              </span>
-            </div>
-          </div>
-          <ChevronDown className={`w-4 h-4 text-theme-text-muted shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
-        </button>
+            <ChevronDown className={`w-4 h-4 text-theme-text-muted shrink-0 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+          </button>
+        )}
 
         <div className="flex items-center justify-between bg-theme-card p-1.5 rounded-2xl border border-theme-border transition-colors duration-200">
           {mounted ? (
@@ -275,13 +311,15 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
           )}
         </div>
 
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-theme-text-muted hover:text-red-400 transition"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          Cerrar sesión
-        </button>
+        {!isGuest && (
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 w-full px-3 py-2 text-[11px] text-theme-text-muted hover:text-red-400 transition"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Cerrar sesión
+          </button>
+        )}
       </div>
 
       {/* Modal de confirmación para eliminar cuenta */}

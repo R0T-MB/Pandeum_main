@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_PERIOD: int = 60
 
+    # Guest mode (usuarios sin cuenta)
+    GUEST_CHAT_MAX_PER_HOUR: int = 12
+    GUEST_CHAT_WINDOW_SECONDS: int = 3600
+
     model_config = ConfigDict(env_file=".env")
 
 settings = Settings()

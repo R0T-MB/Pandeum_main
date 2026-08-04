@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
+import LoginRequired from '@/components/layout/LoginRequired'
 import { Menu, History, Heart, MessageSquare } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -20,7 +21,7 @@ interface Favorite {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, isGuest } = useAuth()
   const router = useRouter()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [favorites, setFavorites] = useState<Favorite[]>([])
@@ -30,8 +31,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       loadDashboardData()
+    } else if (isGuest) {
+      setLoading(false)
     }
-  }, [user])
+  }, [user, isGuest])
 
   const loadDashboardData = async () => {
     try {
@@ -62,6 +65,17 @@ export default function DashboardPage() {
           <div className="p-4">Cargando...</div>
         </div>
       </div>
+    )
+  }
+
+  if (isGuest) {
+    return (
+      <LoginRequired
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        title="Inicia sesión para ver tu dashboard"
+        description="Resumen de tu actividad, favoritos y accesos rápidos disponibles al crear una cuenta."
+      />
     )
   }
 

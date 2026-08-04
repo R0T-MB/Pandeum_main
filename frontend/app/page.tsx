@@ -12,6 +12,7 @@ import { SuggestionDrawer } from '@/components/layout/SuggestionDrawer'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Conversation, Message, ProviderRecommendation } from '@/types'
 import {
   Store,
@@ -40,7 +41,7 @@ const exampleProblems = [
 ]
 
 export default function HomePage() {
-  const { user } = useAuth()
+  const { user, isGuest } = useAuth()
   const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -53,6 +54,8 @@ export default function HomePage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const [inputValue, setInputValue] = useState('')
+  const [guestBlocked, setGuestBlocked] = useState(false)
+  const [guestRemaining, setGuestRemaining] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadConversation = useCallback(async (conversationId: string) => {
@@ -106,6 +109,10 @@ export default function HomePage() {
 
   const handleSendMessage = async (problem: string) => {
     if (!problem.trim()) return
+    if (isGuest && guestBlocked) {
+      toast.error('Alcanzaste el límite del modo invitado. Inicia sesión para continuar.')
+      return
+    }
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -129,6 +136,9 @@ export default function HomePage() {
         .filter(Boolean) as Array<{ problem_text: string; ai_response: unknown }>
 
       const aiData = await aiApi.solve(problem, contextMessages)
+      if (aiData.guest_remaining != null) {
+        setGuestRemaining(aiData.guest_remaining)
+      }
       if (aiData.conversation_id) {
         setCurrentConversationId(aiData.conversation_id)
         router.replace(`/?conversation=${aiData.conversation_id}`, { scroll: false })
@@ -144,7 +154,12 @@ export default function HomePage() {
       const status = error?.response?.status || ''
       const detail = error?.response?.data?.detail || error?.message || ''
       console.error('Chat error:', { status, detail, url: '/ai/solve' })
-      toast.error(detail ? `Error: ${detail}` : 'Error al procesar tu consulta')
+      if (status === 429 && isGuest) {
+        setGuestBlocked(true)
+        toast.error('Alcanzaste el límite del modo invitado. Inicia sesión para continuar.')
+      } else {
+        toast.error(detail ? `Error: ${detail}` : 'Error al procesar tu consulta')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -281,6 +296,33 @@ export default function HomePage() {
 
         {/* Input + Filters */}
         <div className="max-w-4xl mx-auto w-full mt-6">
+          {isGuest && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-theme-surface border border-theme-border mb-3 shadow-lg">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-1.5 rounded-xl bg-violet-600/20 text-violet-400 shrink-0">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] text-theme-text-secondary truncate">
+                  Modo invitado: usa el chat y el mapa sin registrarte.
+                  {guestRemaining != null && !guestBlocked && (
+                    <span className="text-theme-text-muted"> Quedan <span className="text-violet-400 font-semibold">{guestRemaining}</span> consultas.</span>
+                  )}
+                  {guestBlocked && (
+                    <span className="text-rose-400 font-semibold"> Alcanzaste el límite de consultas.</span>
+                  )}
+                </p>
+              </div>
+              {guestBlocked && (
+                <Link
+                  href="/login"
+                  className="shrink-0 px-3.5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-[11px] font-bold transition"
+                >
+                  Inicia sesión
+                </Link>
+              )}
+            </div>
+          )}
+
           <div className="bg-theme-surface border border-theme-border rounded-2xl p-2 flex items-center justify-between mb-3 shadow-2xl transition-colors duration-200">
             <div className="flex items-center gap-3 px-3 flex-1">
               <Paperclip className="w-5 h-5 text-theme-text-muted cursor-pointer hover:text-theme-text transition" />
@@ -289,8 +331,9 @@ export default function HomePage() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Cuéntame qué necesitas..."
-                className="bg-transparent border-none outline-none text-sm text-theme-text placeholder-[var(--color-text-muted)] w-full"
+                disabled={isGuest && guestBlocked}
+                placeholder={guestBlocked ? 'Límite alcanzado. Inicia sesión para seguir.' : 'Cuéntame qué necesitas...'}
+                className="bg-transparent border-none outline-none text-sm text-theme-text placeholder-[var(--color-text-muted)] w-full disabled:opacity-50"
               />
             </div>
             <button
@@ -300,7 +343,7 @@ export default function HomePage() {
                   setInputValue('')
                 }
               }}
-              disabled={isLoading}
+              disabled={isLoading || (isGuest && guestBlocked)}
               className="w-10 h-10 rounded-xl bg-violet-600 hover:bg-violet-500 text-white flex items-center justify-center shadow-lg shadow-violet-600/30 transition disabled:opacity-50"
             >
               <Send className="w-4 h-4" />

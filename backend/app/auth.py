@@ -14,6 +14,7 @@ from .models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -88,7 +89,23 @@ def get_current_user(
     db: Session = Depends(get_db)
 ) -> User:
     token = credentials.credentials
+    user = _resolve_user_from_token(db, token)
+    if user:
+        return user
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido o expirado")
 
+def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Igual que get_current_user pero devuelve None si no hay token
+    o el token no es válido. No lanza 401. Usado para endpoints públicos
+    con funcionalidad limitada para invitados."""
+    if not credentials:
+        return None
+    return _resolve_user_from_token(db, credentials.credentials)
+
+def _resolve_user_from_token(db: Session, token: str) -> Optional[User]:
     try:
         payload = jose_jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         if payload.get("type") == "access":
@@ -104,7 +121,7 @@ def get_current_user(
     if clerk_payload:
         clerk_user_id = clerk_payload.get("sub")
         if not clerk_user_id:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token de Clerk inválido: sin sub")
+            return None
 
         user = db.query(User).filter(User.clerk_user_id == clerk_user_id).first()
         if user:
@@ -112,10 +129,7 @@ def get_current_user(
 
         email = clerk_payload.get("email") or clerk_payload.get("email_address")
         if not email:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="No se pudo obtener email del token de Clerk"
-            )
+            return None
 
         full_name = clerk_payload.get("name")
         email_verified = clerk_payload.get("email_verified", False)
@@ -145,7 +159,7 @@ def get_current_user(
         db.refresh(user)
         return user
 
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido o expirado")
+    return None
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     return current_user

@@ -5,12 +5,13 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import { Conversation } from '@/types'
 import Sidebar from '@/components/layout/Sidebar'
+import LoginRequired from '@/components/layout/LoginRequired'
 import { Menu, History, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
 export default function HistoryPage() {
-  const { user } = useAuth()
+  const { user, isGuest } = useAuth()
   const router = useRouter()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,6 +48,17 @@ export default function HistoryPage() {
       <div className="flex h-screen bg-[#050816] items-center justify-center">
         <Loader2 size={32} className="text-[#7C3AED] animate-spin" />
       </div>
+    )
+  }
+
+  if (isGuest) {
+    return (
+      <LoginRequired
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        title="Inicia sesión para ver tu historial"
+        description="Todas tus conversaciones con Pandeum IA quedarán guardadas aquí al crear una cuenta."
+      />
     )
   }
 

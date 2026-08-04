@@ -3,20 +3,53 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..schemas import ProblemRequest, AISolveResponse
 from ..ai_engine import AIEngine
-from ..auth import get_current_user, get_current_active_user
+from ..auth import get_optional_current_user
 from ..models import User
 from ..crud import get_user_memory, save_conversation, add_to_waiting_list, get_external_resources, get_user_conversations
+from ..utils.guest_limit import GuestUsageTracker
+from ..config import settings
 from typing import Optional
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
+_guest_tracker = GuestUsageTracker(
+    max_requests=settings.GUEST_CHAT_MAX_PER_HOUR,
+    window_seconds=settings.GUEST_CHAT_WINDOW_SECONDS,
+)
+
+def _guest_key(request: Request) -> str:
+    # Si está detrás de un proxy, usar X-Forwarded-For: 1º IP
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    client = request.client
+    return f"guest:{client.host if client else 'unknown'}:{settings.GUEST_CHAT_WINDOW_SECONDS}"
+
 @router.post("/solve", response_model=AISolveResponse)
 async def solve_problem(
     request: ProblemRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)  # opcional
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     user_id = str(current_user.id) if current_user else None
+
+    # En modo invitado aplicar límite de consultas por IP
+    if not user_id:
+        key = _guest_key(http_request)
+        if not _guest_tracker.check(key):
+            raise HTTPException(
+                status_code=429,
+                detail="Alcanzaste el límite de consultas del modo invitado. Inicia sesión para continuar."
+            )
+    else:
+        key = None
+
+    guest_remaining = None
+    guest_limit = None
+    if not user_id:
+        guest_remaining = _guest_tracker.remaining(key)  # type: ignore[arg-type]
+        guest_limit = settings.GUEST_CHAT_MAX_PER_HOUR
     
     # Obtener memoria contextual si usuario autenticado
     memory_context = None
@@ -52,6 +85,11 @@ async def solve_problem(
         memory_context=memory_context,
         conversation_context=conversation_context
     )
+
+    # Registrar consulta de invitado solo si la IA respondió
+    if not user_id:
+        _guest_tracker.record(key)  # type: ignore[arg-type]
+        guest_remaining = _guest_tracker.remaining(key)  # type: ignore[arg-type]
     
     # Normalizar fallback para asegurar que sea dict
     fallback = result.get("fallback")
@@ -104,14 +142,18 @@ async def solve_problem(
         external = get_external_resources(db, category="general")  # simplificado
         if external:
             result["fallback"]["guides"] = [{"title": r.title, "url": r.url} for r in external]
-    
+
+    if guest_remaining is not None:
+        result["guest_remaining"] = guest_remaining
+        result["guest_limit"] = guest_limit
+
     return result
 
 @router.post("/explore")
 async def explore_mode(
     request: ProblemRequest,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     # Modo exploración no guarda conversación igual, solo devuelve ideas
     result = await AIEngine.explore_mode(
