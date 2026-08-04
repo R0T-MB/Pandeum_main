@@ -12,6 +12,7 @@ from ..crud import get_or_create_user_from_clerk
 from ..config import settings
 import httpx
 import logging
+import hashlib
 
 logger = logging.getLogger("pandeum")
 
@@ -68,12 +69,15 @@ def clerk_sync(
     db: Session = Depends(get_db)
 ):
     expected = settings.CLERK_SYNC_SECRET
+    # Fingerprint enmascarado para diagnosticar el 403 sin exponer el secreto.
+    # Muestra longitud + sha256 corto; si los dos fingerprint difieren => los
+    # secretos (Vercel vs Railway) no coinciden.
+    def _fp(s: str | None) -> str:
+        return (hashlib.sha256(s.encode()).hexdigest()[:12] + f"/{len(s)}") if s else "missing"
     logger.info(
-        "[clerk-sync] expected_secret_exists=%s expected_len=%s received_secret_exists=%s received_len=%s",
-        bool(expected),
-        len(expected) if expected else 0,
-        bool(x_clerk_sync_secret),
-        len(x_clerk_sync_secret) if x_clerk_sync_secret else 0,
+        "[clerk-sync] expected_fp=%s received_fp=%s",
+        _fp(expected),
+        _fp(x_clerk_sync_secret),
     )
     if not expected:
         raise HTTPException(status_code=503, detail="Clerk sync no configurado")
