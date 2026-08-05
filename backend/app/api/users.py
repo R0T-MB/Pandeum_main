@@ -7,6 +7,7 @@ from ..schemas import (
 )
 from ..auth import get_current_user
 from ..models import User
+from ..config import settings
 from ..crud import (
     get_user_by_id, get_user_conversations, get_conversation_by_id,
     switch_user_role, convert_to_provider, delete_user_account
@@ -16,7 +17,18 @@ from typing import List
 router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # El super admin (fundador) conserva su admin de forma permanente.
+    # Auto-reparación: si por el motivo que sea el flag se perdió, se restaura
+    # al consultar /users/me (lo que usa el frontend para decidir el panel).
+    super_admin_email = (settings.SUPER_ADMIN_EMAIL or "").strip().lower()
+    if super_admin_email and current_user.email and current_user.email.strip().lower() == super_admin_email and not current_user.is_admin:
+        current_user.is_admin = True
+        db.commit()
+        db.refresh(current_user)
     return current_user
 
 @router.put("/me")
