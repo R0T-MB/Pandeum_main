@@ -128,10 +128,14 @@ def get_or_create_user_from_clerk(
         if user.email_verified != email_verified:
             user.email_verified = email_verified
             changed = True
-        if user.account_type != account_type:
-            user.account_type = account_type
-            user.is_provider = (account_type == "provider")
-            user.is_admin = (account_type == "admin")
+        # El sync de login nunca degrada a un proveedor existente. Si el
+        # payload llega con "client" (default del frontend sin flag en
+        # localStorage), un proveedor registrado se conservaría como tal.
+        # Solo se permite escalar client -> provider (registro/upgrade).
+        if user.account_type != account_type and account_type == "provider":
+            user.account_type = "provider"
+            user.is_provider = True
+            user.is_admin = False
             changed = True
         if changed:
             db.commit()
@@ -142,9 +146,16 @@ def get_or_create_user_from_clerk(
     if user and not user.clerk_user_id:
         user.clerk_user_id = clerk_user_id
         user.email_verified = email_verified
-        user.account_type = account_type
-        user.is_provider = (account_type == "provider")
-        user.is_admin = (account_type == "admin")
+        # Cuenta legacy (pre-Clerk): conservar el rol de proveedor existente.
+        # El sync solo sube a provider si el payload lo indica explícitamente;
+        # nunca degrada a quien ya es proveedor.
+        if account_type == "provider" or user.is_provider:
+            user.account_type = "provider"
+            user.is_provider = True
+        else:
+            user.account_type = "client"
+            user.is_provider = False
+        user.is_admin = False
         if full_name:
             user.full_name = full_name
         db.commit()

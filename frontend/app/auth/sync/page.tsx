@@ -49,7 +49,10 @@ export default function SyncPage() {
         localStorage.removeItem('account_type')
         localStorage.removeItem('business_name')
 
-        if (accountType === 'provider') {
+        const data = await res.json()
+        const isProvider = data?.is_provider === true
+
+        if (isProvider) {
           router.replace('/provider-dashboard')
         } else {
           router.replace('/')
