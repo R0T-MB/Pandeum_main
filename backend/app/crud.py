@@ -6,6 +6,7 @@ from .models import (
 )
 from .schemas import UserRegister, ProviderCreate
 from .auth import get_password_hash
+from .config import settings
 from uuid import UUID
 from typing import Optional
 
@@ -116,6 +117,10 @@ def get_or_create_user_from_clerk(
     # Restringir account_type: client/provider únicamente (nunca admin vía sync)
     if account_type not in ("client", "provider"):
         account_type = "client"
+    # El super admin (fundador) se identifica por email: su admin es PERMANENTE.
+    # El sync nunca degrada is_admin; además se garantiza admin para el fundador.
+    super_admin_email = (settings.SUPER_ADMIN_EMAIL or "").strip().lower()
+    is_founder = bool(super_admin_email and email and email.strip().lower() == super_admin_email)
     user = get_user_by_clerk_id(db, clerk_user_id)
     if user:
         changed = False
@@ -135,7 +140,10 @@ def get_or_create_user_from_clerk(
         if user.account_type != account_type and account_type == "provider":
             user.account_type = "provider"
             user.is_provider = True
-            user.is_admin = False
+            changed = True
+        # Garantizar admin permanente al fundador (nunca se lo quita el sync)
+        if is_founder and not user.is_admin:
+            user.is_admin = True
             changed = True
         if changed:
             db.commit()
@@ -155,7 +163,9 @@ def get_or_create_user_from_clerk(
         else:
             user.account_type = "client"
             user.is_provider = False
-        user.is_admin = False
+        # El sync nunca degrada is_admin; el fundador siempre conserva su admin.
+        if is_founder:
+            user.is_admin = True
         if full_name:
             user.full_name = full_name
         db.commit()
@@ -172,7 +182,7 @@ def get_or_create_user_from_clerk(
         email_verified=email_verified,
         account_type=account_type,
         is_provider=(account_type == "provider"),
-        is_admin=(account_type == "admin"),
+        is_admin=is_founder,
         password_hash=None
     )
     db.add(user)
