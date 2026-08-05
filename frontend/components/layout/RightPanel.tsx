@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import {
@@ -173,11 +173,16 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
   const hasProviderCoords = providerLat != null && providerLng != null
   const hasUserCoords = userLat != null && userLng != null
 
+  const requestedLocationFor = useRef<string | null>(null)
+
   useEffect(() => {
+    if (!primary?.provider_id) return
+    if (requestedLocationFor.current === primary.provider_id) return
     if (hasProviderCoords && userLat === null && userLng === null && !geoLoading) {
+      requestedLocationFor.current = primary.provider_id
       requestLocation()
     }
-  }, [primary?.provider_id])
+  }, [primary?.provider_id, hasProviderCoords, userLat, userLng, geoLoading, requestLocation])
 
   const fetchRoute = useCallback(() => {
     if (userLat == null || userLng == null || !hasProviderCoords) {

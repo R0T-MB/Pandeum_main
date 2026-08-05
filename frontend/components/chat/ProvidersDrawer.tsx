@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Star, MapPin, Clock, Zap, Tag, Phone, Loader2, Mail, Globe, MessageCircle, ExternalLink, User, Navigation, X } from 'lucide-react'
 import { ProviderRecommendation } from '@/types'
@@ -66,12 +66,12 @@ export function ProvidersDrawer({
     }
   }, [isOpen, providers, userLat, userLng, geoLoading, geoError, requestLocation])
 
-  const getProviderDistance = (p: ProviderRecommendation): number | null => {
+  const getProviderDistance = useCallback((p: ProviderRecommendation): number | null => {
     if (userLat != null && userLng != null && p.location_lat != null && p.location_lng != null) {
       return haversineDistance(userLat, userLng, p.location_lat, p.location_lng)
     }
     return p.distance_km ?? null
-  }
+  }, [userLat, userLng])
 
   const sortedProviders = useMemo(() => {
     const list = [...providers]
@@ -109,7 +109,7 @@ export function ProvidersDrawer({
       default:
         return list
     }
-  }, [providers, activeSort, userLat, userLng])
+  }, [providers, activeSort, getProviderDistance])
 
   /* ── Desktop: slide-over drawer ── */
   /* ── Mobile: full-screen overlay  ── */

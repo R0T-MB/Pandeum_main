@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image, ExternalLink, LayoutDashboard, User, BarChart3, Settings, Eye, TrendingUp, Zap, Star } from 'lucide-react'
+import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image as ImageIcon, ExternalLink, LayoutDashboard, User, BarChart3, Settings, Eye, TrendingUp, Zap, Star } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Provider, Service } from '@/types'
@@ -180,7 +180,7 @@ export default function ProviderDashboardPage() {
     { key: 'overview', label: 'Vista general', icon: LayoutDashboard },
     { key: 'profile', label: 'Perfil público', icon: User },
     { key: 'services', label: 'Servicios', icon: Briefcase },
-    { key: 'gallery', label: 'Galería', icon: Image },
+    { key: 'gallery', label: 'Galería', icon: ImageIcon },
     { key: 'schedule_location', label: 'Horarios y ubicación', icon: Clock },
     { key: 'contact', label: 'Contacto y redes', icon: MessageCircle },
     { key: 'stats', label: 'Estadísticas', icon: BarChart3 },
@@ -193,15 +193,7 @@ export default function ProviderDashboardPage() {
     }
   }, [user, authLoading, router])
 
-  useEffect(() => {
-    if (user && user.is_provider) {
-      loadData()
-    } else if (user && !user.is_provider) {
-      setLoading(false)
-    }
-  }, [user])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     setProviderLoadError(false)
     try {
@@ -248,7 +240,15 @@ export default function ProviderDashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (user && user.is_provider) {
+      loadData()
+    } else if (user && !user.is_provider) {
+      setLoading(false)
+    }
+  }, [user, loadData])
 
   const handleFormChange = (key: string, value: string | boolean | unknown[]) => {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -823,7 +823,7 @@ export default function ProviderDashboardPage() {
                       ) : (
                         <div className="flex flex-col items-center gap-3">
                           <div className="w-16 h-16 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center">
-                            <Image size={24} className="text-[#9CA3AF]" strokeWidth={1.5} />
+                            <ImageIcon size={24} className="text-[#9CA3AF]" strokeWidth={1.5} />
                           </div>
                           <div className="text-center">
                             <label className="cursor-pointer inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#6D5EF8]/10 border border-[#6D5EF8]/30 text-[#6D5EF8] text-sm font-medium hover:bg-[#6D5EF8]/20 transition-all duration-200">
@@ -869,7 +869,7 @@ export default function ProviderDashboardPage() {
                       ) : (
                         <div className="flex flex-col items-center gap-3">
                           <div className="w-16 h-16 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center">
-                            <Image size={24} className="text-[#9CA3AF]" strokeWidth={1.5} />
+                            <ImageIcon size={24} className="text-[#9CA3AF]" strokeWidth={1.5} />
                           </div>
                           <div className="text-center">
                             <label className="cursor-pointer inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#6D5EF8]/10 border border-[#6D5EF8]/30 text-[#6D5EF8] text-sm font-medium hover:bg-[#6D5EF8]/20 transition-all duration-200">
@@ -1086,7 +1086,7 @@ export default function ProviderDashboardPage() {
               <div className={cardClass}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-10 h-10 rounded-xl bg-[#6D5EF8]/10 flex items-center justify-center">
-                    <Image size={18} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                    <ImageIcon size={18} className="text-[#6D5EF8]" strokeWidth={1.75} />
                   </div>
                   <div>
                     <h2 className="text-base font-semibold text-white">Galería</h2>
@@ -1130,7 +1130,7 @@ export default function ProviderDashboardPage() {
                   ) : (
                     <div className="text-center py-10">
                       <div className="w-16 h-16 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-4">
-                        <Image size={28} className="text-[#1E2D4A]" strokeWidth={1.5} />
+                        <ImageIcon size={28} className="text-[#1E2D4A]" strokeWidth={1.5} />
                       </div>
                       <p className="text-sm text-[#9CA3AF] max-w-md mx-auto leading-relaxed">
                         Aún no has subido imágenes. Agrega fotos de tus trabajos, productos o servicios.

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Navigation, ExternalLink, Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { api } from '@/lib/api'
@@ -85,11 +85,16 @@ export function RouteMapModal({ isOpen, onClose, provider }: RouteMapModalProps)
     })
   }, [])
 
+  const locationRequestedRef = useRef(false)
+
   useEffect(() => {
-    if (isOpen && userLat === null && userLng === null && !geoLoading) {
+    if (isOpen && userLat === null && userLng === null && !geoLoading && !locationRequestedRef.current) {
+      locationRequestedRef.current = true
       requestLocation()
+    } else if (!isOpen) {
+      locationRequestedRef.current = false
     }
-  }, [isOpen])
+  }, [isOpen, userLat, userLng, geoLoading, requestLocation])
 
   useEffect(() => {
     if (!isOpen || !provider) return

@@ -98,7 +98,7 @@ export function SuggestionDrawer({ isOpen, onClose, providers = [] }: Suggestion
                   </div>
                   {featured.reason_bullets.length > 0 && (
                     <p className="text-xs text-[#AEB5C5] mt-2 leading-relaxed line-clamp-2 italic">
-                      "{featured.reason_bullets[0]}"
+                      &ldquo;{featured.reason_bullets[0]}&rdquo;
                     </p>
                   )}
                 </div>

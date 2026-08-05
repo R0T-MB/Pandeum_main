@@ -17,7 +17,7 @@ export default function FavoritesPage() {
   useEffect(() => {
     if (user) {
       loadFavorites()
-    } else if (!user && !loading) {
+    } else {
       setLoading(false)
     }
   }, [user])

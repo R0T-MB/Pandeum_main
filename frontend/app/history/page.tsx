@@ -20,7 +20,7 @@ export default function HistoryPage() {
   useEffect(() => {
     if (user) {
       loadHistory()
-    } else if (!user && !loading) {
+    } else {
       setLoading(false)
     }
   }, [user])

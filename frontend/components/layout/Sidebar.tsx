@@ -67,7 +67,9 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     { href: '/map', label: 'Mapa', icon: MapPin },
     { href: '/favorites', label: 'Favoritos', icon: Heart, locked: isGuest },
     { href: '/history', label: 'Historial', icon: History, locked: isGuest },
-    { href: '/companion', label: 'Mi Compañero', icon: Users, locked: isGuest },
+    isProvider
+      ? { href: '/provider-dashboard', label: 'Panel de Proveedor', icon: Store }
+      : { href: '/companion', label: 'Mi Compañero', icon: Users, locked: isGuest },
   ]
 
   const isActive = (href: string) => pathname === href
@@ -236,21 +238,38 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                 )}
               </div>
 
-              {/* Mi Compañero */}
-              <Link
-                href="/companion"
-                onClick={onClose}
-                className="flex items-center gap-2.5 px-2 py-2.5 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-theme-text hover:bg-indigo-600/20 transition"
-              >
-                <div className="p-1.5 rounded-xl bg-indigo-600/20 text-indigo-400">
-                  <Bot className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-semibold text-theme-text truncate">Mi Compañero</p>
-                  <p className="text-[9px] text-theme-text-muted truncate">Configuración y accesos del asistente IA</p>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-theme-text-muted rotate-[-90deg]" />
-              </Link>
+              {/* Panel de Proveedor / Mi Compañero */}
+              {isProvider ? (
+                <Link
+                  href="/provider-dashboard"
+                  onClick={onClose}
+                  className="flex items-center gap-2.5 px-2 py-2.5 rounded-2xl bg-violet-600/10 border border-violet-500/20 text-theme-text hover:bg-violet-600/20 transition"
+                >
+                  <div className="p-1.5 rounded-xl bg-violet-600/20 text-violet-400">
+                    <Store className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-theme-text truncate">Panel de Proveedor</p>
+                    <p className="text-[9px] text-theme-text-muted truncate">Gestiona tu negocio y servicios en Pandeum</p>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-theme-text-muted rotate-[-90deg]" />
+                </Link>
+              ) : (
+                <Link
+                  href="/companion"
+                  onClick={onClose}
+                  className="flex items-center gap-2.5 px-2 py-2.5 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-theme-text hover:bg-indigo-600/20 transition"
+                >
+                  <div className="p-1.5 rounded-xl bg-indigo-600/20 text-indigo-400">
+                    <Bot className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-theme-text truncate">Mi Compañero</p>
+                    <p className="text-[9px] text-theme-text-muted truncate">Configuración y accesos del asistente IA</p>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-theme-text-muted rotate-[-90deg]" />
+                </Link>
+              )}
 
               {/* Configuración y Seguridad */}
               <div className="px-1">

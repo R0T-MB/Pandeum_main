@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { useAuth } from '@/components/providers/AuthProvider'
@@ -44,7 +44,7 @@ export default function PublicProviderProfile() {
   const [galleryModal, setGalleryModal] = useState<{ images: { url: string; title?: string }[]; index: number } | null>(null)
   const [scheduleOpen, setScheduleOpen] = useState(false)
 
-  const loadProvider = () => {
+  const loadProvider = useCallback(() => {
     if (!id) return
     setLoading(true)
     setError(false)
@@ -52,20 +52,20 @@ export default function PublicProviderProfile() {
       .then(res => setProvider(res.data as ProviderPublic))
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }
+  }, [id])
 
-  useEffect(() => { loadProvider() }, [id])
+  useEffect(() => { loadProvider() }, [loadProvider])
 
-  const loadReviews = () => {
+  const loadReviews = useCallback(() => {
     if (!id) return
     setReviewsLoading(true)
     api.get(`/providers/${id}/reviews`)
       .then(res => setReviews(res.data as Review[]))
       .catch(() => {})
       .finally(() => setReviewsLoading(false))
-  }
+  }, [id])
 
-  useEffect(() => { loadReviews() }, [id])
+  useEffect(() => { loadReviews() }, [loadReviews])
 
   const handleSubmitReview = async () => {
     if (!user) { toast.error('Debes iniciar sesión para calificar a este proveedor.'); return }
