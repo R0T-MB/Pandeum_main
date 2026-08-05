@@ -49,8 +49,11 @@ def update_user_role(
     user = db.query(User).filter(User.id == str(user_id)).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    # El super admin (fundador tiene autoridad total (incluido su propio rol.
+    # El super admin (fundador) tiene autoridad total sobre OTROS admins/usuarios.
+    # Su propio rol de admin es PERMANENTE: no puede desactivarse a sí mismo.
     if is_super_admin(admin):
+        if user.id == admin.id and role_data.is_admin is False:
+            raise HTTPException(status_code=403, detail="El rol de super admin es permanente y no puedes eliminarlo")
         user.is_admin = role_data.is_admin
         db.commit()
         db.refresh(user)

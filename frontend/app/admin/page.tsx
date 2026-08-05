@@ -343,9 +343,11 @@ export default function AdminPage() {
                             {u.is_provider ? 'Proveedor' : 'Cliente'}
                           </span>
                           {u.is_admin && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-medium flex items-center gap-1">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-lg font-medium flex items-center gap-1 ${
+                              u.is_super_admin ? 'bg-amber-500/20 border border-amber-500/50 text-amber-300' : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
+                            }`}>
                               <ShieldCheck size={10} strokeWidth={2} />
-                              Admin
+                              {u.is_super_admin ? 'Super Admin' : 'Admin'}
                             </span>
                           )}
                         </div>
@@ -353,9 +355,13 @@ export default function AdminPage() {
                       {[
                         (() => {
                           // Reglas de permiso por fila, espejo del backend:
-                          // - Super admin (fundador): autoridad total (propio y demás admins)
+                          // - Super admin (fundador): autoridad total, pero su rol es PERMANENTE
+                          //   (no puede degradarse a sí mismo; el botón de "quitar admin" no aparece)
                           // - Admin normal: no puede tocar su propio rol ni el de otros admins
                           if (!user.is_super_admin && (u.id === user.id || u.is_admin)) {
+                            return null
+                          }
+                          if (user.is_super_admin && u.id === user.id) {
                             return null
                           }
                           if (u.is_admin) {
