@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 from ..database import get_db
 from ..schemas import ProviderResponse, UserResponse, ProviderVerification, UserRoleUpdate
-from ..auth import get_current_admin_user
+from ..auth import get_current_admin_user, is_super_admin
 from ..models import User, Provider
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -49,6 +49,18 @@ def update_user_role(
     user = db.query(User).filter(User.id == str(user_id)).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    # El super admin (fundador tiene autoridad total (incluido su propio rol.
+    if is_super_admin(admin):
+        user.is_admin = role_data.is_admin
+        db.commit()
+        db.refresh(user)
+        return user
+    # Para el resto de administradores: no pueden modificar su propio rol...
+    if user.id == admin.id:
+        raise HTTPException(status_code=403, detail="No puedes modificar tu propio rol")
+    # ...ni modificar el rol de otro administrador
+    if user.is_admin:
+        raise HTTPException(status_code=403, detail="No tienes permisos para modificar a otro administrador")
     user.is_admin = role_data.is_admin
     db.commit()
     db.refresh(user)

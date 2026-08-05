@@ -350,19 +350,40 @@ export default function AdminPage() {
                           )}
                         </div>
                       </div>
-                      <button
-                        onClick={() => toggleAdmin(u)}
-                        disabled={actingId === u.id || u.id === user.id}
-                        title={u.id === user.id ? 'No puedes quitar tu propio admin' : (u.is_admin ? 'Quitar admin' : 'Marcar como admin')}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 disabled:opacity-50 flex-shrink-0 ${
-                          u.is_admin
-                            ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
-                            : 'bg-[#151E2F] border border-[#1E2D4A] text-[#9CA3AF] hover:border-[#6D5EF8]/50 hover:text-white'
-                        }`}
-                      >
-                        {actingId === u.id ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} strokeWidth={1.75} />}
-                        {u.is_admin ? 'Quitar admin' : 'Ser admin'}
-                      </button>
+                      {[
+                        (() => {
+                          // Reglas de permiso por fila, espejo del backend:
+                          // - Super admin (fundador): autoridad total (propio y demás admins)
+                          // - Admin normal: no puede tocar su propio rol ni el de otros admins
+                          if (!user.is_super_admin && (u.id === user.id || u.is_admin)) {
+                            return null
+                          }
+                          if (u.is_admin) {
+                            return (
+                              <button
+                                onClick={() => toggleAdmin(u)}
+                                disabled={actingId === u.id}
+                                title="Quitar admin"
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs font-medium transition-all duration-200 disabled:opacity-50 flex-shrink-0"
+                              >
+                                {actingId === u.id ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} strokeWidth={1.75} />}
+                                Quitar admin
+                              </button>
+                            )
+                          }
+                          return (
+                            <button
+                              onClick={() => toggleAdmin(u)}
+                              disabled={actingId === u.id}
+                              title="Marcar como admin"
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#151E2F] border border-[#1E2D4A] text-[#9CA3AF] hover:border-[#6D5EF8]/50 hover:text-white text-xs font-medium transition-all duration-200 disabled:opacity-50 flex-shrink-0"
+                            >
+                              {actingId === u.id ? <Loader2 size={13} className="animate-spin" /> : <ShieldCheck size={13} strokeWidth={1.75} />}
+                              Hacer admin
+                            </button>
+                          )
+                        })(),
+                      ]}
                     </div>
                   ))}
                   {usersList.length === 0 && (

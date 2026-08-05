@@ -5,6 +5,7 @@ export interface User {
   city: string | null;
   is_provider: boolean;
   is_admin: boolean;
+  is_super_admin?: boolean;
   clerk_user_id?: string | null;
   email_verified?: boolean;
   account_type?: string;

@@ -168,3 +168,8 @@ def get_current_admin_user(current_user: User = Depends(get_current_user)) -> Us
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos de administrador")
     return current_user
+
+def is_super_admin(user: User) -> bool:
+    """El super admin (fundador) se identifica por email vía variable de entorno.
+    Tiene autoridad total, incluida la gestión de otros administradores."""
+    return user.is_super_admin

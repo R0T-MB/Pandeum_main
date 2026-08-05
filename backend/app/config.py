@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     CLERK_JWKS_URL: Optional[str] = None
     CLERK_SYNC_SECRET: str = ""
 
+    # Super admin (fundador): email con autoridad total sobre admins
+    SUPER_ADMIN_EMAIL: Optional[str] = None
+
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_PERIOD: int = 60

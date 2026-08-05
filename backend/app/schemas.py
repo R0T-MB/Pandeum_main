@@ -32,6 +32,7 @@ class UserResponse(BaseModel):
     city: Optional[str]
     is_provider: bool
     is_admin: bool
+    is_super_admin: bool = False
     clerk_user_id: Optional[str] = None
     email_verified: Optional[bool] = None
     account_type: Optional[str] = "client"

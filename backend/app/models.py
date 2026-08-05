@@ -32,6 +32,14 @@ class User(Base):
     favorites = relationship("Favorite", back_populates="user")
     user_memory = relationship("UserMemory", back_populates="user", uselist=False)
 
+    @property
+    def is_super_admin(self) -> bool:
+        """El super admin (fundador) se identifica por email vía env SUPER_ADMIN_EMAIL.
+        Tiene autoridad total, incluida la gestión de otros administradores."""
+        from .config import settings
+        email = (settings.SUPER_ADMIN_EMAIL or "").strip().lower()
+        return bool(self.is_admin and email and self.email and self.email.strip().lower() == email)
+
 class Provider(Base):
     __tablename__ = "providers"
 
