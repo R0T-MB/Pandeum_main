@@ -57,6 +57,13 @@ export interface Provider {
   service_keywords: string[];
   rating: number;
   review_count: number;
+  user?: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    is_provider: boolean;
+    is_admin: boolean;
+  } | null;
 }
 
 export interface Review {

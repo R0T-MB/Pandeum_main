@@ -25,6 +25,8 @@ import {
   Lock,
   LogIn,
   Store,
+  ShieldCheck,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from 'next-themes'
@@ -56,13 +58,14 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
   }, [])
 
   const isProvider = user?.account_type === 'provider' || user?.is_provider === true
+  const isAdmin = user?.is_admin === true
   const userName = user?.full_name || ''
   const userEmail = user?.email || ''
   const userInitials = userName
     ? userName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
     : ''
 
-  const navItems = [
+  const navItems: Array<{ href: string; label: string; icon: LucideIcon; locked?: boolean } | null> = [
     { href: '/', label: 'Chat', icon: MessageSquare },
     { href: '/map', label: 'Mapa', icon: MapPin },
     { href: '/favorites', label: 'Favoritos', icon: Heart, locked: isGuest },
@@ -70,7 +73,10 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
     isProvider
       ? { href: '/provider-dashboard', label: 'Panel de Proveedor', icon: Store }
       : { href: '/companion', label: 'Mi Compañero', icon: Users, locked: isGuest },
-  ]
+    isAdmin
+      ? { href: '/admin', label: 'Administración', icon: ShieldCheck }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => item !== null)
 
   const isActive = (href: string) => pathname === href
 
@@ -266,6 +272,23 @@ const Sidebar = ({ isOpen = false, onClose }: SidebarProps) => {
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] font-semibold text-theme-text truncate">Mi Compañero</p>
                     <p className="text-[9px] text-theme-text-muted truncate">Configuración y accesos del asistente IA</p>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-theme-text-muted rotate-[-90deg]" />
+                </Link>
+              )}
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={onClose}
+                  className="flex items-center gap-2.5 px-2 py-2.5 rounded-2xl bg-amber-600/10 border border-amber-500/20 text-theme-text hover:bg-amber-600/20 transition"
+                >
+                  <div className="p-1.5 rounded-xl bg-amber-600/20 text-amber-400">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-theme-text truncate">Administración</p>
+                    <p className="text-[9px] text-theme-text-muted truncate">Verificación y gestión de usuarios</p>
                   </div>
                   <ChevronDown className="w-3.5 h-3.5 text-theme-text-muted rotate-[-90deg]" />
                 </Link>
