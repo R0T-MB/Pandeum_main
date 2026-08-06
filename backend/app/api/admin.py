@@ -3,9 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 from ..database import get_db
-from ..schemas import ProviderResponse, UserResponse, ProviderVerification, UserRoleUpdate
+from ..schemas import (
+    ProviderResponse, UserResponse, ProviderVerification, UserRoleUpdate,
+    ReviewModerationSchema, ReviewModerationAction,
+)
 from ..auth import get_current_admin_user, is_super_admin
-from ..models import User, Provider
+from ..models import User, Provider, Review
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -68,3 +71,49 @@ def update_user_role(
     db.commit()
     db.refresh(user)
     return user
+
+
+def _to_moderation_schema(review: Review) -> dict:
+    return {
+        "id": review.id,
+        "provider_id": review.provider_id,
+        "user_id": review.user_id,
+        "user_name": review.user.full_name or review.user.email if review.user else "Desconocido",
+        "provider_name": review.provider.business_name if review.provider else "Desconocido",
+        "rating": review.rating,
+        "comment": review.comment,
+        "fraud_risk_flags": review.fraud_risk_flags or {},
+        "review_verification_status": review.review_verification_status,
+        "created_at": review.created_at,
+    }
+
+
+@router.get("/reviews/queue", response_model=List[ReviewModerationSchema])
+def get_review_queue(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user)
+):
+    """Reseñas pendientes o marcadas (para revisión manual del admin)."""
+    reviews = db.query(Review).filter(
+        Review.review_verification_status.in_(["pending", "rejected"])
+    ).order_by(Review.created_at.asc()).all()
+    return [_to_moderation_schema(r) for r in reviews]
+
+
+@router.put("/reviews/{review_id}/moderate", response_model=ReviewModerationSchema)
+def moderate_review(
+    review_id: UUID,
+    action: ReviewModerationAction,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user)
+):
+    review = db.query(Review).filter(Review.id == str(review_id)).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Reseña no encontrada")
+    status_map = {"approve": "approved", "reject": "rejected", "pending": "pending"}
+    if action.action not in status_map:
+        raise HTTPException(status_code=400, detail="Acción inválida: approve|reject|pending")
+    review.review_verification_status = status_map[action.action]
+    db.commit()
+    db.refresh(review)
+    return _to_moderation_schema(review)

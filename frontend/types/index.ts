@@ -76,6 +76,19 @@ export interface Review {
   created_at: string;
 }
 
+export interface ReviewModeration {
+  id: string;
+  provider_id: string;
+  user_id: string;
+  user_name: string;
+  provider_name: string;
+  rating: number;
+  comment: string | null;
+  fraud_risk_flags: Record<string, unknown>;
+  review_verification_status: string;
+  created_at: string;
+}
+
 export interface ProviderPublic extends Provider {
   services: Service[];
 }

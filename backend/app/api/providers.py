@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
@@ -7,6 +7,7 @@ from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, Provider
 from ..auth import get_current_user, get_current_admin_user
 from ..models import User, Provider, Review, Favorite, Service
 from ..crud import create_provider, get_provider_rating, get_provider_review_count
+from ..moderation import review_decision
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -104,6 +105,7 @@ def update_my_provider(
 def create_or_update_review(
     provider_id: UUID,
     review_data: ReviewCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -113,14 +115,24 @@ def create_or_update_review(
     if str(current_user.id) == str(provider.id):
         raise HTTPException(status_code=400, detail="No puedes reseñar tu propio perfil")
 
+    # Moderación automática: decide estado (approved/pending/rejected) y flags
+    decision = review_decision(review_data.comment or "", db, current_user)
+
     existing = db.query(Review).filter(
         Review.user_id == current_user.id,
         Review.provider_id == str(provider_id)
     ).first()
 
+    ip = request.client.host if request.client else None
+    ua = request.headers.get("user-agent")
+
     if existing:
         existing.rating = review_data.rating
         existing.comment = review_data.comment
+        existing.reviewer_ip = ip
+        existing.reviewer_user_agent = ua
+        existing.fraud_risk_flags = decision["flags"]
+        existing.review_verification_status = decision["status"]
         db.commit()
         db.refresh(existing)
         review = existing
@@ -130,7 +142,10 @@ def create_or_update_review(
             provider_id=str(provider_id),
             rating=review_data.rating,
             comment=review_data.comment,
-            review_verification_status="pending"
+            reviewer_ip=ip,
+            reviewer_user_agent=ua,
+            fraud_risk_flags=decision["flags"],
+            review_verification_status=decision["status"]
         )
         db.add(review)
         db.commit()
@@ -148,7 +163,8 @@ def create_or_update_review(
 @router.get("/{provider_id}/reviews", response_model=List[ReviewResponse])
 def get_provider_reviews(provider_id: UUID, db: Session = Depends(get_db)):
     reviews = db.query(Review).filter(
-        Review.provider_id == str(provider_id)
+        Review.provider_id == str(provider_id),
+        Review.review_verification_status == "approved"
     ).order_by(Review.created_at.desc()).all()
     result = []
     for r in reviews:

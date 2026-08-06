@@ -226,6 +226,26 @@ class ReviewResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ReviewModerationSchema(BaseModel):
+    id: UUID
+    provider_id: UUID
+    user_id: UUID
+    user_name: str
+    provider_name: str
+    rating: int
+    comment: Optional[str]
+    fraud_risk_flags: Dict[str, Any] = {}
+    review_verification_status: str = "pending"
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ReviewModerationAction(BaseModel):
+    action: str  # "approve" | "reject" | "pending"
+
 # ========== Favorites ==========
 class FavoriteResponse(BaseModel):
     provider_id: UUID

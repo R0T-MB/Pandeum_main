@@ -20,16 +20,36 @@ import {
   User as UserIcon,
   ShieldAlert,
   Clock,
+  MessageSquare,
+  Flag,
 } from 'lucide-react'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { Provider, User } from '@/types'
+import { Provider, User, ReviewModeration } from '@/types'
 
-type Tab = 'verification' | 'users'
+type Tab = 'verification' | 'users' | 'reviews'
 
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Pendiente',
   verified: 'Verificado',
   rejected: 'Rechazado',
+}
+
+const REVIEW_STATUS_LABEL: Record<string, string> = {
+  approved: 'Aprobada',
+  rejected: 'Rechazada',
+  pending: 'Pendiente',
+}
+
+const FLAG_LABEL: Record<string, string> = {
+  inappropriate: 'Lenguaje inapropiado',
+  spam_links: 'Enlaces/spam',
+  spam: 'Contenido de spam',
+  pii_email: 'Datos personales (email)',
+  pii_phone: 'Datos personales (teléfono)',
+  pii_card: 'Datos personales (tarjeta)',
+  fresh_account: 'Cuenta nueva',
+  burst_reviews: 'Reseñas masivas',
+  account_signals: 'Señal de cuenta',
 }
 
 export default function AdminPage() {
@@ -40,6 +60,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('verification')
   const [providers, setProviders] = useState<Provider[]>([])
   const [usersList, setUsersList] = useState<User[]>([])
+  const [reviewQueue, setReviewQueue] = useState<ReviewModeration[]>([])
   const [loading, setLoading] = useState(true)
   const [actingId, setActingId] = useState<string | null>(null)
 
@@ -72,14 +93,23 @@ export default function AdminPage() {
     }
   }, [])
 
+  const loadReviewQueue = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/reviews/queue')
+      setReviewQueue(res.data as ReviewModeration[])
+    } catch {
+      toast.error('Error al cargar cola de reseñas')
+    }
+  }, [])
+
   useEffect(() => {
     if (user?.is_admin) {
       setLoading(true)
-      Promise.all([loadProviders(), loadUsers()]).finally(() => setLoading(false))
+      Promise.all([loadProviders(), loadUsers(), loadReviewQueue()]).finally(() => setLoading(false))
     } else if (user && !user.is_admin) {
       setLoading(false)
     }
-  }, [user, loadProviders, loadUsers])
+  }, [user, loadProviders, loadUsers, loadReviewQueue])
 
   const verifyProvider = async (providerId: string, status: 'verified' | 'rejected') => {
     setActingId(providerId)
@@ -89,6 +119,19 @@ export default function AdminPage() {
       setProviders(prev => prev.filter(p => p.id !== providerId))
     } catch {
       toast.error('Error al actualizar la verificación')
+    } finally {
+      setActingId(null)
+    }
+  }
+
+  const moderateReview = async (reviewId: string, action: 'approve' | 'reject') => {
+    setActingId(reviewId)
+    try {
+      await api.put(`/admin/reviews/${reviewId}/moderate`, { action })
+      toast.success(action === 'approve' ? 'Reseña aprobada' : 'Reseña rechazada')
+      setReviewQueue(prev => prev.filter(r => r.id !== reviewId))
+    } catch {
+      toast.error('Error al moderar la reseña')
     } finally {
       setActingId(null)
     }
@@ -178,6 +221,7 @@ export default function AdminPage() {
               {([
                 { key: 'verification', label: 'Verificación de proveedores', icon: Store },
                 { key: 'users', label: 'Usuarios', icon: Users },
+                { key: 'reviews', label: 'Moderación de reseñas', icon: MessageSquare },
               ] as { key: Tab; label: string; icon: React.ElementType }[]).map(s => {
                 const Icon = s.icon
                 const isActive = tab === s.key
@@ -398,6 +442,104 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Moderación de reseñas */}
+            {tab === 'reviews' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#6D5EF8]/10 flex items-center justify-center">
+                      <MessageSquare size={18} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-white">Moderación de reseñas</h2>
+                      <p className="text-xs text-[#9CA3AF]">
+                        Reseñas pendientes o rechazadas automáticamente, listas para revisión
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setLoading(true); loadReviewQueue().finally(() => setLoading(false)) }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#151E2F] border border-[#1E2D4A] text-white hover:border-[#6D5EF8]/50 text-xs font-medium transition-all duration-200"
+                  >
+                    <RefreshCw size={14} strokeWidth={1.75} />
+                    Actualizar
+                  </button>
+                </div>
+
+                {reviewQueue.length === 0 ? (
+                  <div className={`${cardClass} flex flex-col items-center py-12 text-center`}>
+                    <div className="w-14 h-14 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mb-3">
+                      <Flag size={24} className="text-emerald-400" strokeWidth={1.5} />
+                    </div>
+                    <p className="text-sm font-medium text-white">Sin reseñas por revisar</p>
+                    <p className="text-xs text-[#9CA3AF] mt-1">La moderación automática filtró todo el contenido</p>
+                  </div>
+                ) : (
+                  reviewQueue.map(rv => (
+                    <div key={rv.id} className={cardClass}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center flex-shrink-0">
+                            <MessageSquare size={17} className="text-[#6D5EF8]" strokeWidth={1.75} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-white">{rv.user_name}</p>
+                            <p className="text-xs text-[#9CA3AF]">para {rv.provider_name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-yellow-400">{"★".repeat(rv.rating)}{"☆".repeat(5 - rv.rating)}</span>
+                          <span className={`text-[11px] px-2 py-0.5 rounded-lg font-medium ${
+                            rv.review_verification_status === 'rejected' ? 'bg-red-500/10 border border-red-500/30 text-red-400' : 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-400'
+                          }`}>
+                            {REVIEW_STATUS_LABEL[rv.review_verification_status] || rv.review_verification_status}
+                          </span>
+                        </div>
+                      </div>
+                      {rv.comment && (
+                        <p className="text-sm text-[#D1D5DB] mt-3 bg-[#151E2F] border border-[#1E2D4A] rounded-xl p-3">
+                          {rv.comment}
+                        </p>
+                      )}
+                      {(rv.fraud_risk_flags && Object.keys(rv.fraud_risk_flags).length > 0) ? (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {Object.entries(rv.fraud_risk_flags).map(([k, v]) => (
+                            <span key={k} className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
+                              <Flag size={10} strokeWidth={2} />
+                              {FLAG_LABEL[k] || k}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-[#9CA3AF] mt-3 flex items-center gap-1.5">
+                          <Check size={11} strokeWidth={2} className="text-emerald-400" />
+                          Sin señales de riesgo detectadas
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#1E2D4A]">
+                        <button
+                          onClick={() => moderateReview(rv.id, 'reject')}
+                          disabled={actingId === rv.id}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 text-xs font-medium transition-all duration-200 disabled:opacity-50"
+                        >
+                          <X size={13} strokeWidth={2} />
+                          Rechazar
+                        </button>
+                        <button
+                          onClick={() => moderateReview(rv.id, 'approve')}
+                          disabled={actingId === rv.id}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-medium transition-all duration-200 disabled:opacity-50"
+                        >
+                          {actingId === rv.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2} />}
+                          Aprobar
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
