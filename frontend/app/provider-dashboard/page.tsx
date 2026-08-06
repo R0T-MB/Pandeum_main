@@ -1462,7 +1462,7 @@ export default function ProviderDashboardPage() {
                       <div className="mt-3 text-xs text-[#9CA3AF] space-y-1">
                         <p>Email: {user.email}</p>
                         <p>ID: {user.id}</p>
-                        <p>Estado: {provider?.verification_status === 'verified' ? 'Verificado' : 'Pendiente de verificación'}</p>
+                        <p>Estado: {provider?.verification_status === 'verified' ? 'Verificado' : provider?.verification_status === 'rejected' ? 'Rechazado' : 'Pendiente de verificación'}</p>
                       </div>
                     )}
                   </div>
