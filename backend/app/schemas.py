@@ -88,6 +88,11 @@ class ProviderUpdate(ProviderBase):
 class ProviderResponse(ProviderBase):
     id: UUID
     verification_status: str
+    rejection_reason: Optional[str] = None
+    rejection_category: Optional[str] = None
+    rejected_at: Optional[datetime] = None
+    can_apply: Optional[bool] = None
+    cooldown_seconds: Optional[int] = None
     trust_score: float
     trust_factors: Dict
     cases_resolved_similar: int
@@ -272,8 +277,22 @@ class MemoryResponse(BaseModel):
     updated_at: datetime
 
 # ========== Admin ==========
+REJECTION_CATEGORIES = [
+    "datos_incompletos",       # datos de negocio/contacto/ubicación faltantes o incorrectos
+    "normativas_licencias",    # falta licencia/certificado/acreditación exigida para la categoría
+    "contenido_inapropiado",   # descripción/solicitudes spam, enlaces externos, fotos ajenas
+    "identidad_falsa",         # datos que no coinciden / fraude de identidad
+    "sancion_previa",          # historial de cuenta suspendida o conducta sancionada
+]
+
 class ProviderVerification(BaseModel):
     verification_status: str  # 'verified', 'rejected'
+    rejection_category: Optional[str] = None
+    rejection_reason: Optional[str] = None
+
+class ProviderResubmitRequest(BaseModel):
+    # Mensaje opcional del proveedor explicando las correcciones aplicadas
+    correction_note: Optional[str] = None
 
 class UserRoleUpdate(BaseModel):
     is_admin: bool

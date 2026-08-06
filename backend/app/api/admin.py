@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
@@ -9,6 +10,7 @@ from ..schemas import (
 )
 from ..auth import get_current_admin_user, is_super_admin
 from ..models import User, Provider, Review
+from ..config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -30,10 +32,42 @@ def verify_provider(
     provider = db.query(Provider).filter(Provider.id == str(provider_id)).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Proveedor no encontrado")
-    provider.verification_status = verification.verification_status
+    status = verification.verification_status
+    if status not in ("pending", "verified", "rejected"):
+        raise HTTPException(status_code=400, detail="Estado de verificación inválido")
+    if status == "rejected":
+        if not verification.rejection_category:
+            raise HTTPException(status_code=400, detail="Debes indicar una categoría de infracción al rechazar")
+        if not verification.rejection_reason or not verification.rejection_reason.strip():
+            raise HTTPException(status_code=400, detail="Debes indicar un motivo de rechazo para el proveedor")
+    provider.verification_status = status
+    if status == "rejected":
+        provider.rejection_category = verification.rejection_category
+        provider.rejection_reason = verification.rejection_reason.strip()
+        provider.rejected_at = datetime.now(timezone.utc)
+    else:
+        # Al aprobar (o devolver a pending) se limpia el historial de rechazo previo
+        provider.rejection_category = None
+        provider.rejection_reason = None
+        provider.rejected_at = None
     db.commit()
     db.refresh(provider)
-    return provider
+    payload = provider.__dict__.copy()
+    payload["can_apply"] = provider.verification_status != "rejected"
+    payload["cooldown_seconds"] = _rejection_cooldown(provider)
+    return payload
+
+
+def _rejection_cooldown(provider: Provider) -> int:
+    """Segundos que faltan para poder re-solicitar (0 si ya puede)."""
+    if not provider.rejected_at:
+        return 0
+    rejected = provider.rejected_at
+    if getattr(rejected, "tzinfo", None) is None:
+        rejected = rejected.replace(tzinfo=timezone.utc)
+    cooldown = settings.PROVIDER_RESUBMIT_COOLDOWN_HOURS * 3600
+    remaining = cooldown - int((datetime.now(timezone.utc) - rejected).total_seconds())
+    return max(0, remaining)
 
 @router.get("/users", response_model=List[UserResponse])
 def list_users(

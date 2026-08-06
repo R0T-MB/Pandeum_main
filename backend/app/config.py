@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     GUEST_CHAT_MAX_PER_HOUR: int = 12
     GUEST_CHAT_WINDOW_SECONDS: int = 3600
 
+    # Re-solicitud de verificación de proveedor (cooldown tras rechazo, en horas)
+    PROVIDER_RESUBMIT_COOLDOWN_HOURS: int = 72
+
     model_config = ConfigDict(env_file=str(_ENV_FILE), extra="ignore")
 
 settings = Settings()

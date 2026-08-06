@@ -1,15 +1,38 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from ..database import get_db
-from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, ProviderPublicResponse, ReviewCreate, ReviewResponse, FavoriteResponse, ServiceCreate, ServiceUpdate, ServiceResponse
+from ..schemas import ProviderCreate, ProviderUpdate, ProviderResponse, ProviderPublicResponse, ReviewCreate, ReviewResponse, FavoriteResponse, ServiceCreate, ServiceUpdate, ServiceResponse, ProviderResubmitRequest
 from ..auth import get_current_user, get_current_admin_user
 from ..models import User, Provider, Review, Favorite, Service
 from ..crud import create_provider, get_provider_rating, get_provider_review_count
 from ..moderation import review_decision
+from ..config import settings
 
 router = APIRouter(prefix="/providers", tags=["providers"])
+
+def _cooldown_remaining(provider: Provider) -> int:
+    """Segundos que faltan para poder re-solicitar (0 si ya puede)."""
+    if not provider.rejected_at:
+        return 0
+    rejected = provider.rejected_at
+    if getattr(rejected, "tzinfo", None) is None:
+        rejected = rejected.replace(tzinfo=timezone.utc)
+    cooldown = settings.PROVIDER_RESUBMIT_COOLDOWN_HOURS * 3600
+    remaining = cooldown - int((datetime.now(timezone.utc) - rejected).total_seconds())
+    return max(0, remaining)
+
+def _provider_payload(provider: Provider, db: Session) -> dict:
+    return {
+        **provider.__dict__,
+        "user": provider.user,
+        "rating": get_provider_rating(db, provider.id),
+        "review_count": get_provider_review_count(db, provider.id),
+        "can_apply": provider.verification_status != "rejected" or _cooldown_remaining(provider) == 0,
+        "cooldown_seconds": _cooldown_remaining(provider) if provider.verification_status == "rejected" else 0,
+    }
 
 @router.post("/register", response_model=ProviderResponse)
 def register_provider(
@@ -20,7 +43,41 @@ def register_provider(
     if current_user.is_provider:
         raise HTTPException(status_code=400, detail="Ya eres un proveedor")
     provider = create_provider(db, str(current_user.id), provider_data)
-    return provider
+    return _provider_payload(provider, db)
+
+@router.post("/resubmit", response_model=ProviderResponse)
+def resubmit_provider_request(
+    resubmit_data: ProviderResubmitRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Re-solicitud explícita de revisión tras un rechazo (cooldown de 72h)."""
+    if not current_user.is_provider:
+        raise HTTPException(status_code=403, detail="No eres proveedor")
+    provider = db.query(Provider).filter(Provider.id == str(current_user.id)).first()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Perfil de proveedor no encontrado")
+    if provider.verification_status != "rejected":
+        raise HTTPException(status_code=400, detail="No hay una solicitud rechazada para re-enviar")
+    remaining = _cooldown_remaining(provider)
+    if remaining > 0:
+        raise HTTPException(
+            status_code=429,
+            detail="Debes esperar para corregir tu solicitud según las normativas de Pandeum",
+            headers={"Retry-After": str(remaining)},
+        )
+    # Reenvío: vuelve a la cola de revisión y guarda la nota de correcciones del proveedor
+    provider.verification_status = "pending"
+    provider.rejection_category = None
+    provider.rejection_reason = None
+    provider.rejected_at = None
+    if resubmit_data.correction_note:
+        trust_factors = provider.trust_factors or {}
+        trust_factors["last_correction_note"] = resubmit_data.correction_note.strip()
+        provider.trust_factors = trust_factors
+    db.commit()
+    db.refresh(provider)
+    return _provider_payload(provider, db)
 
 @router.get("/", response_model=List[ProviderResponse])
 def list_providers(
@@ -72,7 +129,9 @@ def get_provider(provider_id: UUID, db: Session = Depends(get_db)):
         "user": provider.user,
         "rating": rating,
         "review_count": review_count,
-        "services": services
+        "services": services,
+        "can_apply": provider.verification_status != "rejected" or _cooldown_remaining(provider) == 0,
+        "cooldown_seconds": _cooldown_remaining(provider) if provider.verification_status == "rejected" else 0,
     }
 
     return data
@@ -92,14 +151,7 @@ def update_my_provider(
         setattr(provider, key, value)
     db.commit()
     db.refresh(provider)
-    rating = get_provider_rating(db, provider.id)
-    review_count = get_provider_review_count(db, provider.id)
-    return {
-        **provider.__dict__,
-        "user": provider.user,
-        "rating": rating,
-        "review_count": review_count
-}
+    return _provider_payload(provider, db)
 
 @router.post("/{provider_id}/reviews", response_model=ReviewResponse)
 def create_or_update_review(

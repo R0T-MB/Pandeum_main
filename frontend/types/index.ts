@@ -58,6 +58,11 @@ export interface Provider {
   service_keywords: string[];
   rating: number;
   review_count: number;
+  rejection_reason?: string | null;
+  rejection_category?: string | null;
+  rejected_at?: string | null;
+  can_apply?: boolean;
+  cooldown_seconds?: number;
   user?: {
     id: string;
     email: string;

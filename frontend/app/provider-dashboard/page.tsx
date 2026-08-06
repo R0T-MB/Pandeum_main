@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { api } from '@/lib/api'
 import Sidebar from '@/components/layout/Sidebar'
-import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image as ImageIcon, ExternalLink, LayoutDashboard, User, BarChart3, Settings, Eye, TrendingUp, Zap, Star } from 'lucide-react'
+import { Menu, Save, Plus, Loader2, Briefcase, Tag, Phone, DollarSign, CheckCircle, MessageCircle, X, Clock, MapPin, Upload, Trash2, Image as ImageIcon, ExternalLink, LayoutDashboard, User, BarChart3, Settings, Eye, TrendingUp, Zap, Star, AlertCircle, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Provider, Service } from '@/types'
@@ -455,6 +455,26 @@ export default function ProviderDashboardPage() {
       toast.error('Error al guardar el perfil')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const [resubmitting, setResubmitting] = useState(false)
+  const resubmitRequest = async () => {
+    setResubmitting(true)
+    try {
+      await api.post('/providers/resubmit', {
+        correction_note: `Corrección de solicitud tras rechazo: ${provider?.rejection_reason || ''}`,
+      })
+      toast.success('Solicitud reenviada para revisión')
+      loadData()
+    } catch (err: any) {
+      if (err?.response?.data?.detail) {
+        toast.error(typeof err.response.data.detail === 'string' ? err.response.data.detail : 'Error al reenviar la solicitud')
+      } else {
+        toast.error('Error al reenviar la solicitud')
+      }
+    } finally {
+      setResubmitting(false)
     }
   }
 
@@ -1351,6 +1371,42 @@ export default function ProviderDashboardPage() {
                     </div>
                     {form.available_now && <p className="text-xs text-green-400 flex items-center gap-1 mt-2"><CheckCircle size={12} /> Visible para clientes</p>}
                   </div>
+
+                  {provider?.verification_status === 'rejected' && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                          <AlertCircle size={18} className="text-red-400" strokeWidth={1.75} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-red-400">Solicitud rechazada</p>
+                          {provider.rejection_reason && (
+                            <p className="text-xs text-[#D1D5DB] mt-1 leading-relaxed">
+                              Motivo: {provider.rejection_reason}
+                            </p>
+                          )}
+                          <p className="text-[11px] text-[#9CA3AF] mt-2">
+                            Corrige los puntos señalados cumpliendo las normativas de Pandeum y reenvía tu solicitud para una nueva revisión.
+                          </p>
+                          {provider.can_apply ? (
+                            <button
+                              onClick={resubmitRequest}
+                              disabled={resubmitting}
+                              className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-xl bg-[#6D5EF8] hover:bg-[#5B4FE0] text-white text-xs font-medium transition-all duration-200 disabled:opacity-50"
+                            >
+                              {resubmitting ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} strokeWidth={1.75} />}
+                              Reenviar solicitud
+                            </button>
+                          ) : (
+                            <p className="text-[11px] text-yellow-400 flex items-center gap-1.5 mt-3">
+                              <Clock size={12} strokeWidth={2} />
+                              Podrás reenviar tu solicitud en {Math.ceil((provider.cooldown_seconds || 0) / 3600)} horas.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="bg-[#151E2F] rounded-xl p-4 border border-[#1E2D4A]">
                     <div className="flex items-center justify-between">

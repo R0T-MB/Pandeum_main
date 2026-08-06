@@ -63,6 +63,10 @@ export default function AdminPage() {
   const [reviewQueue, setReviewQueue] = useState<ReviewModeration[]>([])
   const [loading, setLoading] = useState(true)
   const [actingId, setActingId] = useState<string | null>(null)
+  const [rejectTarget, setRejectTarget] = useState<Provider | null>(null)
+  const [rejectCategory, setRejectCategory] = useState('datos_incompletos')
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejecting, setRejecting] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -114,9 +118,21 @@ export default function AdminPage() {
   const verifyProvider = async (providerId: string, status: 'verified' | 'rejected') => {
     setActingId(providerId)
     try {
-      await api.put(`/admin/providers/${providerId}/verify`, { verification_status: status })
+      const payload: Record<string, unknown> = { verification_status: status }
+      if (status === 'rejected') {
+        if (!rejectReason.trim()) {
+          toast.error('Indica el motivo del rechazo')
+          setActingId(null)
+          return
+        }
+        payload.rejection_category = rejectCategory
+        payload.rejection_reason = rejectReason.trim()
+      }
+      await api.put(`/admin/providers/${providerId}/verify`, payload)
       toast.success(status === 'verified' ? 'Proveedor verificado' : 'Proveedor rechazado')
       setProviders(prev => prev.filter(p => p.id !== providerId))
+      setRejectTarget(null)
+      setRejectReason('')
     } catch {
       toast.error('Error al actualizar la verificación')
     } finally {
@@ -331,7 +347,7 @@ export default function AdminPage() {
                           Ver perfil
                         </Link>
                         <button
-                          onClick={() => verifyProvider(p.id, 'rejected')}
+                          onClick={() => { setRejectTarget(p); setRejectCategory('datos_incompletos'); setRejectReason('') }}
                           disabled={actingId === p.id}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 text-xs font-medium transition-all duration-200 disabled:opacity-50"
                         >
@@ -545,6 +561,63 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de rechazo de proveedor */}
+      {rejectTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setRejectTarget(null)} />
+          <div className="relative w-full max-w-md bg-[#111827] border border-[#1E2D4A] rounded-3xl overflow-hidden shadow-2xl">
+            <div className="px-5 py-4 border-b border-[#1E2D4A]">
+              <h3 className="text-sm font-semibold text-white">Rechazar solicitud</h3>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">
+                {rejectTarget.business_name} — el proveedor verá este motivo y podrá corregirlo en 72h.
+              </p>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">Categoría de infracción</label>
+                <select
+                  value={rejectCategory}
+                  onChange={e => setRejectCategory(e.target.value)}
+                  className="w-full bg-[#111827] border border-[#1E2D4A] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#6D5EF8]/50 transition-all duration-200"
+                >
+                  <option value="datos_incompletos">Datos de negocio incompletos o incorrectos</option>
+                  <option value="normativas_licencias">Falta licencia/certificado exigido</option>
+                  <option value="contenido_inapropiado">Contenido inapropiado o spam</option>
+                  <option value="identidad_falsa">Identidad falsa o datos no coincidentes</option>
+                  <option value="sancion_previa">Cuenta previamente sancionada</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">Motivo para el proveedor</label>
+                <textarea
+                  value={rejectReason}
+                  onChange={e => setRejectReason(e.target.value)}
+                  rows={4}
+                  placeholder="Explica qué debe corregir para cumplir las normativas (ej: falta dirección, teléfono válido, rango de precios...)"
+                  className="w-full bg-[#111827] border border-[#1E2D4A] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#6D5EF8]/50 transition-all duration-200 resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-5 py-4 border-t border-[#1E2D4A]">
+              <button
+                onClick={() => setRejectTarget(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#151E2F] border border-[#1E2D4A] text-white text-xs font-medium transition-all duration-200"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => verifyProvider(rejectTarget.id, 'rejected')}
+                disabled={actingId === rejectTarget.id}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 text-xs font-medium transition-all duration-200 disabled:opacity-50"
+              >
+                {actingId === rejectTarget.id ? <Loader2 size={13} className="animate-spin" /> : <X size={13} strokeWidth={2} />}
+                Confirmar rechazo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
