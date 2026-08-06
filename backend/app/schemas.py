@@ -277,13 +277,20 @@ class MemoryResponse(BaseModel):
     updated_at: datetime
 
 # ========== Admin ==========
+# Categorías de rechazo ACTIVAS en la etapa inicial de Pandeum.
+# En esta fase solo se bloquea el registro por contenido inapropiado/spam
+# o identidad falsa; en el resto se es tolerante (incluso con info incompleta).
 REJECTION_CATEGORIES = [
-    "datos_incompletos",       # datos de negocio/contacto/ubicación faltantes o incorrectos
-    "normativas_licencias",    # falta licencia/certificado/acreditación exigida para la categoría
-    "contenido_inapropiado",   # descripción/solicitudes spam, enlaces externos, fotos ajenas
+    "contenido_inapropiado",   # discriminación, sex, actos de odio, spam, enlaces externos, fotos ajenas
     "identidad_falsa",         # datos que no coinciden / fraude de identidad
-    "sancion_previa",          # historial de cuenta suspendida o conducta sancionada
 ]
+
+# Categorías reservadas para el futuro, cuando Pandeum crezca. Hoy NO se usan
+# como motivo de bloqueo (marcar solo pendiente/tolerante), pero se dejan
+# definidas y a la espera de activarse:
+# "datos_incompletos",       # datos de negocio/contacto/ubicación faltantes
+# "normativas_licencias",    # falta licencia/certificado exigido para la categoría
+# "sancion_previa",          # historial de cuenta suspendida o conducta sancionada
 
 class ProviderVerification(BaseModel):
     verification_status: str  # 'verified', 'rejected'

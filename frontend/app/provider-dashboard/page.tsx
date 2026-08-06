@@ -123,6 +123,7 @@ export default function ProviderDashboardPage() {
   const [saving, setSaving] = useState(false)
   const [creatingService, setCreatingService] = useState(false)
   const [providerLoadError, setProviderLoadError] = useState(false)
+  const [providerErrorInfo, setProviderErrorInfo] = useState<{ kind: string; reason?: string } | null>(null)
 
   const [provider, setProvider] = useState<Provider | null>(null)
   const [services, setServices] = useState<Service[]>([])
@@ -196,6 +197,7 @@ export default function ProviderDashboardPage() {
   const loadData = useCallback(async () => {
     setLoading(true)
     setProviderLoadError(false)
+    setProviderErrorInfo(null)
     try {
       const [providerRes, servicesRes] = await Promise.all([
         api.get(`/providers/${user!.id}`),
@@ -235,8 +237,14 @@ export default function ProviderDashboardPage() {
         setMapCenter([Number(p.location_lat), Number(p.location_lng)])
       }
       setServices(servicesRes.data as Service[])
-    } catch {
+    } catch (err: any) {
       setProviderLoadError(true)
+      // 404 => la cuenta ya no tiene un perfil de proveedor registrado
+      if (err?.response?.status === 404) {
+        setProviderErrorInfo({ kind: 'not_provider' })
+      } else {
+        setProviderErrorInfo({ kind: 'other' })
+      }
     } finally {
       setLoading(false)
     }
@@ -615,16 +623,49 @@ export default function ProviderDashboardPage() {
               <Briefcase size={14} className="text-[#6D5EF8]" strokeWidth={1.75} />
             </div>
           </header>
-          <div className="flex-1 flex items-center justify-center px-4">
-            <div className="text-center max-w-md">
-              <div className="w-16 h-16 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-4">
-                <Briefcase size={28} className="text-red-400" strokeWidth={1.5} />
+
+          {providerErrorInfo?.kind === 'not_provider' ? (
+            <div className="flex-1 flex items-center justify-center px-4">
+              <div className="text-center max-w-md">
+                <div className="w-16 h-16 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle size={28} className="text-yellow-400" strokeWidth={1.5} />
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2">Ya no tienes una cuenta de proveedor activa</h2>
+                <p className="text-sm text-[#9CA3AF] leading-relaxed mb-6">
+                  Tu perfil de proveedor ya no está registrado. Esto puede deberse a una solicitud rechazada o a una revisión
+                  de tu cuenta. Para volver a participar:
+                </p>
+                <ol className="text-left text-sm text-[#9CA3AF] leading-relaxed space-y-2 mb-6 bg-[#151E2F] border border-[#1E2D4A] rounded-xl p-4">
+                  <li><strong className="text-white">1.</strong> Si tu solicitud fue rechazada, revisa el motivo en tu correo o contacta al equipo.</li>
+                  <li><strong className="text-white">2.</strong> Corrige los puntos señalados y espera el período de espera establecido.</li>
+                  <li><strong className="text-white">3.</strong> Puedes volver a solicitar ser proveedor desde tu perfil.</li>
+                </ol>
+                <div className="flex items-center justify-center gap-3">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-2 bg-[#151E2F] border border-[#1E2D4A] text-white rounded-2xl px-5 py-3 text-sm font-medium transition-all duration-200 hover:border-[#6D5EF8]/50"
+                  >
+                    Volver al inicio
+                  </Link>
+                  <button
+                    onClick={loadData}
+                    className="inline-flex items-center gap-2 bg-[#6D5EF8] hover:bg-[#5B4FE0] text-white rounded-2xl px-5 py-3 text-sm font-medium transition-all duration-200"
+                  >
+                    Intentar de nuevo
+                  </button>
+                </div>
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">No se pudo cargar tu perfil de proveedor</h2>
-              <p className="text-sm text-[#9CA3AF] leading-relaxed mb-6">
-                Hubo un problema al obtener tus datos. Verifica que tu cuenta esté registrada como proveedor.
-              </p>
-              <div className="flex items-center justify-center gap-3">
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center px-4">
+              <div className="text-center max-w-md">
+                <div className="w-16 h-16 rounded-2xl bg-[#151E2F] border border-[#1E2D4A] flex items-center justify-center mx-auto mb-4">
+                  <Briefcase size={28} className="text-red-400" strokeWidth={1.5} />
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2">No se pudo cargar tu perfil de proveedor</h2>
+                <p className="text-sm text-[#9CA3AF] leading-relaxed mb-6">
+                  Hubo un problema al obtener tus datos. Por favor intenta de nuevo en unos momentos.
+                </p>
                 <button
                   onClick={loadData}
                   className="inline-flex items-center gap-2 bg-[#6D5EF8] hover:bg-[#5B4FE0] text-white rounded-2xl px-5 py-3 text-sm font-medium transition-all duration-200"
@@ -633,7 +674,7 @@ export default function ProviderDashboardPage() {
                 </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     )

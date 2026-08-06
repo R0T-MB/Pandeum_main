@@ -64,7 +64,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [actingId, setActingId] = useState<string | null>(null)
   const [rejectTarget, setRejectTarget] = useState<Provider | null>(null)
-  const [rejectCategory, setRejectCategory] = useState('datos_incompletos')
+  const [rejectCategory, setRejectCategory] = useState('contenido_inapropiado')
   const [rejectReason, setRejectReason] = useState('')
   const [rejecting, setRejecting] = useState(false)
 
@@ -347,7 +347,7 @@ export default function AdminPage() {
                           Ver perfil
                         </Link>
                         <button
-                          onClick={() => { setRejectTarget(p); setRejectCategory('datos_incompletos'); setRejectReason('') }}
+                          onClick={() => { setRejectTarget(p); setRejectCategory('contenido_inapropiado'); setRejectReason('') }}
                           disabled={actingId === p.id}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 text-xs font-medium transition-all duration-200 disabled:opacity-50"
                         >
@@ -581,11 +581,8 @@ export default function AdminPage() {
                   onChange={e => setRejectCategory(e.target.value)}
                   className="w-full bg-[#111827] border border-[#1E2D4A] rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#6D5EF8]/50 transition-all duration-200"
                 >
-                  <option value="datos_incompletos">Datos de negocio incompletos o incorrectos</option>
-                  <option value="normativas_licencias">Falta licencia/certificado exigido</option>
                   <option value="contenido_inapropiado">Contenido inapropiado o spam</option>
                   <option value="identidad_falsa">Identidad falsa o datos no coincidentes</option>
-                  <option value="sancion_previa">Cuenta previamente sancionada</option>
                 </select>
               </div>
               <div>

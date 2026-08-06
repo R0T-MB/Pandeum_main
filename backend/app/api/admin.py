@@ -6,7 +6,7 @@ from uuid import UUID
 from ..database import get_db
 from ..schemas import (
     ProviderResponse, UserResponse, ProviderVerification, UserRoleUpdate,
-    ReviewModerationSchema, ReviewModerationAction,
+    ReviewModerationSchema, ReviewModerationAction, REJECTION_CATEGORIES,
 )
 from ..auth import get_current_admin_user, is_super_admin
 from ..models import User, Provider, Review
@@ -36,8 +36,14 @@ def verify_provider(
     if status not in ("pending", "verified", "rejected"):
         raise HTTPException(status_code=400, detail="Estado de verificación inválido")
     if status == "rejected":
-        if not verification.rejection_category:
-            raise HTTPException(status_code=400, detail="Debes indicar una categoría de infracción al rechazar")
+        # Etapa inicial de Pandeum: solo se rechaza por contenido inapropiado/spam
+        # o identidad falsa. Las categorías futuras (licencias, datos incompletos)
+        # no están vigentes como motivo de bloqueo.
+        if verification.rejection_category not in REJECTION_CATEGORIES:
+            raise HTTPException(
+                status_code=400,
+                detail="Categoría de rechazo no válida en esta etapa. Solo se bloquea por contenido inapropiado/spam o identidad falsa.",
+            )
         if not verification.rejection_reason or not verification.rejection_reason.strip():
             raise HTTPException(status_code=400, detail="Debes indicar un motivo de rechazo para el proveedor")
     provider.verification_status = status

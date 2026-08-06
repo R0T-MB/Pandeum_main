@@ -40,15 +40,24 @@ def test_provider_resubmit_after_rejection(client):
                      json={"verification_status": "rejected"})
     assert bad.status_code == 400
 
-    # rechazar con categoría+motivo -> rejected con datos
-    rej = client.put(f"/admin/providers/{pid}/verify", headers=ah, json={
+    # en la etapa inicial solo se rechaza por infracciones vigentes (contenido inapropiado / identidad falsa);
+    # "datos_incompletos" no es motivo de bloqueo por ahora -> 400
+    future = client.put(f"/admin/providers/{pid}/verify", headers=ah, json={
         "verification_status": "rejected",
         "rejection_category": "datos_incompletos",
-        "rejection_reason": "Falta la dirección y el rango de precios",
+        "rejection_reason": "Falta la dirección",
+    })
+    assert future.status_code == 400
+
+    # rechazar con categoría vigente+motivo -> rejected con datos
+    rej = client.put(f"/admin/providers/{pid}/verify", headers=ah, json={
+        "verification_status": "rejected",
+        "rejection_category": "contenido_inapropiado",
+        "rejection_reason": "La descripción contiene ofertas promocionales y enlaces externos",
     })
     assert rej.status_code == 200, rej.text
     assert rej.json()["verification_status"] == "rejected"
-    assert rej.json()["rejection_reason"] == "Falta la dirección y el rango de precios"
+    assert rej.json()["rejection_reason"] == "La descripción contiene ofertas promocionales y enlaces externos"
     assert rej.json()["can_apply"] is False
     assert rej.json()["cooldown_seconds"] > 0
 
