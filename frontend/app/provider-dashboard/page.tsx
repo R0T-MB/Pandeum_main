@@ -239,8 +239,10 @@ export default function ProviderDashboardPage() {
       setServices(servicesRes.data as Service[])
     } catch (err: any) {
       setProviderLoadError(true)
-      // 404 => la cuenta ya no tiene un perfil de proveedor registrado
-      if (err?.response?.status === 404) {
+      // 404 (perfil de proveedor no encontrado) o 403 (cuenta ya no es proveedor)
+      // => la cuenta ya no tiene un perfil de proveedor activo
+      const status = err?.response?.status
+      if (status === 404 || status === 403) {
         setProviderErrorInfo({ kind: 'not_provider' })
       } else {
         setProviderErrorInfo({ kind: 'other' })
