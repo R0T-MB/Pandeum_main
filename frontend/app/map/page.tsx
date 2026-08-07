@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Provider } from '@/types'
 import Sidebar from '@/components/layout/Sidebar'
-import { MapPin, Navigation, Menu, Loader2, Crosshair, X, Car, Footprints, Bike } from 'lucide-react'
+import { MapPin, Navigation, Menu, Loader2, Crosshair, X, Car, Footprints, Bike, Star, Wallet, Phone, MessageCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import toast from 'react-hot-toast'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -84,6 +84,8 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
 
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null)
+
   const [selectedRouteProvider, setSelectedRouteProvider] = useState<Provider | null>(null)
   const [routeCoords, setRouteCoords] = useState<[number, number][] | null>(null)
   const [routeDistance, setRouteDistance] = useState<number | null>(null)
@@ -157,6 +159,15 @@ export default function MapPage() {
 
   const handleViewProfile = (provider: Provider) => {
     router.push(`/providers/${provider.id}`)
+  }
+
+  const handleSelectProvider = (provider: Provider) => {
+    setSelectedProvider(provider)
+    handleClearRoute()
+  }
+
+  const handleCloseProfile = () => {
+    setSelectedProvider(null)
   }
 
   const handleSetRoute = (provider: Provider) => {
@@ -290,43 +301,10 @@ export default function MapPage() {
                     key={p.id}
                     position={[p.location_lat!, p.location_lng!]}
                     icon={createCustomIcon(p, L)}
-                  >
-                    <Popup>
-                      <div className="min-w-[180px]">
-                        <div className="flex items-center gap-2 mb-1">
-                          {p.avatar_url ? (
-                            <img src={p.avatar_url} alt="" className="w-6 h-6 rounded-lg object-cover border border-[#1E2D4A]" />
-                          ) : null}
-                          <p className="font-semibold text-sm">{p.business_name}</p>
-                        </div>
-                        <p className="text-xs text-[#9CA3AF] mb-1">{p.category}{p.subcategory ? ` · ${p.subcategory}` : ''}</p>
-                        {(() => {
-                          const d = getDistance(p)
-                          return d != null ? (
-                            <p className="text-xs text-[#7C3AED] mb-2 flex items-center gap-1">
-                              <MapPin size={10} />
-                              {d.toFixed(1)} km
-                            </p>
-                          ) : null
-                        })()}
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={() => handleViewProfile(p)}
-                            className="flex-1 text-xs text-white bg-[#7C3AED] hover:bg-[#6D5EF8] px-3 py-1.5 rounded-xl transition-colors"
-                          >
-                            Ver perfil
-                          </button>
-                          <button
-                            onClick={() => handleSetRoute(p)}
-                            className="flex-1 text-xs text-white bg-[#151E2F] hover:bg-[#1A2440] px-3 py-1.5 rounded-xl border border-[rgba(255,255,255,0.06)] transition-colors flex items-center justify-center gap-1"
-                          >
-                            <Navigation size={10} />
-                            Ruta
-                          </button>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
+                    eventHandlers={{
+                      click: () => handleSelectProvider(p),
+                    }}
+                  />
                 ))}
                 {routeCoords && routeCoords.length >= 2 && (
                   <Polyline
@@ -401,6 +379,131 @@ export default function MapPage() {
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] bg-[#151E2F] rounded-xl px-4 py-2 border border-[rgba(255,255,255,0.06)] flex items-center gap-2 shadow-lg">
               <Loader2 size={14} className="animate-spin text-[#7C3AED]" />
               <span className="text-xs text-[#9CA3AF]">Calculando ruta...</span>
+            </div>
+          )}
+
+          {selectedProvider && (
+            <div className="absolute right-0 top-0 bottom-0 w-full sm:w-[360px] z-[55] border-l border-[rgba(255,255,255,0.06)] bg-[#0B1120]/95 backdrop-blur-xl">
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,255,255,0.06)] flex-shrink-0">
+                  <p className="text-sm font-semibold text-white">Detalles del proveedor</p>
+                  <button
+                    onClick={handleCloseProfile}
+                    className="p-1.5 rounded-xl hover:bg-[#1A2440] transition-colors text-[#9CA3AF] hover:text-white"
+                  >
+                    <X size={16} strokeWidth={1.75} />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                  <div className="flex items-start gap-3">
+                    {selectedProvider.avatar_url ? (
+                      <img
+                        src={selectedProvider.avatar_url}
+                        alt=""
+                        className="w-14 h-14 rounded-2xl object-cover border border-[#1E2D4A] flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#6D5EF8]/20 to-[#5B4FE0]/20 flex items-center justify-center text-lg font-bold text-[#6D5EF8] flex-shrink-0">
+                        {getInitials(selectedProvider.business_name)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-white leading-snug">{selectedProvider.business_name}</p>
+                      <p className="text-xs text-[#9CA3AF] mt-0.5">
+                        {selectedProvider.category}
+                        {selectedProvider.subcategory ? ` · ${selectedProvider.subcategory}` : ''}
+                      </p>
+                      {selectedProvider.available_now && (
+                        <span className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          Disponible ahora
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const d = getDistance(selectedProvider)
+                    if (d == null) return null
+                    return (
+                      <p className="text-xs text-[#7C3AED] flex items-center gap-1.5">
+                        <MapPin size={12} strokeWidth={1.75} />
+                        A {d.toFixed(1)} km de ti
+                      </p>
+                    )
+                  })()}
+
+                  {selectedProvider.description && (
+                    <p className="text-sm text-[#9CA3AF] leading-relaxed">{selectedProvider.description}</p>
+                  )}
+
+                  {selectedProvider.rating != null && (
+                    <div className="flex flex-wrap gap-2">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111827] border border-[rgba(255,255,255,0.06)]">
+                        <Star size={13} className="text-amber-400" fill="currentColor" />
+                        <span className="text-xs font-medium text-white">{Number(selectedProvider.rating).toFixed(1)}</span>
+                        <span className="text-xs text-[#6B7280]">· {selectedProvider.review_count ?? 0} reseñas</span>
+                      </div>
+                      {(selectedProvider.price_min != null || selectedProvider.price_max != null) && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111827] border border-[rgba(255,255,255,0.06)]">
+                          <Wallet size={13} className="text-[#7C3AED]" />
+                          <span className="text-xs text-white">
+                            {selectedProvider.price_min != null ? `$${selectedProvider.price_min}` : ''}
+                            {selectedProvider.price_min != null && selectedProvider.price_max != null ? ' - ' : ''}
+                            {selectedProvider.price_max != null ? `$${selectedProvider.price_max}` : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedProvider.address && (
+                    <div className="flex items-start gap-2 text-sm text-[#9CA3AF]">
+                      <MapPin size={14} className="mt-0.5 text-[#6B7280] flex-shrink-0" strokeWidth={1.75} />
+                      <span>{selectedProvider.address}</span>
+                    </div>
+                  )}
+
+                  {selectedProvider.phone && (
+                    <button
+                      onClick={() => window.location.href = `tel:${selectedProvider.phone}`}
+                      className="flex items-center gap-2 text-sm text-[#9CA3AF] hover:text-white transition-colors"
+                    >
+                      <Phone size={14} className="text-[#6B7280] flex-shrink-0" strokeWidth={1.75} />
+                      {selectedProvider.phone}
+                    </button>
+                  )}
+
+                  {selectedProvider.whatsapp && (
+                    <a
+                      href={`https://wa.me/${selectedProvider.whatsapp.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 text-sm text-[#9CA3AF] hover:text-emerald-400 transition-colors"
+                    >
+                      <MessageCircle size={14} className="text-[#25D366] flex-shrink-0" strokeWidth={1.75} />
+                      Contactar por WhatsApp
+                    </a>
+                  )}
+                </div>
+
+                <div className="px-5 py-4 border-t border-[rgba(255,255,255,0.06)] flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => handleViewProfile(selectedProvider)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#6D5EF8] hover:bg-[#5B4FE0] transition-all duration-200 shadow-lg shadow-[#6D5EF8]/20"
+                  >
+                    Ver perfil completo
+                  </button>
+                  <button
+                    onClick={() => handleSetRoute(selectedProvider)}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#151E2F] hover:bg-[#1A2440] border border-[rgba(255,255,255,0.08)] transition-colors"
+                  >
+                    <Navigation size={15} strokeWidth={1.75} />
+                    Ruta
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
