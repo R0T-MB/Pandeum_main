@@ -20,6 +20,7 @@ import {
   Bus,
   Loader2,
   Crosshair,
+  X,
 } from 'lucide-react'
 import { ProviderRecommendation, Provider } from '@/types'
 import { useGeolocation } from '@/hooks/useGeolocation'
@@ -65,6 +66,8 @@ function FitToBounds({ user, points }: { user: [number, number] | null; points: 
 interface RightPanelProps {
   providers?: ProviderRecommendation[]
   onOpenProviders?: () => void
+  isOpen?: boolean
+  onClose?: () => void
 }
 
 const getInitials = (name: string) =>
@@ -113,7 +116,7 @@ const formatDuration = (seconds: number): string => {
   return `${Math.round(seconds / 60)} min`
 }
 
-export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps) {
+export function RightPanel({ providers = [], onOpenProviders, isOpen = false, onClose }: RightPanelProps) {
   const primary = providers[0] as ProviderRecommendation | undefined
   const { latitude: userLat, longitude: userLng, error: geoError, loading: geoLoading, requestLocation } = useGeolocation()
 
@@ -231,9 +234,8 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
     ? `https://www.google.com/maps/dir/?api=1&destination=${providerLat},${providerLng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(primary?.business_name || '')}`
 
-  return (
-    <aside className="hidden xl:flex xl:flex-col xl:w-[380px] bg-theme-bg border-l border-theme-border p-4 gap-4 overflow-y-auto h-screen shrink-0 select-none transition-colors duration-200">
-
+  const panelContent = (
+    <>
       {/* Header + "Ver más sugerencias" */}
       <div>
         <h3 className="text-xs font-bold text-theme-text uppercase tracking-wider">
@@ -577,7 +579,36 @@ export function RightPanel({ providers = [], onOpenProviders }: RightPanelProps)
           <Navigation className="w-3.5 h-3.5 fill-current" /> Iniciar navegación
         </a>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Desktop: panel fijo a la derecha */}
+      <aside className="hidden xl:flex xl:flex-col xl:w-[380px] bg-theme-bg border-l border-theme-border p-4 gap-4 overflow-y-auto h-screen shrink-0 select-none transition-colors duration-200">
+        {panelContent}
+      </aside>
+
+      {/* Móvil / tablet: drawer deslizable desde la derecha */}
+      <div
+        className={`fixed inset-y-0 right-0 z-50 w-full max-w-[380px] bg-theme-bg border-l border-theme-border flex flex-col transform transition-transform duration-300 ease-out xl:hidden ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-theme-border shrink-0">
+          <span className="text-sm font-bold text-theme-text">Proveedores disponibles</span>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-theme-text-muted hover:text-theme-text hover:bg-theme-divider transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+          {panelContent}
+        </div>
+      </div>
+    </>
   )
 }
 

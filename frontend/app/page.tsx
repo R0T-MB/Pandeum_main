@@ -29,6 +29,7 @@ import {
   Clock,
   SlidersHorizontal,
   Bot,
+  Menu,
 } from 'lucide-react'
 
 const exampleProblems = [
@@ -46,6 +47,7 @@ export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [panelProviders, setPanelProviders] = useState<ProviderRecommendation[]>([])
   const [panelLabel, setPanelLabel] = useState<string | undefined>()
   const [selectedProvider, setSelectedProvider] = useState<ProviderRecommendation | null>(null)
@@ -224,7 +226,27 @@ export default function HomePage() {
     <div className="flex h-screen w-screen bg-theme-bg text-theme-text font-sans overflow-hidden transition-colors duration-200">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 bg-theme-bg p-6 flex flex-col justify-between overflow-y-auto transition-colors duration-200">
+      {/* Barra móvil: botón del menú lateral + acceso al panel derecho */}
+      <header className="xl:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-theme-bg/90 backdrop-blur border-b border-theme-border flex-shrink-0">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Abrir menú"
+          className="p-2 rounded-xl hover:bg-theme-divider transition-all duration-200 text-theme-text-secondary hover:text-theme-text"
+        >
+          <Menu size={20} strokeWidth={1.75} />
+        </button>
+        <span className="text-sm font-bold text-theme-text">PANDEUM</span>
+        <button
+          onClick={() => setRightPanelOpen(true)}
+          aria-label="Abrir panel de proveedores"
+          className="flex items-center gap-1.5 p-2 rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30 transition"
+        >
+          <MapPin size={16} strokeWidth={1.75} />
+          <span className="text-[11px] font-semibold hidden sm:inline">Proveedores</span>
+        </button>
+      </header>
+
+      <main className="flex-1 bg-theme-bg p-6 pt-20 xl:pt-6 flex flex-col justify-between overflow-y-auto transition-colors duration-200">
         <div className="max-w-4xl mx-auto w-full">
           {/* Banner de Saludo e IA Superior */}
           <div className="relative bg-theme-surface border border-theme-border rounded-3xl p-6 mb-6 overflow-hidden shadow-2xl transition-colors duration-200">
@@ -391,7 +413,26 @@ export default function HomePage() {
         </div>
       </main>
 
-      <RightPanel providers={panelProviders} onOpenProviders={() => setIsDrawerOpen(true)} />
+      <RightPanel
+        providers={panelProviders}
+        onOpenProviders={() => setIsDrawerOpen(true)}
+        isOpen={rightPanelOpen}
+        onClose={() => setRightPanelOpen(false)}
+      />
+
+      {/* Backdrop del panel derecho en móvil */}
+      {rightPanelOpen && (
+        <div className="fixed inset-0 z-40 bg-black/60 xl:hidden" onClick={() => setRightPanelOpen(false)} />
+      )}
+
+      {/* Botón flotante para abrir el panel de proveedores en móvil */}
+      <button
+        onClick={() => setRightPanelOpen(true)}
+        aria-label="Abrir proveedores"
+        className="xl:hidden fixed bottom-6 right-5 z-40 w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-600/40 flex items-center justify-center text-white transition"
+      >
+        <MapPin size={22} strokeWidth={1.75} />
+      </button>
 
       <ProvidersDrawer
         isOpen={isDrawerOpen}
