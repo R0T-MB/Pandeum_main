@@ -2,6 +2,7 @@
 
 import { SignIn } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
+import Link from 'next/link'
 
 export default function LoginPage() {
   return (
@@ -32,6 +33,14 @@ export default function LoginPage() {
             },
           }}
         />
+        <div className="mt-4 text-center">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-[#2F5D7C] hover:text-[#3A7DA0] transition-colors"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
       </div>
     </div>
   )
