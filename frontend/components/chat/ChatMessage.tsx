@@ -2,7 +2,8 @@
 
 import { Message, ProviderRecommendation } from '@/types'
 import { SolutionJourney } from './SolutionJourney'
-import { MapPin, Utensils, Shirt, Scissors, Wrench, ShoppingBag, HeartPulse, Info, Lightbulb, LucideIcon, CheckCheck, Star, Bot, ChevronRight, Navigation, Phone } from 'lucide-react'
+import { MapPin, Utensils, Shirt, Scissors, Wrench, ShoppingBag, HeartPulse, Info, Lightbulb, LucideIcon, CheckCheck, Star, Bot, ChevronRight, Navigation, Phone, Volume2, VolumeX, Loader2 } from 'lucide-react'
+import { useState } from 'react'
 
 interface ChatMessageProps {
   message: Message
@@ -42,6 +43,49 @@ const PandeumAvatar = () => (
     <Bot size={18} className="text-white" strokeWidth={1.75} />
   </div>
 )
+
+const VoiceButton = ({ text }: { text: string }) => {
+  const [speaking, setSpeaking] = useState(false)
+
+  const speak = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      return
+    }
+    if (speaking) {
+      window.speechSynthesis.cancel()
+      setSpeaking(false)
+      return
+    }
+    if (!text.trim()) return
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'es-ES'
+    const voice = window.speechSynthesis
+      .getVoices()
+      .find((v) => v.lang && v.lang.toLowerCase().startsWith('es'))
+    if (voice) utterance.voice = voice
+    utterance.onend = () => setSpeaking(false)
+    utterance.onerror = () => setSpeaking(false)
+    setSpeaking(true)
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utterance)
+  }
+
+  return (
+    <button
+      onClick={speak}
+      aria-label={speaking ? 'Detener audio' : 'Leer en voz alta'}
+      title={speaking ? 'Detener' : 'Leer en voz alta'}
+      className={`p-1.5 rounded-lg transition-colors ${
+        speaking
+          ? 'text-[#6E42FF] bg-[#6E42FF]/10'
+          : 'text-[#AEB5C5] hover:text-[#6E42FF] hover:bg-[rgba(255,255,255,0.05)]'
+      }`}
+    >
+      {speaking ? <Loader2 size={14} className="animate-spin" /> : <Volume2 size={14} />}
+    </button>
+  )
+}
 
 export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
   if (message.role === 'user') {
@@ -91,6 +135,9 @@ export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
                   <span className="text-[11px] text-[#AEB5C5]">
                     {message.timestamp ? formatTime(new Date(message.timestamp)) : ''}
                   </span>
+                  <VoiceButton
+                    text={aiResponse.direct_answer || aiResponse.natural_message || ''}
+                  />
                 </div>
                 <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.08)] rounded-[18px] rounded-tl-sm px-6 py-5 shadow-[0_12px_30px_rgba(0,0,0,.18)]">
                   <p className="text-base text-white leading-relaxed whitespace-pre-wrap">
@@ -121,6 +168,7 @@ export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
                   <span className="text-[11px] text-[#9CA3AF]">
                     {message.timestamp ? formatTime(new Date(message.timestamp)) : ''}
                   </span>
+                  <VoiceButton text={aiResponse.direct_answer || ''} />
                 </div>
                 <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.08)] rounded-[18px] rounded-tl-sm px-6 py-5 pandeum-shadow">
                   {aiResponse.direct_answer && (
@@ -176,6 +224,9 @@ export const ChatMessage = ({ message, onViewPlaces }: ChatMessageProps) => {
                 <span className="text-[11px] text-[#9CA3AF]">
                   {message.timestamp ? formatTime(new Date(message.timestamp)) : ''}
                 </span>
+                <VoiceButton
+                  text={aiResponse.natural_message || aiResponse.direct_answer || ''}
+                />
               </div>
               <div className="bg-[#151E2F] border border-[rgba(255,255,255,0.08)] rounded-[18px] rounded-tl-sm px-6 py-5 pandeum-shadow">
                 <SolutionJourney response={aiResponse} />

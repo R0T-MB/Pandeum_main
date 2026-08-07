@@ -30,6 +30,9 @@ import {
   SlidersHorizontal,
   Bot,
   Menu,
+  Mic,
+  MicOff,
+  Square,
 } from 'lucide-react'
 
 const exampleProblems = [
@@ -58,6 +61,15 @@ export default function HomePage() {
   const [inputValue, setInputValue] = useState('')
   const [guestBlocked, setGuestBlocked] = useState(false)
   const [guestRemaining, setGuestRemaining] = useState<number | null>(null)
+  const [isListening, setIsListening] = useState(false)
+  const recognitionRef = useRef<{
+    start: () => void
+    stop: () => void
+    abort: () => void
+    onresult: ((e: { results: ArrayLike<unknown> }) => void) | null
+    onend: (() => void) | null
+    onerror: ((e: unknown) => void) | null
+  } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const loadConversation = useCallback(async (conversationId: string) => {
@@ -189,6 +201,58 @@ export default function HomePage() {
         handleSendMessage(inputValue.trim())
         setInputValue('')
       }
+    }
+  }
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop?.()
+    }
+    setIsListening(false)
+  }
+
+  const toggleListening = () => {
+    if (!isListening) {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (!SpeechRecognition) {
+        toast.error('Tu navegador no soporta reconocimiento de voz.')
+        return
+      }
+      const rec = new SpeechRecognition()
+      rec.lang = 'es-ES'
+      rec.interimResults = false
+      rec.maxAlternatives = 1
+      rec.continuous = false
+
+      rec.onresult = (e: any) => {
+        const transcript = Array.from(e.results)
+          .map((r: any) => r?.[0]?.transcript ?? '')
+          .join('')
+          .trim()
+        if (transcript) {
+          setInputValue(transcript)
+          handleSendMessage(transcript)
+          setInputValue('')
+        }
+      }
+      rec.onend = () => setIsListening(false)
+      rec.onerror = () => {
+        setIsListening(false)
+        toast.error('No se pudo capturar la voz. Intenta de nuevo.')
+      }
+
+      recognitionRef.current = rec
+      try {
+        rec.start()
+        setIsListening(true)
+        toast('Escuchando... habla ahora')
+      } catch {
+        setIsListening(false)
+        toast.error('No se pudo iniciar el micrófono.')
+      }
+    } else {
+      stopListening()
     }
   }
 
@@ -376,6 +440,19 @@ export default function HomePage() {
                 placeholder={guestBlocked ? 'Límite alcanzado. Inicia sesión para seguir.' : 'Cuéntame qué necesitas...'}
                 className="bg-transparent border-none outline-none text-sm text-theme-text placeholder-[var(--color-text-muted)] w-full disabled:opacity-50"
               />
+              <button
+                onClick={toggleListening}
+                disabled={isGuest && guestBlocked}
+                aria-label={isListening ? 'Detener grabación' : 'Hablar'}
+                title={isListening ? 'Detener' : 'Dictar por voz'}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0 ${
+                  isListening
+                    ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30 animate-pulse'
+                    : 'bg-theme-divider text-theme-text-muted hover:text-theme-text hover:bg-[var(--color-border)]'
+                }`}
+              >
+                {isListening ? <Square size={15} className="fill-current" /> : <Mic size={17} />}
+              </button>
             </div>
             <button
               onClick={() => {
