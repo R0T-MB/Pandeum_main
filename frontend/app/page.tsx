@@ -212,47 +212,74 @@ export default function HomePage() {
   }
 
   const toggleListening = () => {
-    if (!isListening) {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      if (!SpeechRecognition) {
-        toast.error('Tu navegador no soporta reconocimiento de voz.')
-        return
-      }
-      const rec = new SpeechRecognition()
-      rec.lang = 'es-ES'
-      rec.interimResults = false
-      rec.maxAlternatives = 1
-      rec.continuous = false
-
-      rec.onresult = (e: any) => {
-        const transcript = Array.from(e.results)
-          .map((r: any) => r?.[0]?.transcript ?? '')
-          .join('')
-          .trim()
-        if (transcript) {
-          setInputValue(transcript)
-          handleSendMessage(transcript)
-          setInputValue('')
-        }
-      }
-      rec.onend = () => setIsListening(false)
-      rec.onerror = () => {
-        setIsListening(false)
-        toast.error('No se pudo capturar la voz. Intenta de nuevo.')
-      }
-
-      recognitionRef.current = rec
-      try {
-        rec.start()
-        setIsListening(true)
-        toast('Escuchando... habla ahora')
-      } catch {
-        setIsListening(false)
-        toast.error('No se pudo iniciar el micrófono.')
-      }
-    } else {
+    if (isListening) {
       stopListening()
+      return
+    }
+
+    if (typeof window === 'undefined') return
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      toast.error('Tu navegador no soporta reconocimiento de voz.')
+      return
+    }
+
+    // La API de voz solo funciona en contexto seguro (https o localhost).
+    if (!window.isSecureContext) {
+      toast.error('El reconocimiento de voz requiere conexión segura (https o localhost).')
+      return
+    }
+
+    const rec = new SpeechRecognition()
+    rec.lang = 'es-ES'
+    rec.interimResults = true
+    rec.maxAlternatives = 1
+    rec.continuous = false
+
+    rec.onresult = (e: any) => {
+      let transcript = ''
+      for (let i = 0; i < e.results.length; i++) {
+        transcript += e.results[i][0]?.transcript ?? ''
+      }
+      transcript = transcript.trim()
+      if (!transcript) return
+      setInputValue(transcript)
+      // Si el resultado es final, enviar la consulta.
+      if (e.results[e.results.length - 1]?.isFinal) {
+        setInputValue('')
+        handleSendMessage(transcript)
+      }
+    }
+
+    rec.onend = () => setIsListening(false)
+    rec.onerror = (e: any) => {
+      setIsListening(false)
+      const code = e?.error || ''
+      const messages: Record<string, string> = {
+        'not-allowed':
+          'Permiso de micrófono denegado. Actívalo en la configuración del navegador y vuelve a intentar.',
+        'service-not-allowed':
+          'Permiso de micrófono denegado. Actívalo en la configuración del navegador.',
+        'no-speech':
+          'No se detectó tu voz. Asegúrate de que el micrófono funcione y haz clic para hablar de nuevo.',
+        'audio-capture': 'No se encontró ningún micrófono disponible.',
+        network: 'Hubo un error de red con el reconocimiento de voz. Intenta de nuevo.',
+        aborted: 'La captura se detuvo.',
+        'not-found': 'No se encontró el módulo de lenguaje seleccionado.',
+      }
+      console.error('SpeechRecognition error:', code)
+      toast.error(messages[code] || `Error al capturar la voz (${code}).`)
+    }
+
+    recognitionRef.current = rec
+    try {
+      rec.start()
+      setIsListening(true)
+      toast('Escuchando... habla ahora')
+    } catch {
+      setIsListening(false)
+      toast.error('No se pudo iniciar el micrófono.')
     }
   }
 
