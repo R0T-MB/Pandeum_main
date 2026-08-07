@@ -9,6 +9,7 @@ from ..auth import get_current_user, get_current_admin_user
 from ..models import User, Provider, Review, Favorite, Service
 from ..crud import create_provider, get_provider_rating, get_provider_review_count
 from ..moderation import review_decision
+from ..provider_moderation import apply_moderation
 from ..config import settings
 
 router = APIRouter(prefix="/providers", tags=["providers"])
@@ -43,6 +44,18 @@ def register_provider(
     if current_user.is_provider:
         raise HTTPException(status_code=400, detail="Ya eres un proveedor")
     provider = create_provider(db, str(current_user.id), provider_data)
+
+    # Filtro automático anti negocios de mala intención: analiza los datos de
+    # registro y, si hay señales claras (spam/PII/categoría prohibida), el
+    # proveedor queda bloqueado automáticamente sin pasar a revisión manual.
+    apply_moderation(
+        provider,
+        business_name=provider_data.business_name,
+        description=provider_data.description,
+        category=provider_data.category,
+    )
+    db.commit()
+    db.refresh(provider)
     return _provider_payload(provider, db)
 
 @router.post("/resubmit", response_model=ProviderResponse)
@@ -75,6 +88,13 @@ def resubmit_provider_request(
         trust_factors = provider.trust_factors or {}
         trust_factors["last_correction_note"] = resubmit_data.correction_note.strip()
         provider.trust_factors = trust_factors
+    # Reaplica el filtro: si aún contiene datos de mala intención, no entra a revisión.
+    apply_moderation(
+        provider,
+        business_name=provider.business_name,
+        description=provider.description,
+        category=provider.category,
+    )
     db.commit()
     db.refresh(provider)
     return _provider_payload(provider, db)
@@ -149,6 +169,14 @@ def update_my_provider(
         raise HTTPException(status_code=404, detail="Perfil de proveedor no encontrado")
     for key, value in update_data.dict(exclude_unset=True).items():
         setattr(provider, key, value)
+
+    # Reaplica el filtro anti mala intención sobre los datos editados.
+    apply_moderation(
+        provider,
+        business_name=provider.business_name,
+        description=provider.description,
+        category=provider.category,
+    )
     db.commit()
     db.refresh(provider)
     return _provider_payload(provider, db)
