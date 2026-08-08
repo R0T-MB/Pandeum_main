@@ -255,7 +255,7 @@ export default function HomePage() {
     rec.onend = () => setIsListening(false)
     rec.onerror = (e: any) => {
       setIsListening(false)
-      const code = e?.error || ''
+      const code = e?.error || 'desconocido'
       const messages: Record<string, string> = {
         'not-allowed':
           'Permiso de micrófono denegado. Actívalo en la configuración del navegador y vuelve a intentar.',
@@ -269,7 +269,7 @@ export default function HomePage() {
         'not-found': 'No se encontró el módulo de lenguaje seleccionado.',
       }
       console.error('SpeechRecognition error:', code)
-      toast.error(messages[code] || `Error al capturar la voz (${code}).`)
+      toast.error(messages[code] || `Error al capturar la voz (código: ${code}).`)
     }
 
     recognitionRef.current = rec
